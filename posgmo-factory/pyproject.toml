@@ -1,0 +1,25 @@
+[project]
+name = "posgmo-factory"
+version = "0.1.0"
+description = "POS GMO Autonomous Software Factory — ADK + MCP multi-agent pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "google-adk>=0.3.0",
+    "mcp[cli]>=1.0.0",
+    "fastmcp>=0.4.0",
+    "pydantic>=2.7.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]

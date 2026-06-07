@@ -1,0 +1,32 @@
+[
+  {
+    "patternId": "utc_timezone_normalization",
+    "patternName": "UTC Database to Local Time Horizon Conversion",
+    "description": "Converts UTC database strings explicitly into the local Hermosillo, Sonora (UTC-7) presentation target before rendering timestamps to lists or thermal printing templates.",
+    "implementationExample": "const utcDate = new Date(item.paymentDate + (item.paymentDate.includes('Z') ? '' : 'Z')); const hermosilloDate = new Date(utcDate.getTime() - (7 * 60 * 60 * 1000));"
+  },
+  {
+    "patternId": "inactivity_session_watchdog",
+    "patternName": "Multi-Event Loop Activity Control Watchdog",
+    "description": "Hooks listeners into native window interactions ('mousemove', 'keypress', 'touchstart') to sustain context validity, safely launching a non-blocking 10-second warning overlay before enforcing logouts.",
+    "implementationExample": "useInactivityTimer(timeoutDuration = 300000, onTimeout)"
+  },
+  {
+    "patternId": "api_resilience_fallback",
+    "patternName": "Network Resilience & Local Paths Recovery Pattern",
+    "description": "Protects asset rendering pipeline by intercepting structural data failures and transparently routing execution toward predictable internal paths.",
+    "implementationExample": "catch (error) { console.warn('Error saving image, using local path'); return `/public/assets/${filename}`; }"
+  },
+  {
+    "patternId": "infinite_scroll_pagination",
+    "patternName": "Virtual Buffer Infinite Scroll Data Loading",
+    "description": "Protects mobile DOM memory capacity metrics during massive list evaluations by splitting state objects into dynamic window arrays.",
+    "implementationExample": "displayedIncome.length < filteredIncome.length && <IonInfiniteScroll onIonInfinite={loadMoreIncomes}>"
+  },
+  {
+    "patternId": "local_tax_force_override",
+    "patternName": "Explicit Localized Zero Tax Override (IVA = 0)",
+    "description": "Guarantees layout normalization parameters on regional printing processes by locking local variables to zero regardless of server response state variations.",
+    "implementationExample": "const iva = 0; const subtotal = Number(data.totals.subtotal ?? 0);"
+  }
+]

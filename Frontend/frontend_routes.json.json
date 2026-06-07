@@ -1,0 +1,57 @@
+[
+  {
+    "path": "/login",
+    "component": "src/pages/Authentication/Login.tsx",
+    "authenticated": false,
+    "rolesAllowed": ["*"],
+    "description": "Gateway screen for initial session provisioning."
+  },
+  {
+    "path": "/pos",
+    "component": "src/pages/POS.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Cashier"],
+    "description": "Point-of-Sale module viewport containing core product list items and direct cart assignments."
+  },
+  {
+    "path": "/cart",
+    "component": "src/pages/CartPage/CartPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Cashier"],
+    "description": "Checkout screen parsing detailed options, managing client definitions, coupons, and processing operations."
+  },
+  {
+    "path": "/products",
+    "component": "src/pages/products/ProductListPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Main items overview pane displaying deep modification tables."
+  },
+  {
+    "path": "/products/:productId",
+    "component": "src/pages/products/ProductDetailPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Granular dynamic configuration target for specific items."
+  },
+  {
+    "path": "/incomes",
+    "component": "src/pages/IncomesPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin"],
+    "description": "Auditing viewport detailing income transactions, analytics diagrams, and deletion permissions."
+  },
+  {
+    "path": "/expenses",
+    "component": "src/pages/ExpensesPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin"],
+    "description": "Outflow balancing workspace tracking payments made to service operators or vendors."
+  },
+  {
+    "path": "*",
+    "fallbackRewrite": "/index.html",
+    "excludeAssetExtensions": [".css", ".js", ".png", ".jpg", ".svg", ".ico", ".json"],
+    "description": "Static web navigation fallback rules configuration state mapping directly to host specifications."
+  }
+]

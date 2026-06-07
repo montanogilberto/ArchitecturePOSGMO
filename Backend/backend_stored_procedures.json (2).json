@@ -1,0 +1,22 @@
+{
+  "stored_procedures": [
+    { "name": "sp_checks", "module_binding": "modules/checks.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_checks_all", "module_binding": "modules/checks.py", "parameters": [] },
+    { "name": "sp_checks_one", "module_binding": "modules/checks.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_checks_today", "module_binding": "modules/checks.py", "parameters": [] },
+    { "name": "sp_contractors", "module_binding": "modules/contractors.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_contractors_all", "module_binding": "modules/contractors.py", "parameters": [] },
+    { "name": "sp_departaments", "module_binding": "modules/departaments.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_employees", "module_binding": "modules/employees.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_employmentTypes", "module_binding": "modules/employmentTypes.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_income", "module_binding": "modules/income.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_login", "module_binding": "modules/login.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_orders", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_orders_list", "module_binding": "modules/orders.py", "parameters": [] },
+    { "name": "sp_orders_tracking_status", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_orders_products_one", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_sellListings", "module_binding": "modules/sellListings.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_tankWaters", "module_binding": "modules/IOT.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_users", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"] }
+  ]
+}

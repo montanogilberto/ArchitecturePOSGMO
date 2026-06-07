@@ -1,0 +1,42 @@
+{
+  "base_envelope_format": {
+    "root_key": "Dynamic matching module node (e.g. 'users', 'register', 'marketplaceOrders')",
+    "structure": "Array of objects containing operational attributes + 'action' property"
+  },
+  "schemas": {
+    "CashRegisterInput": {
+      "register": [
+        {
+          "action": "int (1=OPEN, 2=CLOSE, 3=ADD_MOVEMENT, 4=GET_CURRENT, 5=LIST_MOVEMENTS, 6=HISTORY, 7=DAILY_SUMMARY)",
+          "companyId": "int",
+          "userId": "int",
+          "openingCash": "decimal (optional)",
+          "closingCash": "decimal (optional)",
+          "movementType": "string ('sale', 'withdrawal')",
+          "amount": "decimal (optional)",
+          "cashPaid": "decimal (optional)",
+          "cashReturn": "decimal (optional)"
+        }
+      ]
+    },
+    "MarketplaceOrderInput": {
+      "marketplaceOrders": [
+        {
+          "channel": "string ('amazon' | 'mercadolibre' | 'ebay')",
+          "market": "string",
+          "channelOrderId": "string",
+          "unifiedProductId": "int",
+          "quantity": "int",
+          "soldPriceUsd": "decimal",
+          "buyerAddressJson": "object",
+          "status": "string",
+          "action": "string ('1' | '2' | '3')"
+        }
+      ]
+    },
+    "TicketReceiptHtmlRequest": {
+      "incomeId": "int",
+      "html": "string (raw HTML payload data to store)"
+    }
+  }
+}

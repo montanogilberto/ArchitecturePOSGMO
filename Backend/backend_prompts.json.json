@@ -1,0 +1,14 @@
+{
+  "embedded_prompts": [
+    {
+      "target_endpoint": "/symptoms",
+      "intended_behavior": "Instructs the AI orchestrator to evaluate symptoms, determine demographics, and format medical treatment recommendations into structured lists detailing the symptom, treatment plan, medicine name, and exact dosage metrics.",
+      "output_format_constraint": "Must match the schema template containing fields for symptom, treatment, medicine name, and mg."
+    },
+    {
+      "target_endpoint": "/scannertext",
+      "intended_behavior": "Instructs the AI to process messy text maps extracted by the OCR engine and reconstruct the data into clean, valid JSON responses.",
+      "output_format_constraint": "Standard system operation code arrays."
+    }
+  ]
+}

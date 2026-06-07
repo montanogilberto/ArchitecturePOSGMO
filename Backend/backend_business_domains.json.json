@@ -1,0 +1,24 @@
+{
+  "business_domains": [
+    {
+      "domain": "POS & Cash Operations",
+      "modules": ["modules/cashRegister.py", "modules/tickets.py", "modules/income.py", "modules/expenses.py"],
+      "entities": ["register_sessions", "movements", "sales_receipts", "ticket_slips"]
+    },
+    {
+      "domain": "Omnichannel Marketplace Aggregator",
+      "modules": ["modules/unifiedProducts.py", "modules/productMatches.py", "modules/marketplaceOrders.py", "modules/opportunities.py", "modules/sellListings.py"],
+      "entities": ["unified_catalog", "marketplace_matches", "arbitrage_listings", "channel_orders"]
+    },
+    {
+      "domain": "IoT & Automation Telemetry",
+      "modules": ["modules/IOT.py", "modules/vending.py", "modules/laundry.py"],
+      "entities": ["led_status", "tank_waters", "vending_inventory", "laundry_machines"]
+    },
+    {
+      "domain": "Corporate Resource Management (ERP/HR)",
+      "modules": ["modules/employees.py", "modules/contractors.py", "modules/departaments.py", "modules/projects.py", "modules/employeeProjectAssignments.py"],
+      "entities": ["staff_records", "departmental_org", "project_rosters"]
+    }
+  ]
+}

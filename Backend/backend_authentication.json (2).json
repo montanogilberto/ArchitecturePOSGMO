@@ -1,0 +1,24 @@
+{
+  "integrations": [
+    {
+      "provider": "MercadoLibre API",
+      "type": "E-commerce Sync",
+      "endpoints_used": ["/search", "/items", "/oauth/callback"]
+    },
+    {
+      "provider": "Amazon Web Services Proxy Gateway",
+      "type": "Scraper & Seller Central Interface",
+      "modes_supported": ["serp", "spapi"]
+    },
+    {
+      "provider": "Twilio Integration Engine",
+      "type": "Global Messaging Client Gateway",
+      "capabilities": ["Direct Customer SMS Dispatching", "WhatsApp Business Receipt Delivery Hooks"]
+    },
+    {
+      "provider": "Azure Blob Storage Ecosystem",
+      "type": "Static Unstructured Assets Hosting",
+      "target_format": "receipts/{year}/{month}/receipt_{incomeId}.html"
+    }
+  ]
+}

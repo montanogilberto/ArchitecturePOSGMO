@@ -1,0 +1,98 @@
+[
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/pos_laundry",
+    "method": "POST",
+    "fileOrigin": "src/api/laundryApi.ts",
+    "requestContract": {
+      "pos_laundry": {
+        "details": [
+          {
+            "productId": "number",
+            "cantidad": "number",
+            "precio_unitario": "number",
+            "subtotal": "number"
+          }
+        ],
+        "total": "number"
+      }
+    },
+    "responseContract": {
+      "success": "boolean",
+      "incomeId": "number",
+      "msg": "string"
+    }
+  },
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/by_company_products",
+    "method": "POST",
+    "fileOrigin": "src/api/productsApi.ts",
+    "requestContract": {
+      "products": [
+        {
+          "companyId": "string",
+          "categoryId": "string (optional)"
+        }
+      ]
+    },
+    "responseContract": {
+      "result": [
+        {
+          "products": [
+            {
+              "productId": "number",
+              "name": "string",
+              "description": "string",
+              "details": "array"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/all_income",
+    "method": "GET",
+    "fileOrigin": "src/api/laundryApi.ts",
+    "requestContract": {},
+    "responseContract": {
+      "income": [
+        {
+          "incomeId": "number",
+          "orderId": "number",
+          "total": "number",
+          "discountAmount": "number",
+          "paymentMethod": "string",
+          "paymentDate": "string",
+          "userId": "number",
+          "clientId": "number",
+          "companyId": "number"
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/save_image",
+    "method": "POST",
+    "fileOrigin": "src/api/saveImageApi.ts",
+    "requestContract": {
+      "filename": "string",
+      "base64": "string"
+    },
+    "responseContract": {
+      "filepath": "string"
+    }
+  },
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/led_status",
+    "method": "POST",
+    "fileOrigin": "src/pages/LedStatusPage.tsx",
+    "requestContract": {
+      "led_status": [
+        { "status": "string ('on' | 'off')" }
+      ]
+    },
+    "responseContract": {
+      "status": "string"
+    }
+  }
+]

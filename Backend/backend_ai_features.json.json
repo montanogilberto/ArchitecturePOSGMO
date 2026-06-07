@@ -1,0 +1,16 @@
+{
+  "cognitive_services": [
+    {
+      "feature_id": "Azure Computer Vision Text Extraction Engine",
+      "orchestrator": "modules/scannertext.py",
+      "cognitive_client": "ComputerVisionClient API",
+      "downstream_handler": "Passes raw text maps into GPT models for automated normalization and structuring"
+    },
+    {
+      "feature_id": "GPT Engine Diagnosis Structuring Agent",
+      "orchestrator": "modules/api_gpt.py",
+      "endpoints": ["/symptoms"],
+      "purpose": "Consumes natural text input and structures symptom matrices into clear markdown diagnostic and dosage recommendation tables"
+    }
+  ]
+}

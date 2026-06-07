@@ -1,0 +1,19 @@
+{
+  "architectural_pipeline": [
+    {
+      "layer_name": "Ingress Network Gateway",
+      "component": "FastAPI App Engine Router (`main.py`)",
+      "responsibility": "Handles CORS policy validation, payload normalization, and maps `routes_/` paths into memory"
+    },
+    {
+      "layer_name": "Business Intermediary Logic Layer",
+      "component": "Target Functional Python Module (`modules/*.py`)",
+      "responsibility": "Executes external integrations, runs third-party API calls (Azure, Twilio), and serializes dictionaries into JSON text blocks"
+    },
+    {
+      "layer_name": "Transactional Persistence Layer",
+      "component": "Database Core Stored Procedures (`sql_logic/*.sql`)",
+      "responsibility": "Executes atomic table changes, processes operations safely via input parameters, and returns responses using native JSON queries"
+    }
+  ]
+}

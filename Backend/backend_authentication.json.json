@@ -1,0 +1,10 @@
+{
+  "security_framework": {
+    "identity_provider": "Internal database verification layer backing `sp_login` schema hashes",
+    "worker_authentication": "Shared Secret Verification via `security/worker_key.py` enforcing dependency injections (`Depends(require_worker_key)`)",
+    "external_oauth_flows": {
+      "MercadoLibre": "Stateful PKCE Verification Flow with programmatic callback token ingestion (`/mercadolibre/oauth/callback`)",
+      "eBay": "OAuth Client-Credentials / Auth Code flow via `modules/ebay_auth.py`"
+    }
+  }
+}

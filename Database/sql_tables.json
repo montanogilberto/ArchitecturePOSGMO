@@ -1,0 +1,5700 @@
+{
+    "activeIngredients": [
+        {
+            "column": "activeIngredientId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "subCategoryId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "is_principal",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "addresses": [
+        {
+            "column": "addressId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "street",
+            "type": "varchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "postalCode",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "city",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "state",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "buyOffers": [
+        {
+            "column": "buyOfferId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "sourceType",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sourceName",
+            "type": "nvarchar",
+            "length": 200.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "supplierSku",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "titleRaw",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "buyPriceOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "currencyOriginal",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "buyPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxRateToUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxAsOfDate",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "minQty",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "leadTimeDays",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "shippingBuyOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "shippingBuyUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "taxBuyOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "taxBuyUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "offerTimestamp",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "cashRegisterMovements": [
+        {
+            "column": "movementId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "sessionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "movementType",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "amount",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "incomeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "notes",
+            "type": "nvarchar",
+            "length": 250.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "cashPaid",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "cashReturn",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "cashRegisterSessions": [
+        {
+            "column": "sessionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "openedByUserId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "openedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "openingCash",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "closedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "closedByUserId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "closingCash",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "openingNotes",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "closingNotes",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "autoClosed",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "expectedCash",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "cashDifference",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "categories": [
+        {
+            "column": "categoryid",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "check_types": [
+        {
+            "column": "checkTypeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "description",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "YES"
+        }
+    ],
+    "checks": [
+        {
+            "column": "checkId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "latitude",
+            "type": "varchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "longitude",
+            "type": "varchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "description",
+            "type": "varchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "datetimelocal",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "checkTypeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "street",
+            "type": "varchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "postalCode",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "city",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "state",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "clients": [
+        {
+            "column": "clientId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "first_name",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "last_name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "cellphone",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "email",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "phone",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "clothesCatalog": [
+        {
+            "column": "catalogId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "group",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "description",
+            "type": "nvarchar",
+            "length": 250.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sortOrder",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "isActive",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "Commands": [
+        {
+            "column": "commandId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "phrase",
+            "type": "nvarchar",
+            "length": 255.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "action",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "commission_terminals": [
+        {
+            "column": "commissionTerminalId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "provider",
+            "type": "varchar",
+            "length": 40.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "terminalName",
+            "type": "varchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "paymentMethod",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "country",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "commissionRatePct",
+            "type": "decimal",
+            "length": 6.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fixedFeeAmount",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "currency",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "isActive",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "validFrom",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "validTo",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "companies": [
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "companiesBranch": [
+        {
+            "column": "branchId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "active",
+            "type": "varchar",
+            "length": 1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "company_modules": [
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "moduleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "active",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "contractors": [
+        {
+            "column": "contractorId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "employeeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "contractingCompany",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "contractStartDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "contractEndDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "costRules": [
+        {
+            "column": "ruleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "category",
+            "type": "nvarchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "feePercent",
+            "type": "decimal",
+            "length": 9.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fixedFeeUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "adsPercent",
+            "type": "decimal",
+            "length": 9.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "returnsRate",
+            "type": "decimal",
+            "length": 9.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "avgReturnCostUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "packagingCostUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "otherCostUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "effectiveFrom",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "effectiveTo",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "departments": [
+        {
+            "column": "departmentId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "departmentName",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "employeeProjectAssignments": [
+        {
+            "column": "assignmentId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "employeeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "projectId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "assignmentStartDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "assignmentEndDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "employees": [
+        {
+            "column": "employeeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "firstName",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "lastName",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "email",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "phoneNumber",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "address",
+            "type": "nvarchar",
+            "length": 255.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "employmentTypeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "position",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "departmentId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "statusId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "hireDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "endDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "emergencyContactName",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "emergencyContactRelationship",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "emergencyContactPhone",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "notes",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "employmentTypes": [
+        {
+            "column": "employmentTypeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "employmentType",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "exchangeRates": [
+        {
+            "column": "exchangeRateId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "fromCurrency",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "toCurrency",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "rate",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "asOfDate",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "source",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "expenseDetailOptions": [
+        {
+            "column": "expenseDetailOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "expenseDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productOptionChoiceId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "expenseDetails": [
+        {
+            "column": "expenseDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "expenseId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "expenses": [
+        {
+            "column": "expenseId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "orderId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "total",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "paymentMethod",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "paymentDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "supplierId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "images": [
+        {
+            "column": "imageId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "location",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "url",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "id",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "moduleId",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "income": [
+        {
+            "column": "incomeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "orderId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "total",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "paymentMethod",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "paymentDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "clientId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "cashPaid",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "cashReturn",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "promotionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "promotionCode",
+            "type": "varchar",
+            "length": 30.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "discountAmount",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "commissionTerminalId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "incomeDetailOptions": [
+        {
+            "column": "incomeDetailOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "incomeDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productOptionChoiceId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "quantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "incomeDetails": [
+        {
+            "column": "incomeDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "incomeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "quantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "piecesJson",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "ingestState": [
+        {
+            "column": "ingestStateId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "targetKey",
+            "type": "nvarchar",
+            "length": 400.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "source",
+            "type": "varchar",
+            "length": 30.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "lastOffset",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "nextOffset",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "pageSize",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "lastRunAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "nextRunAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "attempts",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "lastError",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "lockedBy",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "lockUntil",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "inventoryMovements": [
+        {
+            "column": "movementId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "quantityDelta",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "reason",
+            "type": "varchar",
+            "length": 30.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "notes",
+            "type": "nvarchar",
+            "length": 300.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "refType",
+            "type": "varchar",
+            "length": 30.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "refId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "inventoryStock": [
+        {
+            "column": "inventoryStockId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "stockQuantity",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "minStockQty",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "reorderQty",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "LedStatus": [
+        {
+            "column": "deviceId",
+            "type": "nvarchar",
+            "length": 64.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "status",
+            "type": "nvarchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_by",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "listingDrafts": [
+        {
+            "column": "draftId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "payloadJson",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "suggestedPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "minPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "maxPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "approvedBy",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "approvedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "errorMessage",
+            "type": "nvarchar",
+            "length": 2000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "logins": [
+        {
+            "column": "loginId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "active",
+            "type": "char",
+            "length": 1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "logs": [
+        {
+            "column": "logId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "tableName",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "recordId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "action",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "actionTime",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "manufactures": [
+        {
+            "column": "manufactureId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "marketplaceOrders": [
+        {
+            "column": "marketplaceOrderId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channelOrderId",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "quantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "soldPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "buyerAddressJson",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 30.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "measurements": [
+        {
+            "column": "measurementId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "prefix",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "mercadolibreWebhookLogs": [
+        {
+            "column": "id",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "payload",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "messageTickets": [
+        {
+            "column": "ticketId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "threadId",
+            "type": "nvarchar",
+            "length": 120.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "marketplaceOrderId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "customerMessage",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "suggestedReply",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "finalReply",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_crawl_frontier": [
+        {
+            "column": "frontierId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "frontierKey",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "frontierType",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sourceUrl",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "entityId",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "firstSeenAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "lastSeenAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "lastCrawledAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "cooldownUntil",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "ml_domains_cache": [
+        {
+            "column": "id",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "site_id",
+            "type": "nvarchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "query_text",
+            "type": "nvarchar",
+            "length": 400.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "domain_id",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "category_id",
+            "type": "nvarchar",
+            "length": 40.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "attributes_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "raw_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_item_features": [
+        {
+            "column": "item_id",
+            "type": "nvarchar",
+            "length": 40.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "site_id",
+            "type": "nvarchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "domain_id",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "category_id",
+            "type": "nvarchar",
+            "length": 40.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "brand",
+            "type": "nvarchar",
+            "length": 120.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "model",
+            "type": "nvarchar",
+            "length": 120.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "internal_memory",
+            "type": "nvarchar",
+            "length": 60.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "ram",
+            "type": "nvarchar",
+            "length": 60.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "storage_type",
+            "type": "nvarchar",
+            "length": 60.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "condition",
+            "type": "nvarchar",
+            "length": 30.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "price",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sold_quantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "available_quantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "shipping_free",
+            "type": "bit",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "logistics_type",
+            "type": "nvarchar",
+            "length": 60.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "features_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "last_seen_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_item_scores": [
+        {
+            "column": "item_id",
+            "type": "nvarchar",
+            "length": 40.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "model_version",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "score",
+            "type": "float",
+            "length": 53.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "explanation_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_jobs": [
+        {
+            "column": "job_id",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "job_type",
+            "type": "nvarchar",
+            "length": 30.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "payload_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "attempts",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "last_error",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "locked_by",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "locked_until",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_oauth_states": [
+        {
+            "column": "state",
+            "type": "nvarchar",
+            "length": 200.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "code_verifier",
+            "type": "nvarchar",
+            "length": 400.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "used_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "ml_scrape_items": [
+        {
+            "column": "scrapeItemId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "runId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "pageId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "itemId",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "itemUrl",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "title",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "price",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "currencyId",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sellerId",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sellerUrl",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "positionInPage",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "discoveredAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "persisted",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_scrape_pages": [
+        {
+            "column": "pageId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "runId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "pageNumber",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "pageUrl",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "httpStatus",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "itemsExtracted",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "itemsReportedTotal",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "durationMs",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "blocked",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "blockReason",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_scrape_runs": [
+        {
+            "column": "runId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "runUid",
+            "type": "uniqueidentifier",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sourceUrl",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "siteId",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "queryText",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "startedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "finishedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "pagesVisited",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "itemsExtracted",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "itemsReportedTotal",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "coveragePercent",
+            "type": "decimal",
+            "length": 5.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "workerId",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "errorMessage",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_search_results": [
+        {
+            "column": "search_result_id",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "search_run_id",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "item_id",
+            "type": "nvarchar",
+            "length": 40.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "title",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "price",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "currency_id",
+            "type": "nvarchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "condition",
+            "type": "nvarchar",
+            "length": 30.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "permalink",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "seller_id",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "thumbnail",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "raw_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_search_runs": [
+        {
+            "column": "search_run_id",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "site_id",
+            "type": "nvarchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "query_text",
+            "type": "nvarchar",
+            "length": 400.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "domain_id",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "category_id",
+            "type": "nvarchar",
+            "length": 40.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "filters_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "http_status",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "error_json",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "finished_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "request_url",
+            "type": "nvarchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "ml_tokens": [
+        {
+            "column": "id",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "access_token",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "refresh_token",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "expires_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "modules": [
+        {
+            "column": "moduleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "opportunities": [
+        {
+            "column": "opportunityId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "buyOfferId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellListingId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "buyTotalCostUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellGrossUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellFeesUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "returnsRiskUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellNetUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "netMarginUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "roi",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "velocityScore",
+            "type": "decimal",
+            "length": 9.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "confidenceScore",
+            "type": "decimal",
+            "length": 9.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "finalScore",
+            "type": "decimal",
+            "length": 9.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "calculatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "orderDetails": [
+        {
+            "column": "orderDetaild",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "orderId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "productOptionChoiceId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "orders": [
+        {
+            "column": "orderId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "quantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "paymentMethod",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "orderDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "orderNumber",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "tableNumber",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "total",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "clientId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "comments",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "orderStatuses": [
+        {
+            "column": "orderStatusId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "color",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "orderTracking": [
+        {
+            "column": "trackingId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "orderId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "orderStatusId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "changedBy",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "changedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "notes",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "permissions": [
+        {
+            "column": "permissionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "code",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 120.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "moduleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "pos_laundry": [
+        {
+            "column": "laundryId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "total",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "create_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "update_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "pos_laundry_detail": [
+        {
+            "column": "laundryDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "laundryId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "cantidad",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "precio_unitario",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "subtotal",
+            "type": "decimal",
+            "length": 21.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "create_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "update_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "procurementJobs": [
+        {
+            "column": "procJobId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "marketplaceOrderId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "supplierCandidate",
+            "type": "nvarchar",
+            "length": 200.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "maxBuyCostUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "decision",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "reason",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "productCategories": [
+        {
+            "column": "productCategoryId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "image",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "productDetails": [
+        {
+            "column": "productDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "stockQuantity",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "unitPrice",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "salePrice",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "productForms": [
+        {
+            "column": "productFormId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "quantity",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productPackingPresentationId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productsPackingTypeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "productMatches": [
+        {
+            "column": "matchId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "entityType",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "entityId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "confidence",
+            "type": "decimal",
+            "length": 5.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "matchMethod",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "productOptionChoices": [
+        {
+            "column": "productOptionChoiceId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "productOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "choiceKey",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "price",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "description",
+            "type": "varchar",
+            "length": 255.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "productOptions": [
+        {
+            "column": "productOptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "optionKey",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "type",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "products": [
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 255.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "code",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "dateOfExpire",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "productFormId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "manufactureId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "description",
+            "type": "varchar",
+            "length": 5000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "barCode",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "categoryId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "productsDescription": [
+        {
+            "column": "productDescriptionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "Dosage",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "measurementId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "is_principal",
+            "type": "varchar",
+            "length": 1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "activeIngredientId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "productsPackingPresentation": [
+        {
+            "column": "productPackingPresentationId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "productsPackingType": [
+        {
+            "column": "productsPackingTypeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "profiles": [
+        {
+            "column": "profileId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "projects": [
+        {
+            "column": "projectId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "projectName",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "promotion_targets": [
+        {
+            "column": "promotionTargetId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "promotionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "targetType",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "promotions": [
+        {
+            "column": "promotionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "code",
+            "type": "varchar",
+            "length": 30.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "promoType",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "isActive",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "startAtUtc",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "endAtUtc",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAtUtc",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "publishJobs": [
+        {
+            "column": "jobId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "draftId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "attempts",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "nextRetryAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "lastError",
+            "type": "nvarchar",
+            "length": 2000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "role_permissions": [
+        {
+            "column": "roleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "permissionId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        }
+    ],
+    "roles": [
+        {
+            "column": "roleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "code",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "description",
+            "type": "nvarchar",
+            "length": 255.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "active",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "sellListingAttributes": [
+        {
+            "column": "sellListingId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "attributesJson",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "attributesHash",
+            "type": "varbinary",
+            "length": 32.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "sellListings": [
+        {
+            "column": "sellListingId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channelItemId",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "title",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "currencyOriginal",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxRateToUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxAsOfDate",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fulfillmentType",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "shippingTimeDays",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "rating",
+            "type": "decimal",
+            "length": 5.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "reviewsCount",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "listingTimestamp",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "listingDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "scrapeItemId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "shipments": [
+        {
+            "column": "shipmentId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "marketplaceOrderId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "carrier",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "serviceLevel",
+            "type": "nvarchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "labelRef",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "trackingNumber",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "shippedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "deliveredAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "lastError",
+            "type": "nvarchar",
+            "length": 2000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "status": [
+        {
+            "column": "statusId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "status",
+            "type": "nvarchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "subCategories": [
+        {
+            "column": "subcategoryid",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "categoryid",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "symptoms": [
+        {
+            "column": "symptomId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 100.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "sysdiagrams": [
+        {
+            "column": "name",
+            "type": "nvarchar",
+            "length": 128.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "principal_id",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "diagram_id",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "version",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "definition",
+            "type": "varbinary",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "tankWaters": [
+        {
+            "column": "tankWaterId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "metrics",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "capacity",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "device",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "tankWatersDetails": [
+        {
+            "column": "tankWatersDetailId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "tankWaterId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "quantity",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "tickets": [
+        {
+            "column": "ticketId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "ticketNumber",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "ticketData",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "printed",
+            "type": "bit",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "printedDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_At",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "incomeId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "fileName",
+            "type": "varchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "containerName",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "blobPath",
+            "type": "varchar",
+            "length": 1000.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "receiptUrl",
+            "type": "varchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "uploadAzure",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "uploadAzureDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "whatsappSent",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "whatsappSentDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "whatsappPhone",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "whatsappResponse",
+            "type": "varchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "smsSent",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "smsSentDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "smsPhone",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "smsResponse",
+            "type": "varchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "generationStatus",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "generatedDate",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "errorMessage",
+            "type": "varchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "shortCode",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "unifiedProducts": [
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "brand",
+            "type": "nvarchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "model",
+            "type": "nvarchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "title",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "ean_upc",
+            "type": "nvarchar",
+            "length": 64.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "attributesJson",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "userCompanies": [
+        {
+            "column": "userCompanyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "branchId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "isDefault",
+            "type": "bit",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "roleName",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "active",
+            "type": "varchar",
+            "length": 1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updated_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "roleId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "users": [
+        {
+            "column": "userId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "name",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "email",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "password",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "created_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "active",
+            "type": "varchar",
+            "length": 1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "image",
+            "type": "varchar",
+            "length": 200.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "imageUrl",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "qrCode",
+            "type": "nvarchar",
+            "length": 100.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "companyId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "vending": [
+        {
+            "column": "id",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "ingreso",
+            "type": "decimal",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "productId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "create_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "update_at",
+            "type": "datetime",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "vw_sellListings_daily_history": [
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channelItemId",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "listingDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "currencyOriginal",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxRateToUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxAsOfDate",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "rating",
+            "type": "decimal",
+            "length": 5.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "reviewsCount",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ],
+    "vw_sellListings_latest_item": [
+        {
+            "column": "sellListingId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channelItemId",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "title",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "currencyOriginal",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxRateToUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxAsOfDate",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "listingTimestamp",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "listingDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "vw_sellListings_latest_unified": [
+        {
+            "column": "sellListingId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "unifiedProductId",
+            "type": "bigint",
+            "length": 19.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "channel",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "market",
+            "type": "char",
+            "length": 2.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "channelItemId",
+            "type": "nvarchar",
+            "length": 80.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "title",
+            "type": "nvarchar",
+            "length": 500.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceOriginal",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "currencyOriginal",
+            "type": "char",
+            "length": 3.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "sellPriceUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxRateToUsd",
+            "type": "decimal",
+            "length": 18.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "fxAsOfDate",
+            "type": "date",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "listingTimestamp",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "listingDate",
+            "type": "date",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "updatedAt",
+            "type": "datetime2",
+            "length": null,
+            "nullable": "NO",
+            "identity": "NO"
+        }
+    ],
+    "whatsapp_messages": [
+        {
+            "column": "messageId",
+            "type": "int",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "YES"
+        },
+        {
+            "column": "phoneNumber",
+            "type": "varchar",
+            "length": 20.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "messageBody",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "responseBody",
+            "type": "nvarchar",
+            "length": -1.0,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "createdAt",
+            "type": "datetime",
+            "length": null,
+            "nullable": "YES",
+            "identity": "NO"
+        },
+        {
+            "column": "direction",
+            "type": "varchar",
+            "length": 10.0,
+            "nullable": "NO",
+            "identity": "NO"
+        },
+        {
+            "column": "status",
+            "type": "varchar",
+            "length": 50.0,
+            "nullable": "YES",
+            "identity": "NO"
+        }
+    ]
+}

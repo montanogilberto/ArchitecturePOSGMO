@@ -1,0 +1,8 @@
+{
+  "database_configuration": {
+    "engine": "SQL Server",
+    "connection_pooling": "Explicit context instantiation per transactional module execution via `databases.py`",
+    "driver_interface": "pyodbc / Turbodbc standard layer mappings",
+    "data_format_strategy": "Heavy usage of T-SQL `FOR JSON PATH` options to return natively compressed serialization streams directly to FastAPI responses"
+  }
+}

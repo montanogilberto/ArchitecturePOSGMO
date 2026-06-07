@@ -1,0 +1,39 @@
+{
+  "models": [
+    {
+      "table": "dbo.Products",
+      "columns": [
+        { "name": "productid", "type": "int", "identity": true, "nullable": false },
+        { "name": "productName", "type": "nvarchar(255)", "nullable": false },
+        { "name": "code", "type": "varchar(100)", "nullable": true },
+        { "name": "image", "type": "image", "nullable": true },
+        { "name": "subCategoryId", "type": "int", "nullable": false },
+        { "name": "productDetailId", "type": "int", "nullable": true },
+        { "name": "productDescriptionId", "type": "int", "nullable": true },
+        { "name": "createdAt", "type": "datetime", "nullable": true },
+        { "name": "updatedAt", "type": "datetime", "nullable": true }
+      ],
+      "primary_key": "PK_products_productId"
+    },
+    {
+      "table": "dbo.users",
+      "columns": [
+        { "name": "userId", "type": "int", "identity": true, "nullable": false },
+        { "name": "email", "type": "nvarchar(255)", "nullable": false },
+        { "name": "name", "type": "nvarchar(255)", "nullable": false },
+        { "name": "password", "type": "nvarchar(max)", "nullable": false },
+        { "name": "createdAt", "type": "datetime", "nullable": true }
+      ],
+      "primary_key": "PK_users_userId"
+    },
+    {
+      "table": "dbo.logins",
+      "columns": [
+        { "name": "loginId", "type": "int", "identity": true, "nullable": false },
+        { "name": "userId", "type": "int", "nullable": false },
+        { "name": "token", "type": "nvarchar(max)", "nullable": true },
+        { "name": "loginTime", "type": "datetime", "nullable": false }
+      ]
+    }
+  ]
+}

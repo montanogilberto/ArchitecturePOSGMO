@@ -1,0 +1,88 @@
+{
+  "architecture": {
+    "project": "POS GMO",
+    "framework": "Ionic React",
+    "language": "TypeScript",
+    "bundler": "Vite",
+    "mobile": "Capacitor",
+    "deployment": "Azure Static Web Apps",
+    "backend": "FastAPI",
+    "backend_url": "https://smartloansbackend.azurewebsites.net",
+    "testing": {
+      "unit": "Vitest",
+      "e2e": "Cypress"
+    }
+  },
+  "modules": [
+    {
+      "name": "products",
+      "type": "crud"
+    },
+    {
+      "name": "categories",
+      "type": "crud"
+    },
+    {
+      "name": "clients",
+      "type": "crud"
+    },
+    {
+      "name": "users",
+      "type": "crud"
+    },
+    {
+      "name": "companies",
+      "type": "crud"
+    },
+    {
+      "name": "orders",
+      "type": "transaction"
+    },
+    {
+      "name": "cart",
+      "type": "transaction"
+    },
+    {
+      "name": "income",
+      "type": "financial"
+    },
+    {
+      "name": "expenses",
+      "type": "financial"
+    },
+    {
+      "name": "cashRegister",
+      "type": "financial"
+    },
+    {
+      "name": "laundry",
+      "type": "service"
+    },
+    {
+      "name": "waterTanks",
+      "type": "service"
+    },
+    {
+      "name": "ticket",
+      "type": "receipt"
+    }
+  ],
+  "api_patterns": {
+    "file_name": "{module}Api.ts",
+    "transport": "fetch",
+    "typescript_interfaces": true
+  },
+  "page_patterns": {
+    "root": "IonPage",
+    "header": "IonHeader",
+    "toolbar": "IonToolbar",
+    "content": "IonContent"
+  },
+  "generation_rules": {
+    "new_module": [
+      "src/api/{module}Api.ts",
+      "src/pages/{Module}Page.tsx",
+      "src/pages/{Module}Page.css"
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+[
+  {
+    "moduleId": "auth",
+    "moduleName": "Authentication & Session Management",
+    "description": "Handles identity verification, password recovery, secure roles, and user inactivity session monitoring.",
+    "files": [
+      "src/pages/Authentication/Login.tsx",
+      "src/pages/Authentication/CreateAccount.tsx",
+      "src/pages/Authentication/ForgotPassword.tsx",
+      "src/pages/Authentication/Logout.tsx",
+      "src/hooks/useInactivityTimer.tsx"
+    ],
+    "dependencies": ["@ionic/react", "react-router-dom", "src/components/UserContext.tsx"]
+  },
+  {
+    "moduleId": "pos_cart",
+    "moduleName": "Point of Sale & Cart Management",
+    "description": "Handles real-time item collection, validation, custom laundry/product dynamic choice modifiers, discounts, and order push transactions.",
+    "files": [
+      "src/pages/CartPage/CartPage.tsx",
+      "src/pages/CartPage/CartItemsList.tsx",
+      "src/pages/CartPage/CartSummary.tsx",
+      "src/pages/CartPage/CheckoutActions.tsx",
+      "src/context/CartContext.tsx"
+    ],
+    "dependencies": ["@ionic/react", "src/api/cartApi.ts", "src/api/laundryApi.ts"]
+  },
+  {
+    "moduleId": "cash_register",
+    "moduleName": "Cash Register Session Management",
+    "description": "Responsible for managing cash register states (Open/Closed) and creating cash inflows or outflows directly inside the workspace view.",
+    "files": [
+      "src/components/CashRegisterCard.tsx",
+      "src/api/cashRegisterApi.ts"
+    ],
+    "dependencies": ["@ionic/react"]
+  },
+  {
+    "moduleId": "inventory_products",
+    "moduleName": "Products & Categories Management",
+    "description": "Manages catalog workflows including product generation wizards, multi-layered configurations, variations, images uploading, and category classification updates.",
+    "files": [
+      "src/pages/products/ProductListPage.tsx",
+      "src/pages/products/ProductDetailPage.tsx",
+      "src/pages/products/ProductsManagementPage.tsx",
+      "src/components/ProductForm.tsx",
+      "src/components/ProductWizard/ProductWizard.tsx",
+      "src/context/ProductContext.tsx"
+    ],
+    "dependencies": ["@ionic/react", "src/api/productsApi.ts", "src/api/saveImageApi.ts"]
+  },
+  {
+    "moduleId": "receipts_printing",
+    "moduleName": "Receipt Engine & Formatting Service",
+    "description": "Normalizes incoming cross-domain entities into specific schemas, building layouts to stream live templates to multi-format native printing runtimes or external channels like SMS or WhatsApp.",
+    "files": [
+      "src/components/UnifiedReceipt.tsx",
+      "src/pages/Receipt/ReceiptDisplay.tsx",
+      "src/services/ReceiptService.ts",
+      "src/services/receipt/printRuntime.ts",
+      "src/services/receipt/printTemplate.ts"
+    ],
+    "dependencies": ["ionicons", "@ionic/react", "src/api/ticketApi.ts"]
+  },
+  {
+    "moduleId": "accounting_ledger",
+    "moduleName": "Financial Incomes & Expenses Audit",
+    "description": "Provides data tables, deep filter grids, pagination mechanisms, and real-time visualization over daily sales metrics and system balance charts.",
+    "files": [
+      "src/pages/IncomesPage.tsx",
+      "src/pages/ExpensesPage.tsx",
+      "src/components/IncomesChart.tsx",
+      "src/components/IncomesFilters.tsx",
+      "src/components/ExpensesFilters.tsx",
+      "src/components/ExpensesList.tsx"
+    ],
+    "dependencies": ["chart.js", "react-chartjs-2", "@ionic/react"]
+  }
+]

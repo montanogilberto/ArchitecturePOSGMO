@@ -1,0 +1,68 @@
+[
+  {
+    "componentName": "UnifiedReceipt",
+    "filePath": "src/components/UnifiedReceipt.tsx",
+    "type": "Organisms / Views",
+    "reusable": true,
+    "description": "Renders standardized receipts with full support for zeroed-out local taxes (IVA = 0), localized formatting conversions, and deep cross-device alignment parameters.",
+    "props": [
+      { "name": "data", "type": "UnifiedReceiptData", "required": true },
+      { "name": "onPrint", "type": "() => void", "required": false },
+      { "name": "showModal", "type": "boolean", "required": false },
+      { "name": "onClose", "type": "() => void", "required": false },
+      { "name": "options", "type": "PrintOptions", "required": false }
+    ]
+  },
+  {
+    "componentName": "ProductWizard",
+    "filePath": "src/components/ProductWizard/ProductWizard.tsx",
+    "type": "Molecules / Step-by-Step Forms",
+    "reusable": true,
+    "description": "A complex linear setup mechanism enabling validation steps for name registry, image parsing configurations, and dynamic options assignment setup.",
+    "props": [
+      { "name": "isOpen", "type": "boolean", "required": true },
+      { "name": "onClose", "type": "() => void", "required": true },
+      { "name": "onSave", "type": "(productData: any) => void", "required": true }
+    ]
+  },
+  {
+    "componentName": "ClientSelector",
+    "filePath": "src/components/ClientSelector.tsx",
+    "type": "Molecules",
+    "reusable": true,
+    "description": "Displays custom multi-device client selection modals with dynamic searching indexes, fallbacks, and instantaneous creation fields inside overlays.",
+    "props": [
+      { "name": "isOpen", "type": "boolean", "required": true },
+      { "name": "onClose", "type": "() => void", "required": true },
+      { "name": "onChange", "type": "(client: any) => void", "required": true },
+      { "name": "selectedClient", "type": "any", "required": false }
+    ]
+  },
+  {
+    "componentName": "IncomesFilters",
+    "filePath": "src/components/IncomesFilters.tsx",
+    "type": "Molecules",
+    "reusable": true,
+    "description": "Provides UI query parameters across transactions containing full query index text fields, specific payment systems selections, and localized calendar range controls.",
+    "props": [
+      { "name": "searchText", "type": "string", "required": true },
+      { "name": "setSearchText", "type": "(value: string) => void", "required": true },
+      { "name": "filterPaymentMethod", "type": "string", "required": true },
+      { "name": "setFilterPaymentMethod", "type": "(value: string) => void", "required": true },
+      { "name": "filterDateFrom", "type": "string", "required": true },
+      { "name": "filterDateTo", "type": "string", "required": true }
+    ]
+  },
+  {
+    "componentName": "DateTypeAlert",
+    "filePath": "src/components/Alerts/DateTypeAlert.tsx",
+    "type": "Atoms",
+    "reusable": true,
+    "description": "Abstracted wrapper managing alerts prompting users to select either individual targeted calendar days or range boundaries.",
+    "props": [
+      { "name": "isOpen", "type": "boolean", "required": true },
+      { "name": "onDidDismiss", "type": "() => void", "required": true },
+      { "name": "onDateTypeChange", "type": "(type: 'single' | 'range') => void", "required": true }
+    ]
+  }
+]

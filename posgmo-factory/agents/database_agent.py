@@ -27,13 +27,13 @@ Read the SpecificationJSON from session state key "specification".
 
 ## SQL Server rules
 - Schema: always dbo.
-- Primary key: {{module}}Id int IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{table} PRIMARY KEY CLUSTERED.
+- Primary key: {{module}}Id int IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{{table}} PRIMARY KEY CLUSTERED.
 - companyId int NOT NULL — always present, always first after the PK.
 - createdAt datetime NOT NULL DEFAULT GETDATE()
 - updatedAt datetime NULL
 - Use datetime (NOT datetime2) for POS domain tables.
-- FK constraints: CONSTRAINT FK_{table}_{parent} FOREIGN KEY ({col}) REFERENCES dbo.{parent}({col}).
-- Indexes: CREATE NONCLUSTERED INDEX IX_{table}_{col} ON dbo.{table}({col}) for every column in spec.db.indexes.
+- FK constraints: CONSTRAINT FK_{{table}}_{{parent}} FOREIGN KEY ({{col}}) REFERENCES dbo.{{parent}}({{col}}).
+- Indexes: CREATE NONCLUSTERED INDEX IX_{{table}}_{{col}} ON dbo.{{table}}({{col}}) for every column in spec.db.indexes.
 
 ## Stored procedure rules
 - ALL SPs share the same parameter: @pjsonfile nvarchar(MAX)
@@ -43,7 +43,7 @@ Read the SpecificationJSON from session state key "specification".
 - sp_{{module}}_all:  ignores @pjsonfile body, uses companyId from JSON, returns FOR JSON PATH
 - sp_{{module}}_one:  uses {{module}}Id from JSON, returns FOR JSON PATH
 - Wrap mutations in BEGIN TRAN / COMMIT / ROLLBACK CATCH.
-- Return JSON: SELECT ... FROM dbo.{table} WHERE ... FOR JSON PATH
+- Return JSON: SELECT ... FROM dbo.{{table}} WHERE ... FOR JSON PATH
 
 ## Output format
 Respond with ONLY a JSON object with this shape — no prose, no markdown fences:

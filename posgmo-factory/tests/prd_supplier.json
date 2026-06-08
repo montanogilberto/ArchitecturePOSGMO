@@ -1,0 +1,17 @@
+{
+    "module": "supplier",
+    "description": "Manages product suppliers linked to POS GMO companies.",
+    "fields": [
+      { "name": "supplierName", "type": "string", "required": true, "max_length": 200 },
+      { "name": "contactName",  "type": "string", "required": false, "max_length": 100 },
+      { "name": "phone",        "type": "string", "required": false, "max_length": 20 },
+      { "name": "email",        "type": "string", "required": false, "max_length": 100 },
+      { "name": "address",      "type": "text",   "required": false },
+      { "name": "active",       "type": "string", "required": true, "max_length": 1,
+        "description": "1 = active, 0 = inactive — matches existing POS GMO convention" }
+    ],
+    "relationships": ["companies"],
+    "roles_allowed": ["Admin", "Manager"],
+    "has_list_view": true,
+    "has_detail_view": false
+  }

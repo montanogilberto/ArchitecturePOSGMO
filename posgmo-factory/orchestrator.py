@@ -2,20 +2,11 @@
 POS GMO AI Factory — Root Orchestrator
 
 Pipeline:
-    PRDInput JSON
-        → ArchitectAgent        (spec)
-        → ParallelAgent         (database + backend in parallel)
-        → FrontendAgent         (depends on spec + backend)
-        → ReviewerAgent         (validates all artifacts)
-        → PRAgent               (opens GitHub PRs if review passed)
+    PRDInput JSON 
+        → root_agent (SequentialAgent: Architect → Database → Backend → Frontend → Reviewer → PR)
 
 Usage:
-    from orchestrator import run_factory
-    import asyncio, json
-
-    prd = json.load(open("examples/prd_supplier.json"))
-    result = asyncio.run(run_factory(prd))
-    print(result)
+    python orchestrator.py tests/prd_supplier.json
 """
 
 from __future__ import annotations
@@ -26,77 +17,104 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google.adk.agents import ParallelAgent, SequentialAgent
+
+# ---------------------------------------------------------------------------
+# GenAI Core API Client Hotfix (Monkey Patching)
+# ---------------------------------------------------------------------------
+from google.genai._api_client import BaseApiClient
+
+_original_async_request = BaseApiClient.async_request
+
+async def _patched_async_request(self, method: str, path: str, *args, **kwargs):
+    if "gemini-2.0-flash" in path:
+        path = path.replace("gemini-2.0-flash", "gemini-2.5-flash")
+        
+    if "json" in kwargs and kwargs["json"]:
+        if isinstance(kwargs["json"], dict) and kwargs["json"].get("model") == "models/gemini-2.0-flash":
+            kwargs["json"]["model"] = "models/gemini-2.5-flash"
+        elif isinstance(kwargs["json"], str) and "gemini-2.0-flash" in kwargs["json"]:
+            kwargs["json"] = kwargs["json"].replace("gemini-2.0-flash", "gemini-2.5-flash")
+
+    return await _original_async_request(self, method, path, *args, **kwargs)
+
+BaseApiClient.async_request = _patched_async_request
+# ---------------------------------------------------------------------------
+
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
-from agents.architect_agent  import architect_agent
-from agents.backend_agent    import backend_agent
-from agents.database_agent   import database_agent
-from agents.frontend_agent   import frontend_agent
-from agents.pr_agent         import pr_agent
-from agents.reviewer_agent   import reviewer_agent
+from agents import root_agent
 from prd_schema import PRDInput
 
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-# Pipeline assembly
-# ---------------------------------------------------------------------------
-
-_parallel_codegen = ParallelAgent(
-    name="parallel_codegen",
-    description="Runs Database Agent and Backend Agent concurrently.",
-    sub_agents=[database_agent, backend_agent],
-)
-
-factory_pipeline = SequentialAgent(
-    name="pos_gmo_factory",
-    description="Full POS GMO module generation pipeline.",
-    sub_agents=[
-        architect_agent,
-        _parallel_codegen,
-        frontend_agent,
-        reviewer_agent,
-        pr_agent,
-    ],
-)
-
-# ---------------------------------------------------------------------------
-# Runner
+# Runner Configuration
 # ---------------------------------------------------------------------------
 
 _session_service = InMemorySessionService()
 
 _runner = Runner(
-    agent=factory_pipeline,
+    agent=root_agent,
     app_name="posgmo_factory",
     session_service=_session_service,
 )
 
 
+def _build_session_state(prd: PRDInput) -> dict[str, str]:
+    """
+    Build required ADK template context for agent instruction placeholders.
+    """
+    module = prd.module or ""
+    module_capitalized = module[:1].upper() + module[1:] if module else ""
+    
+    # Intentamos extraer un parent del PRD si existe, de lo contrario dejamos fallback vacío
+    # Esto evita romper los formateadores de strings si el prompt usa {parent}
+    parent_val = getattr(prd, "parent", "") or ""
+    parent_capitalized = parent_val[:1].upper() + parent_val[1:] if parent_val else ""
+    
+    return {
+        # Mapeos estándar del módulo
+        "module": module,
+        "Module": module_capitalized,
+        "plural": f"{module}s",
+        "id": f"{module}Id",
+        
+        # Mapeos de base de datos / tablas
+        "table": f"{module_capitalized}s",
+        "Table": f"{module_capitalized}s",
+        
+        # Contexto jerárquico (Solución al KeyError: 'parent')
+        "parent": parent_val,
+        "Parent": parent_capitalized,
+        
+        # Llaves genéricas adicionales por si otros agentes las buscan en el prompt
+        "description": getattr(prd, "description", "") or "",
+
+        # Placeholders usados como literales en instrucciones de agentes
+        # (evita KeyError durante inject_session_state cuando aparezcan {col}, etc.)
+        "col": "col",
+        "fk_table": "fk_table",
+        "fk_column": "fk_column",
+        "loading": "loading",
+        "error": "error",
+        "GITHUB_REPO_OWNER": os.getenv("GITHUB_REPO_OWNER", ""),
+        "GITHUB_REPO_NAME": os.getenv("GITHUB_REPO_NAME", ""),
+        "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN", ""),
+    }
+
+
 async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
     """
-    Runs the full generation pipeline for a PRD.
-
-    Args:
-        prd_dict: Raw dict matching the PRDInput schema.
-        user_id:  Logical user identifier for session isolation.
-
-    Returns:
-        Dict with keys: specification, database_artifacts, backend_artifacts,
-        frontend_artifacts, review_result, pr_result.
-
-    Raises:
-        pydantic.ValidationError: If prd_dict fails PRDInput validation.
+    Runs the full generation pipeline for a PRD using the pre-built root_agent.
     """
-    # Gate: validate PRD before touching any agent
     prd = PRDInput.model_validate(prd_dict)
 
     session = await _session_service.create_session(
         app_name="posgmo_factory",
         user_id=user_id,
+        state=_build_session_state(prd),
     )
 
     message = Content(
@@ -104,23 +122,20 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
         parts=[Part(text=json.dumps(prd.model_dump()))],
     )
 
-    final_state: dict = {}
     async for event in _runner.run_async(
         user_id=user_id,
         session_id=session.id,
         new_message=message,
     ):
         if event.is_final_response() and event.content:
-            pass  # final agent text (pr_agent output)
+            pass  
 
-    # Collect all output_key values from session state
     updated = await _session_service.get_session(
         app_name="posgmo_factory",
         user_id=user_id,
         session_id=session.id,
     )
-    final_state = dict(updated.state)
-    return final_state
+    return dict(updated.state)
 
 
 # ---------------------------------------------------------------------------

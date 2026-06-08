@@ -41,7 +41,10 @@ The content is organized as follows:
 
 <directory_structure>
 agents/
+  .adk/
+    session.db
   __init__.py
+  agent.py
   architect_agent.py
   backend_agent.py
   database_agent.py
@@ -56,6 +59,7 @@ mcp_server/
   server.py
 tests/
   __init__.py
+  prd_supplier.json
   test_agents_import.py
   test_mcp_server.py
   test_prd_schema.py
@@ -63,13 +67,40 @@ tests/
 orchestrator.py
 prd_schema.py
 pyproject.toml
+TODO.md
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
 <file path="agents/__init__.py">
+from .agent import root_agent
 
+__all__ = ["root_agent"]
+</file>
+
+<file path="agents/agent.py">
+from google.adk.agents import SequentialAgent
+
+from agents.architect_agent import architect_agent
+from agents.database_agent import database_agent
+from agents.backend_agent import backend_agent
+from agents.frontend_agent import frontend_agent
+from agents.reviewer_agent import reviewer_agent
+from agents.pr_agent import pr_agent
+
+root_agent = SequentialAgent(
+    name="posgmo_factory",
+    description="POS GMO Software Factory",
+    sub_agents=[
+        architect_agent,
+        database_agent,
+        backend_agent,
+        frontend_agent,
+        reviewer_agent,
+        pr_agent,
+    ],
+)
 </file>
 
 <file path="agents/architect_agent.py">
@@ -92,7 +123,7 @@ INSTRUCTION = """
 You are the Architect Agent for POS GMO — an autonomous software factory.
 
 ## Your role
-Read the incoming PRD JSON, consult the knowledge base, and produce a
+Read the incoming PRD JSON, sp_{{module}} consult the knowledge base, and produce a
 SpecificationJSON. You NEVER write code.
 
 ## Mandatory knowledge calls (always in this order)
@@ -106,18 +137,18 @@ SpecificationJSON. You NEVER write code.
 ## Rules
 - NEVER invent a table, column, SP, or pattern not found in the knowledge base.
 - companyId is ALWAYS added to db.columns automatically — never put it in the PRD.
-- SP naming: sp_{module}, sp_{module}_all, sp_{module}_one.
-- SP prefix in spec: "sp_{module}".
+- SP naming: sp_{{module}}, sp_{{module}}_all, sp_{{module}}_one.
+- SP prefix in spec: "sp_{{module}}".
 - File naming must be exact:
-    backend.model_file   = "models/{module}.py"
-    backend.schema_file  = "schemas/{module}.py"
-    backend.route_file   = "routes/{module}.py"
-    frontend.api_file    = "src/api/{module}Api.ts"
-    frontend.page_file   = "src/pages/{Module}Page.tsx"   (Module = PascalCase)
-    frontend.css_file    = "src/pages/{Module}Page.css"
+    backend.model_file   = "models/{{module}}.py"
+    backend.schema_file  = "schemas/{{module}}.py"
+    backend.route_file   = "routes/{{module}}.py"
+    frontend.api_file    = "src/api/{{module}}Api.ts"
+    frontend.page_file   = "src/pages/{{Module}}Page.tsx"   (Module = PascalCase)
+    frontend.css_file    = "src/pages/{{Module}}Page.css"
 - FK columns must reference tables confirmed to exist via get_table_list().
 - POS domain tables: use "datetime" not "datetime2".
-- Primary key column: {module}Id, type "int IDENTITY(1,1) NOT NULL".
+- Primary key column: {{module}}Id, type "int IDENTITY(1,1) NOT NULL".
 
 ## Output format
 Respond with ONLY a valid JSON object matching the SpecificationJSON schema.
@@ -176,9 +207,9 @@ architect_agent = Agent(
 Backend Agent
 
 Reads the SpecificationJSON from session state and generates three Python files:
-  - models/{module}.py    — Pydantic request/response models
-  - schemas/{module}.py   — thin Pydantic schema aliases (used for OpenAPI docs)
-  - routes/{module}.py    — FastAPI APIRouter with all CRUD endpoints
+  - models/{{module}}.py    — Pydantic request/response models
+  - schemas/{{module}}.py   — thin Pydantic schema aliases (used for OpenAPI docs)
+  - routes/{{module}}.py    — FastAPI APIRouter with all CRUD endpoints
 
 Output stored in session state under key "backend_artifacts".
 """
@@ -199,30 +230,30 @@ Read the SpecificationJSON from session state key "specification".
 4. get_sp_patterns()          — confirm SP names to call
 
 ## Python / FastAPI rules
-- models/{module}.py:
-    * Class {Module}Base(BaseModel):  all fields, Optional for nullable
-    * Class {Module}Create({Module}Base):  used for POST body
-    * Class {Module}Response({Module}Base):  adds {module}Id, companyId, createdAt, updatedAt
+- models/{{module}}.py:
+    * Class {{Module}}Base(BaseModel):  all fields, Optional for nullable
+    * Class {{Module}}Create({{Module}}Base):  used for POST body
+    * Class {{Module}}Response({{Module}}Base):  adds {{module}}Id, companyId, createdAt, updatedAt
     * Use Optional[X] = None for nullable columns.
     * datetime fields typed as Optional[datetime] = None.
     * Google-style docstring on every class and function.
 
-- schemas/{module}.py:
-    * from models.{module} import {Module}Create, {Module}Response
-    * Re-export with __all__ = ["{Module}Create", "{Module}Response"]
-    * Add any response envelope schemas needed (e.g. {Module}ListResponse).
+- schemas/{{module}}.py:
+    * from models.{{module}} import {{Module}}Create, {{Module}}Response
+    * Re-export with __all__ = ["{{Module}}Create", "{{Module}}Response"]
+    * Add any response envelope schemas needed (e.g. {{Module}}ListResponse).
 
-- routes/{module}.py:
-    * router = APIRouter(prefix="/{plural}", tags=["{Module}"])
+- routes/{{module}}.py:
+    * router = APIRouter(prefix="/{{plural}}", tags=["{{Module}}"])
     * Imports: from fastapi import APIRouter, HTTPException
     * DB connection helper: from database import get_connection   (existing pattern)
-    * ALL DB calls: cursor.execute("EXEC sp_{module} @pjsonfile=?", json.dumps(payload))
+    * ALL DB calls: cursor.execute("EXEC sp_{{module}} @pjsonfile=?", json.dumps(payload))
     * NEVER write raw SQL in Python.
-    * POST   /{plural}/             → calls sp_{module} with action="INSERT"
-    * PUT    /{plural}/{id}         → calls sp_{module} with action="UPDATE"
-    * DELETE /{plural}/{id}         → calls sp_{module} with action="DELETE"
-    * GET    /{plural}/             → calls sp_{module}_all
-    * GET    /{plural}/{id}         → calls sp_{module}_one
+    * POST   /{{plural}}/             → calls sp_{{module}} with action="INSERT"
+    * PUT    /{{plural}}/{{id}}         → calls sp_{{module}} with action="UPDATE"
+    * DELETE /{{plural}}/{{id}}         → calls sp_{{module}} with action="DELETE"
+    * GET    /{{plural}}/             → calls sp_{{module}}_all
+    * GET    /{{plural}}/{{id}}         → calls sp_{{module}}_one
     * Parse SP response: rows = cursor.fetchone()[0]; return json.loads(rows)
     * On empty result raise HTTPException(status_code=404)
     * Full Google-style docstring on every endpoint.
@@ -230,9 +261,9 @@ Read the SpecificationJSON from session state key "specification".
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences:
 {
-  "model_file":  { "path": "models/{module}.py",  "content": "<full Python source>" },
-  "schema_file": { "path": "schemas/{module}.py", "content": "<full Python source>" },
-  "route_file":  { "path": "routes/{module}.py",  "content": "<full Python source>" }
+  "model_file":  { "path": "models/{{module}}.py",  "content": "<full Python source>" },
+  "schema_file": { "path": "schemas/{{module}}.py", "content": "<full Python source>" },
+  "route_file":  { "path": "routes/{{module}}.py",  "content": "<full Python source>" }
 }
 """
 
@@ -256,9 +287,9 @@ Database Agent
 
 Reads the SpecificationJSON from session state and generates:
   1. CREATE TABLE statement
-  2. sp_{module}         — INSERT / UPDATE (upsert via @pjsonfile)
-  3. sp_{module}_all     — SELECT all for company
-  4. sp_{module}_one     — SELECT by primary key
+  2. sp_{{module}}         — INSERT / UPDATE (upsert via @pjsonfile)
+  3. sp_{{module}}_all     — SELECT all for company
+  4. sp_{{module}}_one     — SELECT by primary key
 
 Output stored in session state under key "database_artifacts".
 """
@@ -280,7 +311,7 @@ Read the SpecificationJSON from session state key "specification".
 
 ## SQL Server rules
 - Schema: always dbo.
-- Primary key: {module}Id int IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{table} PRIMARY KEY CLUSTERED.
+- Primary key: {{module}}Id int IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{table} PRIMARY KEY CLUSTERED.
 - companyId int NOT NULL — always present, always first after the PK.
 - createdAt datetime NOT NULL DEFAULT GETDATE()
 - updatedAt datetime NULL
@@ -292,9 +323,9 @@ Read the SpecificationJSON from session state key "specification".
 - ALL SPs share the same parameter: @pjsonfile nvarchar(MAX)
 - Parse input with: SELECT @field = value FROM OPENJSON(@pjsonfile) WITH (field type '$.field')
 - Operation is driven by JSON field "action": "INSERT", "UPDATE", "DELETE", "SELECT_ONE", "SELECT_ALL"
-- sp_{module}:      handles INSERT and UPDATE (check action field)
-- sp_{module}_all:  ignores @pjsonfile body, uses companyId from JSON, returns FOR JSON PATH
-- sp_{module}_one:  uses {module}Id from JSON, returns FOR JSON PATH
+- sp_{{module}}:      handles INSERT and UPDATE (check action field)
+- sp_{{module}}_all:  ignores @pjsonfile body, uses companyId from JSON, returns FOR JSON PATH
+- sp_{{module}}_one:  uses {{module}}Id from JSON, returns FOR JSON PATH
 - Wrap mutations in BEGIN TRAN / COMMIT / ROLLBACK CATCH.
 - Return JSON: SELECT ... FROM dbo.{table} WHERE ... FOR JSON PATH
 
@@ -302,9 +333,9 @@ Read the SpecificationJSON from session state key "specification".
 Respond with ONLY a JSON object with this shape — no prose, no markdown fences:
 {
   "create_table": "<full CREATE TABLE SQL>",
-  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{module} SQL>",
-  "sp_all":       "<full CREATE OR ALTER PROCEDURE sp_{module}_all SQL>",
-  "sp_one":       "<full CREATE OR ALTER PROCEDURE sp_{module}_one SQL>"
+  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{{module}} SQL>",
+  "sp_all":       "<full CREATE OR ALTER PROCEDURE sp_{{module}}_all SQL>",
+  "sp_one":       "<full CREATE OR ALTER PROCEDURE sp_{{module}}_one SQL>"
 }
 """
 
@@ -328,9 +359,9 @@ Frontend Agent
 
 Reads the SpecificationJSON and the backend_artifacts from session state
 and generates three TypeScript files:
-  - src/api/{module}Api.ts       — fetch-based API client + TS interfaces
-  - src/pages/{Module}Page.tsx   — Ionic React page
-  - src/pages/{Module}Page.css   — scoped styles
+  - src/api/{{module}}Api.ts       — fetch-based API client + TS interfaces
+  - src/pages/{{Module}}Page.tsx   — Ionic React page
+  - src/pages/{{Module}}Page.css   — scoped styles
 
 Output stored in session state under key "frontend_artifacts".
 """
@@ -352,20 +383,20 @@ You are the Frontend Agent for POS GMO.
 4. get_api_contracts()         — study existing contracts to match style
 5. get_component_catalog()     — reuse existing components before creating new ones
 
-## TypeScript rules (src/api/{module}Api.ts)
+## TypeScript rules (src/api/{{module}}Api.ts)
 - Plain fetch() — no axios or any HTTP library.
 - Export one TypeScript interface per entity:
-    export interface {Module} { {module}Id: number; companyId: number; ... }
-    export interface {Module}ApiResponse { result: {Module}[] }
+    export interface {{Module}} { {{module}}Id: number; companyId: number; ... }
+    export interface {{Module}}ApiResponse { result: {{Module}}[] }
 - One function per operation, all async:
-    export async function getAll{Module}s(companyId: number): Promise<{Module}[]>
-    export async function create{Module}(data: Omit<{Module}, '{module}Id'>): Promise<{Module}>
-    export async function update{Module}(id: number, data: Partial<{Module}>): Promise<{Module}>
-    export async function delete{Module}(id: number): Promise<void>
+    export async function getAll{{Module}}s(companyId: number): Promise<{{Module}}[]>
+    export async function create{{Module}}(data: Omit<{{Module}}, '{{module}}Id'>): Promise<{{Module}}>
+    export async function update{{Module}}(id: number, data: Partial<{{Module}}>): Promise<{{Module}}>
+    export async function delete{{Module}}(id: number): Promise<void>
 - Base URL from environment: const BASE_URL = import.meta.env.VITE_API_URL ?? 'https://smartloansbackend.azurewebsites.net'
 - On non-ok response: throw new Error(await res.text())
 
-## React / Ionic rules (src/pages/{Module}Page.tsx)
+## React / Ionic rules (src/pages/{{Module}}Page.tsx)
 - Shell: IonPage > IonHeader > IonToolbar (with IonTitle + IonBackButton) > IonContent
 - Loading: IonLoading isOpen={loading}
 - Errors: IonToast isOpen={!!error} message={error} onDidDismiss={() => setError('')}
@@ -379,17 +410,17 @@ You are the Frontend Agent for POS GMO.
 - TypeScript: all props and state typed — no `any` unless unavoidable.
 - No inline styles — all styling goes in the CSS file.
 
-## CSS rules (src/pages/{Module}Page.css)
-- Scoped class names: .{module}-page, .{module}-list, .{module}-card, etc.
+## CSS rules (src/pages/{{Module}}Page.css)
+- Scoped class names: .{{module}}-page, .{{module}}-list, .{{module}}-card, etc.
 - Match the visual density and spacing of existing POS GMO pages.
 - No global selector overrides.
 
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences:
 {
-  "api_file":  { "path": "src/api/{module}Api.ts",        "content": "<full TS source>" },
-  "page_file": { "path": "src/pages/{Module}Page.tsx",    "content": "<full TSX source>" },
-  "css_file":  { "path": "src/pages/{Module}Page.css",    "content": "<full CSS source>" }
+  "api_file":  { "path": "src/api/{{module}}Api.ts",        "content": "<full TS source>" },
+  "page_file": { "path": "src/pages/{{Module}}Page.tsx",    "content": "<full TSX source>" },
+  "css_file":  { "path": "src/pages/{{Module}}Page.css",    "content": "<full CSS source>" }
 }
 """
 
@@ -595,19 +626,19 @@ If passed is false, respond with:
 1. Read GITHUB_REPO_OWNER from env. Derive repo names:
    - Frontend repo: {GITHUB_REPO_OWNER}/checkInPOS
    - Backend repo:  {GITHUB_REPO_OWNER}/smartloans
-2. Branch name: "feat/{module}-module"
+2. Branch name: "feat/{{module}}-module"
 3. Call github_create_branch for the frontend repo.
 4. Call github_create_branch for the backend repo.
 5. Push backend files (3 files from backend_artifacts) to the backend repo.
 6. Push frontend files (3 files from frontend_artifacts) to the frontend repo.
-7. Push database files as a single SQL file "sql_logic/sp_{module}.sql" to the backend repo.
+7. Push database files as a single SQL file "sql_logic/sp_{{module}}.sql" to the backend repo.
    Combine: create_table + sp_upsert + sp_all + sp_one, separated by GO.
 8. Create PR on frontend repo.
 9. Create PR on backend repo.
 
 ## PR body template
 ```
-## {Module} Module — Auto-generated by POS GMO AI Factory
+## {{Module}} Module — Auto-generated by POS GMO AI Factory
 
 ### Review scores
 - Database: {db_score}/100
@@ -621,7 +652,7 @@ If passed is false, respond with:
 - `{model_file}`
 - `{schema_file}`
 - `{route_file}`
-- `sql_logic/sp_{module}.sql`
+- `sql_logic/sp_{{module}}.sql`
 
 ### Notes
 Generated from PRD. Reviewer passed all checks.
@@ -632,7 +663,7 @@ Generated from PRD. Reviewer passed all checks.
   "status": "created",
   "frontend_pr_url": "<url>",
   "backend_pr_url":  "<url>",
-  "branch":          "feat/{module}-module"
+  "branch":          "feat/{{module}}-module"
 }
 """
 
@@ -691,7 +722,7 @@ DATABASE checklist:
 □ Primary key uses IDENTITY(1,1)
 □ createdAt datetime DEFAULT GETDATE() present
 □ SP parameter is @pjsonfile nvarchar(MAX)
-□ SP names match spec: sp_{module}, sp_{module}_all, sp_{module}_one
+□ SP names match spec: sp_{{module}}, sp_{{module}}_all, sp_{{module}}_one
 □ OPENJSON used to parse input
 □ FOR JSON PATH used in SELECT results
 □ Mutations wrapped in BEGIN TRAN / COMMIT / ROLLBACK CATCH
@@ -1073,6 +1104,18 @@ if __name__ == "__main__":
 
 </file>
 
+<file path="tests/prd_supplier.json">
+{
+    "input": "Execute the factory pipeline for the incoming PRD layout.",
+    "session_state": {
+      "module": "supplier",
+      "Module": "Supplier",
+      "plural": "suppliers",
+      "id": "supplierId"
+    }
+  }
+</file>
+
 <file path="tests/test_agents_import.py">
 """
 Smoke tests — verifies all agent modules import cleanly and expose
@@ -1450,7 +1493,8 @@ POS GMO AI Factory — Root Orchestrator
 Pipeline:
     PRDInput JSON
         → ArchitectAgent        (spec)
-        → ParallelAgent         (database + backend in parallel)
+        → DatabaseAgent         (database migration scripts)
+        → BackendAgent          (FastAPI implementation code)
         → FrontendAgent         (depends on spec + backend)
         → ReviewerAgent         (validates all artifacts)
         → PRAgent               (opens GitHub PRs if review passed)
@@ -1472,7 +1516,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google.adk.agents import ParallelAgent, SequentialAgent
+from google.adk.agents import SequentialAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
@@ -1491,18 +1535,15 @@ load_dotenv()
 # Pipeline assembly
 # ---------------------------------------------------------------------------
 
-_parallel_codegen = ParallelAgent(
-    name="parallel_codegen",
-    description="Runs Database Agent and Backend Agent concurrently.",
-    sub_agents=[database_agent, backend_agent],
-)
-
+# Flattened the list structure to assign each sub-agent directly to a single parent agent container,
+# completely resolving the Pydantic assignment conflict.
 factory_pipeline = SequentialAgent(
     name="pos_gmo_factory",
     description="Full POS GMO module generation pipeline.",
     sub_agents=[
         architect_agent,
-        _parallel_codegen,
+        database_agent,
+        backend_agent,
         frontend_agent,
         reviewer_agent,
         pr_agent,
@@ -1520,6 +1561,25 @@ _runner = Runner(
     app_name="posgmo_factory",
     session_service=_session_service,
 )
+
+
+def _build_session_state(prd: PRDInput) -> dict[str, str]:
+    """
+    Build required ADK template context for agent instruction placeholders.
+
+    Required keys:
+      - module: singular lower camelCase (e.g. supplier)
+      - Module: singular PascalCase (e.g. Supplier)
+      - plural: plural lower camelCase (e.g. suppliers)
+      - id:     primary key field (e.g. supplierId)
+    """
+    module = prd.module
+    return {
+        "module": module,
+        "Module": module[:1].upper() + module[1:] if module else module,
+        "plural": f"{module}s",
+        "id": f"{module}Id",
+    }
 
 
 async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
@@ -1543,6 +1603,7 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
     session = await _session_service.create_session(
         app_name="posgmo_factory",
         user_id=user_id,
+        state=_build_session_state(prd),
     )
 
     message = Content(
@@ -1793,6 +1854,25 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
+</file>
+
+<file path="TODO.md">
+# TODO
+
+- [x] Escape literal ADK template placeholders in `agents/architect_agent.py` (`{module}`, `{Module}`, `{plural}`, `{id}` -> double braces).
+- [x] Escape literal ADK template placeholders in `agents/backend_agent.py`.
+- [x] Escape literal ADK template placeholders in `agents/frontend_agent.py`.
+- [x] Escape literal ADK template placeholders in `agents/database_agent.py`.
+- [x] Escape literal ADK template placeholders in `agents/pr_agent.py`.
+- [x] Escape literal ADK template placeholders in `agents/reviewer_agent.py`.
+- [x] Verify no unescaped placeholders remain in agent instruction strings via regex search.
+
+## Session state hardening for ADK placeholders
+
+- [x] Add helper in `orchestrator.py` to build required session context keys: `module`, `Module`, `plural`, `id`.
+- [x] Inject computed `session_state` into `create_session(...)` inside `run_factory`.
+- [x] Keep pipeline behavior unchanged apart from context injection.
+- [ ] Run test suite (`pytest`) to validate no regressions. *(blocked: `pytest` not installed in environment)*
 </file>
 
 </files>

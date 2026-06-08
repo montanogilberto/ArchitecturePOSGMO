@@ -1,9 +1,7 @@
-# TODO
-
-- [x] Escape literal ADK template placeholders in `agents/architect_agent.py` (`{module}`, `{Module}`, `{plural}`, `{id}` -> double braces).
-- [x] Escape literal ADK template placeholders in `agents/backend_agent.py`.
-- [x] Escape literal ADK template placeholders in `agents/frontend_agent.py`.
-- [x] Escape literal ADK template placeholders in `agents/database_agent.py`.
-- [x] Escape literal ADK template placeholders in `agents/pr_agent.py`.
-- [x] Escape literal ADK template placeholders in `agents/reviewer_agent.py`.
-- [x] Verify no unescaped placeholders remain in agent instruction strings via regex search.
+- [x] Analyze runtime error traceback (`KeyError: Context variable not found: loading`)
+- [x] Locate instruction templates that include `{loading}` placeholder semantics
+- [x] Inspect orchestrator session-state placeholder builder
+- [x] Propose minimal safe fix in `orchestrator.py` to include missing template context keys
+- [x] Get user confirmation before editing source files
+- [x] Apply edit to `_build_session_state` in `orchestrator.py`
+- [ ] Run quick validation by executing orchestrator with sample PRD

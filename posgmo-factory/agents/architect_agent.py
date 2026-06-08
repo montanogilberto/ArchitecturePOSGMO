@@ -44,9 +44,11 @@ SpecificationJSON. You NEVER write code.
 - POS domain tables: use "datetime" not "datetime2".
 - Primary key column: {{module}}Id, type "int IDENTITY(1,1) NOT NULL".
 
-## Output format
+## Output format (STRICT)
 Respond with ONLY a valid JSON object matching the SpecificationJSON schema.
 No prose, no markdown fences, no explanation — raw JSON only.
+The very first character of your response MUST be `{` and the very last MUST be `}`.
+NEVER wrap output in ```json ... ``` or any code block.
 
 SpecificationJSON schema:
 {
@@ -89,8 +91,17 @@ architect_agent = Agent(
         "and produces a SpecificationJSON consumed by all downstream agents."
     ),
     model="gemini-2.0-flash",
-    instruction=INSTRUCTION,
+    instruction=INSTRUCTION
+    + """
+Additional strict formatting rule:
+- DO NOT wrap JSON in markdown fences.
+- DO NOT output text like ```json or ```.
+- Output must be raw JSON only.
+""",
     tools=[get_mcp_toolset()],
     output_schema=SpecificationJSON,
     output_key="specification",
+    generate_content_config={
+        "temperature": 0,
+    },
 )

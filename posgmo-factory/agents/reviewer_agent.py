@@ -34,7 +34,7 @@ DATABASE checklist:
 □ Primary key uses IDENTITY(1,1)
 □ createdAt datetime DEFAULT GETDATE() present
 □ SP parameter is @pjsonfile nvarchar(MAX)
-□ SP names match spec: sp_{module}, sp_{module}_all, sp_{module}_one
+□ SP names match spec: sp_{{module}}, sp_{{module}}_all, sp_{{module}}_one
 □ OPENJSON used to parse input
 □ FOR JSON PATH used in SELECT results
 □ Mutations wrapped in BEGIN TRAN / COMMIT / ROLLBACK CATCH

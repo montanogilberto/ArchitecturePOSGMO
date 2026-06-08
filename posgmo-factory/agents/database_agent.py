@@ -3,9 +3,9 @@ Database Agent
 
 Reads the SpecificationJSON from session state and generates:
   1. CREATE TABLE statement
-  2. sp_{module}         — INSERT / UPDATE (upsert via @pjsonfile)
-  3. sp_{module}_all     — SELECT all for company
-  4. sp_{module}_one     — SELECT by primary key
+  2. sp_{{module}}         — INSERT / UPDATE (upsert via @pjsonfile)
+  3. sp_{{module}}_all     — SELECT all for company
+  4. sp_{{module}}_one     — SELECT by primary key
 
 Output stored in session state under key "database_artifacts".
 """
@@ -27,7 +27,7 @@ Read the SpecificationJSON from session state key "specification".
 
 ## SQL Server rules
 - Schema: always dbo.
-- Primary key: {module}Id int IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{table} PRIMARY KEY CLUSTERED.
+- Primary key: {{module}}Id int IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{table} PRIMARY KEY CLUSTERED.
 - companyId int NOT NULL — always present, always first after the PK.
 - createdAt datetime NOT NULL DEFAULT GETDATE()
 - updatedAt datetime NULL
@@ -39,9 +39,9 @@ Read the SpecificationJSON from session state key "specification".
 - ALL SPs share the same parameter: @pjsonfile nvarchar(MAX)
 - Parse input with: SELECT @field = value FROM OPENJSON(@pjsonfile) WITH (field type '$.field')
 - Operation is driven by JSON field "action": "INSERT", "UPDATE", "DELETE", "SELECT_ONE", "SELECT_ALL"
-- sp_{module}:      handles INSERT and UPDATE (check action field)
-- sp_{module}_all:  ignores @pjsonfile body, uses companyId from JSON, returns FOR JSON PATH
-- sp_{module}_one:  uses {module}Id from JSON, returns FOR JSON PATH
+- sp_{{module}}:      handles INSERT and UPDATE (check action field)
+- sp_{{module}}_all:  ignores @pjsonfile body, uses companyId from JSON, returns FOR JSON PATH
+- sp_{{module}}_one:  uses {{module}}Id from JSON, returns FOR JSON PATH
 - Wrap mutations in BEGIN TRAN / COMMIT / ROLLBACK CATCH.
 - Return JSON: SELECT ... FROM dbo.{table} WHERE ... FOR JSON PATH
 
@@ -49,9 +49,9 @@ Read the SpecificationJSON from session state key "specification".
 Respond with ONLY a JSON object with this shape — no prose, no markdown fences:
 {
   "create_table": "<full CREATE TABLE SQL>",
-  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{module} SQL>",
-  "sp_all":       "<full CREATE OR ALTER PROCEDURE sp_{module}_all SQL>",
-  "sp_one":       "<full CREATE OR ALTER PROCEDURE sp_{module}_one SQL>"
+  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{{module}} SQL>",
+  "sp_all":       "<full CREATE OR ALTER PROCEDURE sp_{{module}}_all SQL>",
+  "sp_one":       "<full CREATE OR ALTER PROCEDURE sp_{{module}}_one SQL>"
 }
 """
 

@@ -60,6 +60,8 @@ If any hard block triggers, output ONLY this JSON (no other keys):
   "status": "BLOCKED",
   "tier": "BLOCKED",
   "tier_reason": "<classification not applicable>",
+  "backend_pattern": "CRUD_ONLY",
+  "connector_endpoints": [],
   "mandatory_constraints": { "database": [], "backend": [], "frontend": [] },
   "soft_delete_parents": [],
   "index_recommendations": [],
@@ -122,22 +124,67 @@ For TIER_2+:
 For TIER_3:
 - Both header PK and foreign key on detail table
 
-## Step 5 — Output the gate_result
+## Step 5 — Classify backend pattern
+
+Read `specification.prd_hints.backend_endpoints` — these are the custom endpoints
+the PRD author explicitly defined. Use this as the primary signal:
+
+CRUD_ONLY — use when:
+  - prd_hints.backend_endpoints is empty or missing, OR
+  - Every endpoint path matches the standard CRUD pattern
+    (/plural, /all_plural, /one_plural) with no external service
+
+CRUD_AND_CONNECTOR — use when prd_hints.backend_endpoints contains entries where:
+  - The description mentions an external service (Azure, AWS, Stripe, IoT broker, etc.)
+  - The path is custom (does NOT follow /plural / /all_plural / /one_plural)
+  - requestSchema or responseSchema is named differently from standard SP output
+  - The description uses words: "orchestrate", "validate against AI", "upload",
+    "webhook", "third-party", "blob storage", "face API", "payment gateway"
+
+When CRUD_AND_CONNECTOR is selected, populate `connector_endpoints` — one entry
+per qualifying endpoint in prd_hints.backend_endpoints:
+- method: from prd_hints entry
+- path: from prd_hints entry
+- description: from prd_hints entry
+- external_service: infer from description (e.g. "Azure Face API", "Azure Blob Storage")
+- request_fields: infer from requestSchema name + specification.db.columns
+- response_fields: infer from responseSchema name + what frontend needs
+- notes: any special handling (auth env vars, async, file upload, threshold logic)
+
+## Step 6 — Output the gate_result
+
+IMPORTANT — scope of mandatory_constraints:
+- mandatory_constraints.database: SQL-level rules only (column types, ISNULL, SP structure)
+- mandatory_constraints.backend: rules about Python code — either CRUD functions OR connector
+  logic. For connectors, specify the external service and expected behavior.
+- mandatory_constraints.frontend: display/format rules and UX flow constraints.
 
 {
   "status": "APPROVED",
   "tier": "TIER_1_CATALOG | TIER_2_FINANCIAL | TIER_3_TRANSACTIONAL | TIER_4_IOT",
   "tier_reason": "<one sentence explaining the classification>",
+  "backend_pattern": "CRUD_ONLY | CRUD_AND_CONNECTOR",
+  "connector_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/example/action",
+      "description": "<what this endpoint does>",
+      "external_service": "<Azure Face API | Azure Blob Storage | Stripe | etc.>",
+      "request_fields": ["field1", "field2"],
+      "response_fields": ["result_field1", "result_field2"],
+      "notes": "<auth, async, file handling, error cases>"
+    }
+  ],
   "mandatory_constraints": {
     "database": [
-      "<rule all DB SQL must follow — e.g. 'All DECIMAL columns must be DECIMAL(10,2)'>",
-      "<rule — e.g. 'SP_all must filter WHERE active = 1 on FK join to Companies'>"
+      "<SQL rule — e.g. 'All DECIMAL columns must be DECIMAL(10,2)'>"
     ],
     "backend": [
-      "<rule — e.g. 'sp_upsert must use action codes 1/2/3 with integer TRY_CONVERT'>"
+      "<CRUD rule — e.g. 'return raw DECIMAL values, no rounding'>",
+      "<connector rule if CRUD_AND_CONNECTOR — e.g. 'verify endpoint must call Azure Face API and return isVerified + confidenceScore'>"
     ],
     "frontend": [
-      "<rule — e.g. 'Display amounts with toFixed(2) — never recompute from parts'>"
+      "<display rule — e.g. 'Display amounts with toFixed(2)'>"
     ]
   },
   "soft_delete_parents": [
@@ -153,15 +200,18 @@ For TIER_3:
     { "column": "<col>",      "reason": "<why>" }
   ],
   "warnings": [
-    "<non-blocking issue the user should know about>"
+    "<non-blocking issue — e.g. 'Camera capture (Capacitor) must be wired manually after generation'>"
   ],
-  "summary": "<2 sentences: tier classification + most important constraint>"
+  "summary": "<2 sentences: tier + backend_pattern + most important constraint>"
 }
+
+connector_endpoints MUST be [] when backend_pattern is CRUD_ONLY.
 
 ## Downstream agent rules
 The gate_result is stored in session state. Downstream agents MUST:
 - Database Agent:  apply every item in mandatory_constraints.database
-- Backend Agent:   apply every item in mandatory_constraints.backend
+- Backend Agent:   read backend_pattern; if CRUD_AND_CONNECTOR generate both CRUD functions
+  AND connector functions/routes for every entry in connector_endpoints
 - Frontend Agent:  apply every item in mandatory_constraints.frontend
 - Reviewer Agent:  verify all mandatory_constraints were applied; fail if any missed
 

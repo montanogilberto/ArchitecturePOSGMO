@@ -57,7 +57,9 @@ SP NAMING — must use PLURAL:
 □ @payload TABLE variable declared and populated before any DML
 □ @Outputmessage pattern with result[0].value/msg/error used for all responses
 □ GOTO Finish label present at end of SP
-□ Duplicate validations present before INSERT and UPDATE
+□ Duplicate validations present before INSERT and UPDATE — only required when the spec
+  defines a unique business key (e.g. name, code, rfc). If no unique field exists in the
+  spec (e.g. biometric sessions, log records, IoT readings), omitting duplicates is correct.
 □ Mutations wrapped in BEGIN TRY / BEGIN TRANSACTION / COMMIT / END TRY BEGIN CATCH ROLLBACK END CATCH
 □ sp_{{plural}}_all: no parameter, FOR JSON AUTO, ROOT('{{plural}}') — not FOR JSON PATH
 □ sp_{{plural}}_one: FOR JSON AUTO, ROOT('{{plural}}')
@@ -67,7 +69,14 @@ SP NAMING — must use PLURAL:
 □ updated_at rendered as ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') in sp_one
 □ All FK targets confirmed to exist in knowledge base
 
-BACKEND checklist:
+BACKEND checklist (SCOPE: read gate_result.backend_pattern first.
+- CRUD_ONLY: score only the 3 standard CRUD endpoints below.
+- CRUD_AND_CONNECTOR: score BOTH the 3 CRUD endpoints AND the connector endpoints.
+  For connectors, verify each entry in gate_result.connector_endpoints has a matching
+  async function in module_file and a matching route in route_file.
+  Connector functions must use os.getenv() for secrets, httpx.AsyncClient for HTTP calls,
+  and follow the try/except JSONResponse pattern.
+  Missing a connector endpoint when backend_pattern is CRUD_AND_CONNECTOR is an error.):
 □ module_file path is modules/{{module}}.py
 □ module_file path is modules/{{plural}}.py  (PLURAL — e.g. modules/suppliers.py)
 □ route_file path is routes_/{{module}}.py   (singular with underscore — e.g. routes_/supplier.py)
@@ -78,7 +87,9 @@ BACKEND checklist:
 □ Three functions: {{plural}}_sp, all_{{plural}}_sp, one_{{plural}}_sp (all use PLURAL)
 □ No raw SQL — only EXEC [dbo].[sp_*] @pjsonfile = %s via cursor.execute
 □ all_{{plural}}_sp: fetchall(), concatenate row[0] strings, json.loads
-□ {{plural}}_sp: fetchall(), return json_result[0][0]  ← column index 0, NOT 1. SP returns one column.
+□ {{plural}}_sp: fetchall(), return json_result[0][0]  ← column index 0 (the 'value' string from
+  the SP's Finish block). The Finish block SELECTs 3 columns (value, msg, error) but [0][0]
+  correctly returns just the 'value' column. This IS correct — do NOT flag json_result[0][0] as wrong.
 □ one_{{plural}}_sp: fetchone()[0], json.loads
 □ route_file: `from modules.{{plural}} import ...` (import from PLURAL module file)
 □ router = APIRouter() with NO prefix and NO tags

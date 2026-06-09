@@ -22,10 +22,13 @@ from pydantic import BaseModel, Field, model_validator
 class FieldType(str, Enum):
     string   = "string"
     number   = "number"
+    integer  = "integer"
     boolean  = "boolean"
     date     = "date"
+    datetime = "datetime"   # DATETIME column (maps to nvarchar for display, datetime for storage)
     text     = "text"       # long-form nvarchar(MAX)
     decimal  = "decimal"
+    float_   = "float"      # alias → treated as decimal(5,4) by Architect
 
 
 class PaymentMethod(str, Enum):
@@ -70,6 +73,45 @@ class FieldDef(BaseModel):
         return self
 
 
+class RelationshipDef(BaseModel):
+    """Rich relationship object — parentModule, cardinality, notes."""
+    parentModule: Optional[str] = None
+    cardinality: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class PRDEndpoint(BaseModel):
+    """Custom backend endpoint declared in PRD backend.endpoints[]."""
+    path: str
+    method: str = "POST"
+    description: Optional[str] = None
+    requestSchema: Optional[str] = None
+    responseSchema: Optional[str] = None
+
+
+class PRDFrontendComponent(BaseModel):
+    step: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class PRDFrontendHints(BaseModel):
+    pageRoute: Optional[str] = None
+    allowedRoles: List[str] = Field(default_factory=list)
+    uiPattern: Optional[str] = None
+    components: List[PRDFrontendComponent] = Field(default_factory=list)
+
+
+class PRDDatabaseHints(BaseModel):
+    """Author hints forwarded to downstream agents as context (not enforced)."""
+    tables: List[str] = Field(default_factory=list)
+    storedProcedures: List[str] = Field(default_factory=list)
+
+
+class PRDBackendHints(BaseModel):
+    endpoints: List[PRDEndpoint] = Field(default_factory=list)
+
+
 class PRDInput(BaseModel):
     module: str = Field(
         description="Singular camelCase module name, e.g. 'supplier'",
@@ -83,9 +125,9 @@ class PRDInput(BaseModel):
         description="List of data fields for this module.",
         min_length=1,
     )
-    relationships: List[str] = Field(
+    relationships: List[RelationshipDef] = Field(
         default_factory=list,
-        description="Existing POS GMO table names this module depends on.",
+        description="Parent modules this module depends on (rich object or plain string).",
     )
     roles_allowed: List[AllowedRole] = Field(
         default_factory=lambda: [AllowedRole.admin, AllowedRole.manager],
@@ -102,6 +144,19 @@ class PRDInput(BaseModel):
     has_detail_view: bool = Field(
         default=False,
         description="Whether to generate a detail/edit page at /{module}/:id.",
+    )
+    # Rich optional sections — passed through to SpecificationJSON unchanged
+    frontend: Optional[PRDFrontendHints] = Field(
+        default=None,
+        description="Frontend hints: pageRoute, uiPattern, wizard components.",
+    )
+    backend: Optional[PRDBackendHints] = Field(
+        default=None,
+        description="Custom backend endpoints beyond standard CRUD.",
+    )
+    database: Optional[PRDDatabaseHints] = Field(
+        default=None,
+        description="Author database hints: custom table/SP names.",
     )
 
     @model_validator(mode="after")
@@ -157,12 +212,25 @@ class FrontendSpec(BaseModel):
     )
 
 
+class PRDHints(BaseModel):
+    """Raw PRD sections forwarded unchanged — used by Decision Gate and Backend Agent."""
+    backend_endpoints: List[PRDEndpoint] = Field(default_factory=list)
+    frontend_ui_pattern: Optional[str] = None
+    frontend_components: List[PRDFrontendComponent] = Field(default_factory=list)
+    database_tables: List[str] = Field(default_factory=list)
+    database_sps: List[str] = Field(default_factory=list)
+
+
 class SpecificationJSON(BaseModel):
     module: str
     description: str
     db: DBSpec
     backend: BackendSpec
     frontend: FrontendSpec
+    prd_hints: PRDHints = Field(
+        default_factory=PRDHints,
+        description="Raw PRD hints forwarded to Decision Gate and Backend Agent.",
+    )
 
     @model_validator(mode="after")
     def enforce_naming_standards(self) -> "SpecificationJSON":

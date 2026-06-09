@@ -71,7 +71,29 @@ FORBIDDEN names (any of these will fail the review):
 - companyId is ALWAYS added to db.columns automatically — never put it in the PRD.
 - FK columns must reference tables confirmed to exist via get_table_list().
 - POS domain tables: use "datetime" not "datetime2".
+- PRD field type mapping to SQL:
+    string   → nvarchar(255)
+    text     → nvarchar(MAX)
+    number / integer → int
+    decimal  → decimal(10,2)
+    float    → decimal(5,4)   ← confidence scores, ratios
+    boolean  → bit
+    date     → datetime
+    datetime → datetime
 - Primary key column: <module>Id, type "int IDENTITY(1,1) NOT NULL".
+
+## PRD hints — always forward these from the incoming PRD
+
+If the PRD contains any of these sections, copy them verbatim into `prd_hints`:
+- prd.backend.endpoints[]       → prd_hints.backend_endpoints[]
+- prd.frontend.uiPattern        → prd_hints.frontend_ui_pattern
+- prd.frontend.components[]     → prd_hints.frontend_components[]
+- prd.database.tables[]         → prd_hints.database_tables[]
+- prd.database.storedProcedures[] → prd_hints.database_sps[]
+
+If a section is missing from the PRD, leave the corresponding prd_hints field empty.
+Do NOT use prd_hints.database_tables to override the standard table naming conventions —
+those tables are informational context for the Decision Gate, not directives for the Architect.
 
 ## Self-validation — run these checks before outputting the JSON
 1. db.sp_prefix == "sp_" + db.table_name  (plural)

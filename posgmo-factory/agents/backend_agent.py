@@ -1,10 +1,10 @@
 """
 Backend Agent
 
-Reads the SpecificationJSON from session state and generates three Python files:
-  - models/{{module}}.py    — Pydantic request/response models
-  - schemas/{{module}}.py   — thin Pydantic schema aliases (used for OpenAPI docs)
-  - routes/{{module}}.py    — FastAPI APIRouter with all CRUD endpoints
+Reads the SpecificationJSON from session state and generates two Python files
+following the actual POS GMO backend pattern:
+  - modules/{{module}}.py  — business logic: direct SP calls via pyodbc, returns JSONResponse
+  - routes_/{{module}}.py  — FastAPI APIRouter: thin HTTP layer that calls module functions
 
 Output stored in session state under key "backend_artifacts".
 """
@@ -19,46 +19,130 @@ You are the Backend Agent for POS GMO.
 Read the SpecificationJSON from session state key "specification".
 
 ## Mandatory knowledge calls
-1. get_generation_rules()     — load backend rules
-2. get_backend_patterns()     — study existing models and auth patterns
-3. get_backend_routes()       — verify no route prefix collision
-4. get_sp_patterns()          — confirm SP names to call
+1. get_generation_rules()   — load backend rules
+2. get_backend_patterns()   — study architecture
+3. get_backend_routes()     — verify no route prefix collision
+4. get_sp_patterns()        — confirm SP names
 
-## Python / FastAPI rules
-- models/{{module}}.py:
-    * Class {{Module}}Base(BaseModel):  all fields, Optional for nullable
-    * Class {{Module}}Create({{Module}}Base):  used for POST body
-    * Class {{Module}}Response({{Module}}Base):  adds {{module}}Id, companyId, createdAt, updatedAt
-    * Use Optional[X] = None for nullable columns.
-    * datetime fields typed as Optional[datetime] = None.
-    * Google-style docstring on every class and function.
+## Files to generate
 
-- schemas/{{module}}.py:
-    * from models.{{module}} import {{Module}}Create, {{Module}}Response
-    * Re-export with __all__ = ["{{Module}}Create", "{{Module}}Response"]
-    * Add any response envelope schemas needed (e.g. {{Module}}ListResponse).
+### modules/{module}.py — Business logic layer
+This file contains all direct SP calls. It imports `connection` from `databases`,
+holds a module-level `conn = connection()`, and exposes three functions.
 
-- routes/{{module}}.py:
-    * router = APIRouter(prefix="/{{plural}}", tags=["{{Module}}"])
-    * Imports: from fastapi import APIRouter, HTTPException
-    * DB connection helper: from database import get_connection   (existing pattern)
-    * ALL DB calls: cursor.execute("EXEC sp_{{module}} @pjsonfile=?", json.dumps(payload))
-    * NEVER write raw SQL in Python.
-    * POST   /{{plural}}/             → calls sp_{{module}} with action="INSERT"
-    * PUT    /{{plural}}/{{id}}         → calls sp_{{module}} with action="UPDATE"
-    * DELETE /{{plural}}/{{id}}         → calls sp_{{module}} with action="DELETE"
-    * GET    /{{plural}}/             → calls sp_{{module}}_all
-    * GET    /{{plural}}/{{id}}         → calls sp_{{module}}_one
-    * Parse SP response: rows = cursor.fetchone()[0]; return json.loads(rows)
-    * On empty result raise HTTPException(status_code=404)
-    * Full Google-style docstring on every endpoint.
+Exact pattern to follow (replace {module}/{Module}/{plural} from the spec):
+
+```python
+from fastapi.responses import JSONResponse
+from databases import connection
+import json
+
+conn = connection()
+
+
+def {module}_sp(json_file: dict):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("EXEC [dbo].[sp_{plural}] @pjsonfile = %s", (json.dumps(json_file),))
+        json_result = cursor.fetchall()
+        return JSONResponse(content=json_result[0][1], status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+def all_{plural}_sp():
+    try:
+        cursor = conn.cursor()
+        cursor.execute("EXEC [dbo].[sp_{plural}_all]")
+        rows = cursor.fetchall()
+        json_result = "".join(row[0] for row in rows)
+        result = json.loads(json_result)
+        return JSONResponse(content=result, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+def one_{module}_sp(json_file: dict):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("EXEC [dbo].[sp_{plural}_one] @pjsonfile = %s", (json.dumps(json_file),))
+        json_result = cursor.fetchone()[0]
+        result = json.loads(json_result)
+        return JSONResponse(content=result, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+```
+
+Rules:
+- NEVER import FastAPI, BaseModel, or Pydantic in the module file.
+- NEVER write raw SQL — only EXEC [dbo].[sp_*] calls.
+- Function for upsert: {module}_sp(json_file: dict)
+- Function for list:   all_{plural}_sp()
+- Function for one:    one_{module}_sp(json_file: dict)
+- The caller (route file) sets the "action" field in json_file before passing it.
+
+### routes_/{module}.py — FastAPI router layer
+Three endpoints only. Reads descriptions from txt files. Delegates everything to module functions.
+
+Exact pattern to follow (replace {module}/{plural} from the spec):
+
+```python
+from fastapi import APIRouter
+from modules.{plural} import {plural}_sp, all_{plural}_sp, one_{plural}_sp
+
+
+router = APIRouter()
+
+with open("./docs_description/{plural}.txt", "r") as file:
+    {plural}_docstring = file.read()
+@router.post("/{plural}", summary="{plural} CRUD", description={plural}_docstring)
+def {plural}(json: dict):
+    return {plural}_sp(json)
+
+
+with open("./docs_description/{plural}_all.txt", "r") as file:
+    {plural}_all_docstring = file.read()
+@router.get("/all_{plural}", summary="all {plural}", description={plural}_all_docstring)
+def all_{plural}():
+    return all_{plural}_sp()
+
+
+with open("./docs_description/{plural}_one.txt", "r") as file:
+    {plural}_one_docstring = file.read()
+@router.post("/one_{plural}", summary="one {module}", description={plural}_one_docstring)
+def one_{plural}(json: dict):
+    return one_{plural}_sp(json)
+```
+
+Rules:
+- File path MUST be routes_/{module}.py (note the underscore in routes_).
+- `router = APIRouter()` with NO prefix and NO tags.
+- Only 3 endpoints: POST /{plural}, GET /all_{plural}, POST /one_{plural}.
+- No Pydantic, no HTTPException, no async, no response_model.
+- The caller sends all needed fields (action, companyId, etc.) in the JSON body.
+- Import from `modules.{plural}` (plural form), NOT `modules.{module}`.
+
+### docs_description/ — OpenAPI description txt files
+Generate 3 plain-text files, one per endpoint, describing what the endpoint does.
+
+```
+docs_description/{plural}.txt       — describes the CRUD (INSERT/UPDATE/DELETE) endpoint
+docs_description/{plural}_all.txt   — describes the GET ALL endpoint
+docs_description/{plural}_one.txt   — describes the GET ONE endpoint
+```
+
+Each file is 2–4 sentences of plain English. No markdown, no code.
 
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences:
 {
-  "model_file":  { "path": "models/{{module}}.py",  "content": "<full Python source>" },
-  "schema_file": { "path": "schemas/{{module}}.py", "content": "<full Python source>" },
-  "route_file":  { "path": "routes/{{module}}.py",  "content": "<full Python source>" }
+  "module_file": { "path": "modules/{module}.py",  "content": "<full Python source>" },
+  "route_file":  { "path": "routes_/{module}.py",  "content": "<full Python source>" },
+  "docs_files": [
+    { "path": "docs_description/{plural}.txt",     "content": "<plain text>" },
+    { "path": "docs_description/{plural}_all.txt", "content": "<plain text>" },
+    { "path": "docs_description/{plural}_one.txt", "content": "<plain text>" }
+  ]
 }
 """
 
@@ -66,8 +150,8 @@ Respond with ONLY a JSON object — no prose, no markdown fences:
 backend_agent = Agent(
     name="backend_agent",
     description=(
-        "Generates FastAPI models, schemas, and routes for a POS GMO module, "
-        "following existing Pydantic and pyodbc patterns exactly."
+        "Generates modules/{module}.py (SP business logic) and routes_/{module}.py "
+        "(FastAPI router) for a POS GMO module, following the existing pyodbc + JSONResponse pattern."
     ),
     model="gemini-2.0-flash",
     instruction=INSTRUCTION,

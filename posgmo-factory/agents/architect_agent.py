@@ -56,7 +56,7 @@ SpecificationJSON schema:
   "description": "<one sentence>",
   "db": {
     "table_name": "<plural snake or camel, e.g. suppliers>",
-    "sp_prefix": "sp_<module>",
+    "sp_prefix": "sp_<plural>",
     "columns": [
       {"name": "<camelCase>", "sql_type": "<SQL Server type>",
        "nullable": true|false, "fk_table": null|"<table>", "fk_column": null|"<col>"}
@@ -64,11 +64,10 @@ SpecificationJSON schema:
     "indexes": ["<colName>", ...]
   },
   "backend": {
-    "model_file":    "models/<module>.py",
-    "schema_file":   "schemas/<module>.py",
-    "route_file":    "routes/<module>.py",
+    "module_file":   "modules/<module>.py",   ← MUST start with "modules/" NOT "models/"
+    "route_file":    "routes_/<module>.py",   ← MUST start with "routes_/" (with underscore)
     "router_prefix": "/<plural>",
-    "sp_calls":      ["sp_<module>", "sp_<module>_all", "sp_<module>_one"]
+    "sp_calls":      ["sp_<plural>", "sp_<plural>_all", "sp_<plural>_one"]
   },
   "frontend": {
     "api_file":              "src/api/<module>Api.ts",
@@ -93,10 +92,12 @@ architect_agent = Agent(
     model="gemini-2.0-flash",
     instruction=INSTRUCTION
     + """
-Additional strict formatting rule:
+Additional strict formatting rules:
 - DO NOT wrap JSON in markdown fences.
 - DO NOT output text like ```json or ```.
 - Output must be raw JSON only.
+- backend.module_file MUST be "modules/<module>.py" — NEVER "models/<module>.py".
+- backend.route_file  MUST be "routes_/<module>.py" — NEVER "routes/<module>.py".
 """,
     tools=[get_mcp_toolset()],
     output_schema=SpecificationJSON,

@@ -1,7 +1,5 @@
-- [x] Analyze runtime error traceback (`KeyError: Context variable not found: loading`)
-- [x] Locate instruction templates that include `{loading}` placeholder semantics
-- [x] Inspect orchestrator session-state placeholder builder
-- [x] Propose minimal safe fix in `orchestrator.py` to include missing template context keys
-- [x] Get user confirmation before editing source files
-- [x] Apply edit to `_build_session_state` in `orchestrator.py`
-- [ ] Run quick validation by executing orchestrator with sample PRD
+# TODO
+
+- [x] Patch `agents/pr_agent.py` instruction placeholders to avoid missing context keys.
+- [x] Verify no unsupported `{...}` placeholders remain in PR instruction.
+- [ ] Run orchestrator to validate the fix.

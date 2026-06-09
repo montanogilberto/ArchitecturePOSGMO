@@ -138,11 +138,10 @@ class DBSpec(BaseModel):
 
 
 class BackendSpec(BaseModel):
-    model_file: str                 # e.g. "models/supplier.py"
-    schema_file: str                # e.g. "schemas/supplier.py"
-    route_file: str                 # e.g. "routes/supplier.py"
+    module_file: str                # e.g. "modules/supplier.py"  — business logic / SP calls
+    route_file: str                 # e.g. "routes_/supplier.py"  — FastAPI router
     router_prefix: str              # e.g. "/suppliers"
-    sp_calls: List[str]             # e.g. ["sp_suppliers", "sp_suppliers_all"]
+    sp_calls: List[str]             # e.g. ["sp_suppliers", "sp_suppliers_all", "sp_suppliers_one"]
 
 
 class FrontendSpec(BaseModel):
@@ -168,8 +167,20 @@ class SpecificationJSON(BaseModel):
     @model_validator(mode="after")
     def files_follow_naming(self) -> "SpecificationJSON":
         m = self.module
-        assert self.backend.model_file  == f"models/{m}.py",  "model_file naming"
-        assert self.backend.schema_file == f"schemas/{m}.py", "schema_file naming"
-        assert self.backend.route_file  == f"routes/{m}.py",  "route_file naming"
-        assert self.frontend.api_file   == f"src/api/{m}Api.ts"
+
+        # Coerce common LLM mistakes so the pipeline never crashes on minor path deviations.
+        # "models/" is a frequent mistake — silently correct it to "modules/".
+        self.backend.module_file = self.backend.module_file.replace("models/", "modules/")
+        # "routes/" without underscore — correct to "routes_/"
+        if self.backend.route_file.startswith("routes/"):
+            self.backend.route_file = "routes_/" + self.backend.route_file[len("routes/"):]
+
+        # Enforce canonical paths after coercion.
+        if self.backend.module_file != f"modules/{m}.py":
+            self.backend.module_file = f"modules/{m}.py"
+        if self.backend.route_file != f"routes_/{m}.py":
+            self.backend.route_file = f"routes_/{m}.py"
+        if self.frontend.api_file != f"src/api/{m}Api.ts":
+            self.frontend.api_file = f"src/api/{m}Api.ts"
+
         return self

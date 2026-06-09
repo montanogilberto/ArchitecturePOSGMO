@@ -62,35 +62,52 @@ _runner = Runner(
 )
 
 
+def _gh_repo_slug(env_var: str) -> str:
+    """Extract 'owner/repo' from a full GitHub URL or a bare slug stored in an env var."""
+    raw = os.getenv(env_var, "")
+    # Strip trailing .git and leading https://github.com/
+    raw = raw.rstrip("/").removesuffix(".git")
+    if "github.com/" in raw:
+        raw = raw.split("github.com/", 1)[1]
+    return raw
+
+
 def _build_session_state(prd: PRDInput) -> dict[str, str]:
     """
     Build required ADK template context for agent instruction placeholders.
     """
     module = prd.module or ""
     module_capitalized = module[:1].upper() + module[1:] if module else ""
-    
+
     # Intentamos extraer un parent del PRD si existe, de lo contrario dejamos fallback vacío
     # Esto evita romper los formateadores de strings si el prompt usa {parent}
     parent_val = getattr(prd, "parent", "") or ""
     parent_capitalized = parent_val[:1].upper() + parent_val[1:] if parent_val else ""
-    
+
+    frontend_repo = _gh_repo_slug("GITHUB_REPO_NAME")
+    backend_repo  = _gh_repo_slug("GITHUB_BACKEND_REPO_NAME")
+
     return {
         # Mapeos estándar del módulo
         "module": module,
         "Module": module_capitalized,
         "plural": f"{module}s",
         "id": f"{module}Id",
-        
+
         # Mapeos de base de datos / tablas
         "table": f"{module_capitalized}s",
         "Table": f"{module_capitalized}s",
-        
+
         # Contexto jerárquico (Solución al KeyError: 'parent')
         "parent": parent_val,
         "Parent": parent_capitalized,
-        
+
         # Llaves genéricas adicionales por si otros agentes las buscan en el prompt
         "description": getattr(prd, "description", "") or "",
+
+        # GitHub repo slugs (owner/repo) derived from env vars — used by PR Agent
+        "GITHUB_FRONTEND_REPO": frontend_repo,
+        "GITHUB_BACKEND_REPO":  backend_repo,
 
         # Placeholders usados como literales en instrucciones de agentes
         # (evita KeyError durante inject_session_state cuando aparezcan {col}, etc.)

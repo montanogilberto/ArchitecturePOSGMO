@@ -39,10 +39,10 @@ agent (Database, Backend, Frontend, Reviewer) must obey.
 
 Check these in order:
 
-1. TABLE CONFLICT
-   If schema_analysis.table_conflict is true:
-   → BLOCK with reason: "Table '{table}' already exists in the live database.
-     Drop it first, or rename the module."
+1. TABLE ALREADY EXISTS
+   If schema_analysis.table_already_exists is true:
+   → This is a WARNING, NOT a block. The Database Agent uses CREATE OR ALTER
+     which handles re-runs gracefully. Add a warning to the warnings list.
 
 2. INVALID FK REFERENCES
    For each FK column in specification.db.columns where fk_table is set:
@@ -55,13 +55,20 @@ Check these in order:
    but verify):
    → Add a WARNING (not a block) — it will be auto-injected.
 
-If any hard block triggers, output:
+If any hard block triggers, output ONLY this JSON (no other keys):
 {
   "status": "BLOCKED",
-  "reason": "<clear message>",
-  "fix": "<what the user must do before re-running>"
+  "tier": "BLOCKED",
+  "tier_reason": "<classification not applicable>",
+  "mandatory_constraints": { "database": [], "backend": [], "frontend": [] },
+  "soft_delete_parents": [],
+  "index_recommendations": [],
+  "warnings": [],
+  "reason": "<clear human-readable explanation>",
+  "fix": "<exact step the user must take before re-running>",
+  "summary": "<one sentence explaining the block>"
 }
-Then stop.
+Do NOT skip any field — the schema requires all keys even when blocked.
 
 ## Step 2 — Classify the module tier
 

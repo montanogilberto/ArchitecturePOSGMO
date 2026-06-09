@@ -53,6 +53,8 @@ def store_prd_context(module: str, plural: str, tool_context: ToolContext, paren
         "Parent": Parent,
         # Generic placeholders (prevent inject_session_state KeyErrors)
         "col": "col",
+        "pk": "pk",
+        "table": f"{Module}s",
         "fk_table": "fk_table",
         "fk_column": "fk_column",
         "loading": "loading",

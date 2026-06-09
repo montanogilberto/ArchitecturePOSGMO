@@ -167,9 +167,9 @@ def analyze_database_schema(module: str, plural: str, tool_context: ToolContext)
     except Exception as e:
         return {"error": str(e), "tables": [], "foreign_keys": [], "indexes": []}
 
-    # ── 5. Conflict detection ────────────────────────────────────────────
+    # ── 5. Table existence check (informational only — not a block) ────────
     target_table = plural[0].upper() + plural[1:]   # e.g. "Suppliers"
-    table_conflict = target_table in all_tables or plural in all_tables
+    table_already_exists = target_table in all_tables or plural in all_tables
 
     # ── 6. Smart FK suggestions ──────────────────────────────────────────
     # Tables that likely make sense as parents for ANY new module
@@ -198,16 +198,16 @@ def analyze_database_schema(module: str, plural: str, tool_context: ToolContext)
         "module":          module,
         "plural":          plural,
         "target_table":    target_table,
-        "table_exists":    table_conflict,
-        "all_tables":      all_tables,
-        "table_details":   table_summary,
-        "foreign_keys":    foreign_keys,
-        "indexes":         indexes,
-        "fk_suggestions":  suggestions,
-        "analysis_notes":  (
-            f"Table '{target_table}' ALREADY EXISTS — use ALTER or choose a different name."
-            if table_conflict else
-            f"Table '{target_table}' is available."
+        "table_already_exists": table_already_exists,
+        "all_tables":           all_tables,
+        "table_details":        table_summary,
+        "foreign_keys":         foreign_keys,
+        "indexes":              indexes,
+        "fk_suggestions":       suggestions,
+        "analysis_notes":       (
+            f"Table '{target_table}' already exists — database agent will use CREATE OR ALTER."
+            if table_already_exists else
+            f"Table '{target_table}' is available for creation."
         ),
     }
 

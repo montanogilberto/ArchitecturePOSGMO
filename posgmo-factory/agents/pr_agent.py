@@ -73,12 +73,14 @@ def github_create_branch(repo: str, branch_name: str, base_branch: str = "main")
         r.raise_for_status()
         sha = r.json()["object"]["sha"]
 
-        # Create branch
+        # Create branch (422 = already exists — safe to continue)
         r2 = client.post(
             f"{_GH_API}/repos/{repo}/git/refs",
             headers=_gh_headers(),
             json={"ref": f"refs/heads/{branch_name}", "sha": sha},
         )
+        if r2.status_code == 422:
+            return {"status": "already_exists", "ref": f"refs/heads/{branch_name}"}
         r2.raise_for_status()
         return r2.json()
 

@@ -52,9 +52,56 @@ The real codebase always wins over generic documentation.
     export async function delete{Module}(id: number): Promise<void>
 - Base URL: const BASE_URL = import.meta.env.VITE_API_URL ?? 'https://smartloansbackend.azurewebsites.net'
 - On non-ok response: throw new Error(await res.text())
+- Parse response with `await res.json()` ONLY — NEVER call `JSON.parse()` on the result.
+  `res.json()` already returns a parsed JavaScript object. Calling `JSON.parse()` on it
+  again causes a runtime error. This is an automatic review failure if violated.
 
 ## React / Ionic rules (src/pages/{Module}Page.tsx)
-- Shell: IonPage > IonHeader > IonToolbar (with IonTitle + IonBackButton) > IonContent
+
+### Header — CRITICAL RULE (most common review failure)
+NEVER use IonHeader / IonToolbar / IonTitle directly.
+This codebase uses a shared custom Header component. ALWAYS use:
+```tsx
+import Header from '../components/Header';
+import AlertPopover from '../components/PopOver/AlertPopover';
+import MailPopover from '../components/PopOver/MailPopover';
+
+// Inside component state:
+const [popoverState, setPopoverState] = useState<{
+  showAlertPopover: boolean;
+  showMailPopover: boolean;
+  event?: Event;
+}>({ showAlertPopover: false, showMailPopover: false });
+
+const presentAlertPopover = (e: React.MouseEvent) =>
+  setPopoverState({ ...popoverState, showAlertPopover: true, event: e.nativeEvent });
+const dismissAlertPopover = () =>
+  setPopoverState({ ...popoverState, showAlertPopover: false });
+const presentMailPopover = (e: React.MouseEvent) =>
+  setPopoverState({ ...popoverState, showMailPopover: true, event: e.nativeEvent });
+const dismissMailPopover = () =>
+  setPopoverState({ ...popoverState, showMailPopover: false });
+
+// Inside JSX (replace IonHeader entirely):
+<Header
+  presentAlertPopover=PRESENT_ALERT_FN
+  presentMailPopover=PRESENT_MAIL_FN
+  screenTitle="MODULE_TITLE — POS GMO"
+/>
+<AlertPopover
+  isOpen=SHOW_ALERT_BOOL
+  event=POPOVER_EVENT
+  onDidDismiss=DISMISS_ALERT_FN
+/>
+<MailPopover
+  isOpen=SHOW_MAIL_BOOL
+  event=POPOVER_EVENT
+  onDidDismiss=DISMISS_MAIL_FN
+/>
+```
+
+### Shell structure
+- IonPage > Header (custom, see above) + AlertPopover + MailPopover > IonContent
 - Loading: IonLoading isOpen={loading}
 - Errors: IonToast isOpen={!!error} message={error} onDidDismiss={() => setError('')}
 - Lists: IonList > IonItem. If has_list_view is true: ALWAYS add IonInfiniteScroll — do not
@@ -82,6 +129,14 @@ The real codebase always wins over generic documentation.
   Never display raw date strings directly — always pass through toHermosillo().
 - IVA = 0 always. Never compute tax.
 - useEffect on mount: fetch list, handle errors.
+- TypeScript catch blocks: NEVER use `catch (err: any)` — TypeScript does not allow
+  typed catch parameters. Always use:
+  ```typescript
+  } catch (err) {
+    setError((err as Error).message ?? 'Error desconocido');
+  }
+  ```
+  Same rule applies in API files (supplierApi.ts).
 - TypeScript: ZERO untyped parameters — every event handler must have an explicit generic type:
     - IonInfiniteScroll: `ev: CustomEvent<void>`
     - IonSearchbar onIonChange/onIonInput: `e: CustomEvent<SearchbarInputEventDetail>`
@@ -127,17 +182,16 @@ App.tsx uses this structure (excerpts):
 import SupplierPage from './pages/SupplierPage';   // ← add this
 
 // === IonRouterOutlet inside IonTabs (PrivateRoute section) ===
-<PrivateRoute exact path="/suppliers" component={SupplierPage} />   // ← add this
+// <PrivateRoute exact path="/suppliers" component=COMPONENT_NAME />   ← add this
 
 // === IonMenu > IonList > correct IonItemDivider section ===
-<IonMenuToggle autoHide={false}>
-  {canAccess(roleCode, 'suppliers') && (
-  <IonItem button routerLink="/suppliers">
-    <IonIcon icon={people} slot="start" />
-    <IonLabel>Proveedores</IonLabel>
-  </IonItem>
-  )}
-</IonMenuToggle>
+// <IonMenuToggle autoHide=FALSE_VALUE>
+//   canAccess(roleCode, 'suppliers') guard:
+//   <IonItem button routerLink="/suppliers">
+//     <IonIcon icon=ICON_VARIABLE slot="start" />
+//     <IonLabel>Proveedores</IonLabel>
+//   </IonItem>
+// </IonMenuToggle>
 ```
 
 Rules for App.tsx patches:
@@ -166,7 +220,7 @@ Respond with ONLY a JSON object — no prose, no markdown fences:
   "app_patches": {
     "import_line":   "import {Module}Page from './pages/{Module}Page';",
     "private_route": "<PrivateRoute exact path=\"/{plural}\" component={{Module}Page} />",
-    "menu_item":     "<IonMenuToggle autoHide={false}>\\n  {canAccess(roleCode, '{plural}') && (\\n  <IonItem button routerLink=\"/{plural}\">\\n    <IonIcon icon={ICON_NAME} slot=\\"start\\" />\\n    <IonLabel>SPANISH_LABEL</IonLabel>\\n  </IonItem>\\n  )}\\n</IonMenuToggle>",
+    "menu_item":     "<full IonMenuToggle JSX block with canAccess guard, IonIcon using the chosen icon variable, and IonLabel with the Spanish label>",
     "menu_section":  "Catálogo",
     "icon_name":     "people"
   },

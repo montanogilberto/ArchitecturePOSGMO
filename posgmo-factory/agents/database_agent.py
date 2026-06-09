@@ -207,7 +207,9 @@ BEGIN
     FOR JSON AUTO, ROOT('{{plural}}');
 END
 ```
-- Wrap every nullable column with ISNULL(col, default) — use 0 for ints, '' for strings.
+- EVERY column in SELECT must be wrapped: nullable string → ISNULL(col, ''),
+  nullable int/decimal → ISNULL(col, 0). NO raw column references for nullable columns.
+  This applies to BOTH sp_all and sp_one. Skipping ISNULL is an automatic review failure.
 - Use FOR JSON AUTO, ROOT('{{plural}}') — NOT FOR JSON PATH.
 
 ### sp_{{plural}}_one — SELECT by PK
@@ -236,7 +238,9 @@ BEGIN
     FOR JSON AUTO, ROOT('{{plural}}');
 END
 ```
-- updated_at uses ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') to handle NULLs.
+- updated_at: ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') AS updated_at
+- ALL other nullable columns: ISNULL(col, '') for strings, ISNULL(col, 0) for numbers.
+  Every single nullable column must have ISNULL — no exceptions.
 - Use FOR JSON AUTO, ROOT('{{plural}}').
 
 ## JSON input contract (caller must send):

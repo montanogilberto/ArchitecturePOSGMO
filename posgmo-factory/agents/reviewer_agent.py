@@ -9,7 +9,6 @@ Pipeline halts and regenerates if any artifact scores below 90.
 """
 
 from google.adk.agents import Agent
-from agents.mcp_tools import get_mcp_toolset
 
 INSTRUCTION = """
 You are the Reviewer Agent for POS GMO.
@@ -34,12 +33,6 @@ For TIER_3_TRANSACTIONAL:
 For soft_delete_parents:
 - Verify SP_all JOINs include the active='1' filter for every flagged parent table.
 
-## Mandatory knowledge calls
-1. get_generation_rules()   — load all rules as your scoring rubric
-2. get_db_schema()          — cross-check FK targets and column types
-3. get_sp_patterns()        — verify SP naming matches catalog convention
-4. get_frontend_patterns()  — verify page shell and file naming
-5. get_backend_patterns()   — verify model/route patterns
 
 ## Scoring (0–100 per artifact, must reach 90 to pass)
 
@@ -68,7 +61,9 @@ SP NAMING — must use PLURAL:
 □ Mutations wrapped in BEGIN TRY / BEGIN TRANSACTION / COMMIT / END TRY BEGIN CATCH ROLLBACK END CATCH
 □ sp_{{plural}}_all: no parameter, FOR JSON AUTO, ROOT('{{plural}}') — not FOR JSON PATH
 □ sp_{{plural}}_one: FOR JSON AUTO, ROOT('{{plural}}')
-□ ISNULL(col, default) wrapping on nullable columns in SELECT
+□ ISNULL(col, default) wrapping on EVERY nullable column in SELECT — both sp_all and sp_one.
+  String nullable → ISNULL(col, ''), int/decimal nullable → ISNULL(col, 0).
+  Any raw nullable column reference without ISNULL is an automatic error.
 □ updated_at rendered as ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') in sp_one
 □ All FK targets confirmed to exist in knowledge base
 
@@ -83,7 +78,7 @@ BACKEND checklist:
 □ Three functions: {{plural}}_sp, all_{{plural}}_sp, one_{{plural}}_sp (all use PLURAL)
 □ No raw SQL — only EXEC [dbo].[sp_*] @pjsonfile = %s via cursor.execute
 □ all_{{plural}}_sp: fetchall(), concatenate row[0] strings, json.loads
-□ {{plural}}_sp: fetchall(), return json_result[0][1]
+□ {{plural}}_sp: fetchall(), return json_result[0][0]  ← column index 0, NOT 1. SP returns one column.
 □ one_{{plural}}_sp: fetchone()[0], json.loads
 □ route_file: `from modules.{{plural}} import ...` (import from PLURAL module file)
 □ router = APIRouter() with NO prefix and NO tags
@@ -93,7 +88,9 @@ BACKEND checklist:
 □ docs_files contains 3 txt files in docs_description/
 
 FRONTEND checklist (cross-reference design_brief for codebase-specific rules):
-□ Uses same Header component pattern as design_brief.component_shell
+□ Uses custom <Header> component (import from '../components/Header') — NOT IonHeader/IonToolbar/IonTitle directly. This is an automatic error if violated.
+□ AlertPopover and MailPopover present alongside Header with correct props
+□ No `catch (err: any)` anywhere — must use `catch (err)` with `(err as Error).message` cast
 □ CSS class prefix matches design_brief.css_naming convention
 □ Modal open/close pattern matches design_brief.modal_pattern
 □ State organization matches design_brief.state_pattern
@@ -107,6 +104,7 @@ FRONTEND checklist (cross-reference design_brief for codebase-specific rules):
 □ All state typed with TypeScript (no untyped `any` anywhere)
 □ All event handler parameters explicitly typed with generic — bare `CustomEvent` (without generic) is an error; required: `CustomEvent<void>`, `CustomEvent<SearchbarInputEventDetail>`, `CustomEvent<InputInputEventDetail>`, `CustomEvent<ToggleChangeEventDetail>`, etc.
 □ API client uses plain fetch(), not axios
+□ Response parsed with res.json() ONLY — no JSON.parse() on the result (automatic error if found)
 □ TypeScript interfaces exported from api file
 □ CSS uses scoped class names only
 
@@ -142,6 +140,5 @@ reviewer_agent = Agent(
     ),
     model="gemini-2.5-flash",
     instruction=INSTRUCTION,
-    tools=[get_mcp_toolset()],
     output_key="review_result",
 )

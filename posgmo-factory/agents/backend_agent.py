@@ -54,7 +54,8 @@ def suppliers_sp(json_file: dict):
         cursor = conn.cursor()
         cursor.execute("EXEC [dbo].[sp_suppliers] @pjsonfile = %s", (json.dumps(json_file),))
         json_result = cursor.fetchall()
-        return JSONResponse(content=json_result[0][1], status_code=200)
+        # SP returns ONE row, ONE column ([jsonResult]) → [0][0], NEVER [0][1]
+        return JSONResponse(content=json_result[0][0], status_code=200)
     except Exception as e:
         return JSONResponse(content={{"error": str(e)}}, status_code=500)
 

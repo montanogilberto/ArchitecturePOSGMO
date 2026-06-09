@@ -191,7 +191,7 @@ def _upload_to_blob(raw_bytes: bytes, blob_path: str, content_type: str, metadat
         metadata=metadata,
     )
     account_url = getattr(service_client, "url", None) or _ACCOUNT_URL_FALLBACK
-    return f"{account_url}/{_CLIENTS_CONTAINER}/{blob_path}"
+    return account_url.rstrip("/") + "/" + _CLIENTS_CONTAINER + "/" + blob_path
 
 
 def _upload_base64_to_blob(b64_data: str, blob_path: str, content_type: str, metadata: dict) -> str:
@@ -222,8 +222,10 @@ async def verify_{{module}}_connector(payload: dict) -> JSONResponse:
         selfie_b64 = payload.get("clientSelfieBase64", "")
 
         now = datetime.utcnow()
-        id_blob_path     = f"clients/{now.year}/{now.month:02d}/{document_type}_id_{ts}_{uid}.jpg"
-        selfie_blob_path = f"clients/{now.year}/{now.month:02d}/selfie_{ts}_{uid}.jpg"
+        yr = str(now.year)
+        mo = str(now.month).zfill(2)
+        id_blob_path     = "clients/" + yr + "/" + mo + "/" + document_type + "_id_" + ts + "_" + uid + ".jpg"
+        selfie_blob_path = "clients/" + yr + "/" + mo + "/selfie_" + ts + "_" + uid + ".jpg"
 
         id_image_url = _upload_base64_to_blob(
             id_b64, id_blob_path, "image/jpeg",
@@ -239,7 +241,7 @@ async def verify_{{module}}_connector(payload: dict) -> JSONResponse:
 
             # Step 3 — detect face in ID document
             r1 = await client.post(
-                f"{_FACE_ENDPOINT}/face/v1.0/detect",
+                _FACE_ENDPOINT + "/face/v1.0/detect",
                 headers=_FACE_HEADERS,
                 json={"url": id_image_url},
                 params={"detectionModel": "detection_03", "recognitionModel": "recognition_04"},
@@ -258,7 +260,7 @@ async def verify_{{module}}_connector(payload: dict) -> JSONResponse:
 
             # Step 4 — detect face in selfie
             r2 = await client.post(
-                f"{_FACE_ENDPOINT}/face/v1.0/detect",
+                _FACE_ENDPOINT + "/face/v1.0/detect",
                 headers=_FACE_HEADERS,
                 json={"url": selfie_url},
                 params={"detectionModel": "detection_03", "recognitionModel": "recognition_04"},
@@ -277,7 +279,7 @@ async def verify_{{module}}_connector(payload: dict) -> JSONResponse:
 
             # Step 5 — verify match
             r3 = await client.post(
-                f"{_FACE_ENDPOINT}/face/v1.0/verify",
+                _FACE_ENDPOINT + "/face/v1.0/verify",
                 headers=_FACE_HEADERS,
                 json={"faceId1": face_id_1, "faceId2": face_id_2},
             )
@@ -315,7 +317,7 @@ async def contract_{{module}}_connector(payload: dict) -> JSONResponse:
             now        = datetime.utcnow()
             ts         = now.strftime("%Y%m%d%H%M%S")
             uid        = str(uuid.uuid4())[:8]
-            blob_path  = f"clients/{now.year}/{now.month:02d}/contract_{ts}_{uid}.pdf"
+            blob_path  = "clients/" + str(now.year) + "/" + str(now.month).zfill(2) + "/contract_" + ts + "_" + uid + ".pdf"
             contract_url = _upload_base64_to_blob(
                 contract_b64, blob_path, "application/pdf",
                 {"companyId": str(company_id), "type": "contract"},

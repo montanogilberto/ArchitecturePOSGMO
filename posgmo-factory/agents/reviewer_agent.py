@@ -38,6 +38,11 @@ For soft_delete_parents:
 
 DATABASE checklist (note: execution.details entries with status "skipped (already exists)" are NOT errors — only "error" status counts against the score):
 
+DATETIME vs DATETIME2 rule:
+  - TIER_4_IOT only → DATETIME2(3) is correct
+  - All other tiers (TIER_1, TIER_2, TIER_3) → DATETIME is correct; DATETIME2 is an error
+  Check gate_result.tier before scoring datetime column types.
+
 AUDIT FIELD NAMING — must be EXACTLY:
   ✅ created_At   (capital A, underscore before A)
   ✅ updated_at   (all lowercase)

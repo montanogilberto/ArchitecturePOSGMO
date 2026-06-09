@@ -98,9 +98,12 @@ TIER_3_TRANSACTIONAL — header + detail relationship
   - Frontend must show a master-detail view (IonModal for line items)
   - Total computed server-side only — never in frontend
 
-TIER_4_IOT — sensor/device data
+TIER_4_IOT — physical sensor/device data from hardware
   Signals: description mentions "sensor", "device", "reading", "telemetry",
-  "water", "temperature", "led", "IoT", high-frequency
+  "water level", "temperature", "led", "IoT", "hardware", "high-frequency inserts"
+  NOT a signal: using Azure APIs, cloud services, AI models, or blob storage.
+  External service integration (Azure Face API, Stripe, etc.) is backend_pattern=CRUD_AND_CONNECTOR
+  and does NOT determine the tier — it is orthogonal.
   MANDATORY extra rules:
   - No soft delete (no active flag) — readings are immutable
   - SP_all must support date range filter parameters

@@ -23,6 +23,17 @@ You are the Frontend Agent for POS GMO.
     TIER_2_FINANCIAL  → display amounts with .toFixed(2), never recompute totals
     TIER_3_TRANSACTIONAL → master-detail IonModal for line items, total from server only
     TIER_4_IOT        → chart/graph view (IonCard per reading), no IonInfiniteScroll
+
+- "specification.prd_hints.frontend_ui_pattern" — overrides default layout:
+    "Wizard Flow Layout" → multi-step wizard using IonCard per step, IonButton next/back,
+      currentStep state (number), render only the active step's card.
+      Steps come from specification.prd_hints.frontend_components[].
+      NEVER generate IonList or chart view when uiPattern is "Wizard Flow Layout".
+      NEVER generate IonInfiniteScroll for wizard modules (has_list_view is false).
+
+- "specification.prd_hints.frontend_components" — step definitions for wizard:
+  Each entry has { step, name, description }. Generate one IonCard per step,
+  matching the component name and description exactly.
 - "design_brief"    — from Design Consistency Agent: component shell, CSS naming
   convention, modal pattern, state organization, list pattern, critical differences
   from Ionic docs. THIS IS THE SOURCE OF TRUTH for style decisions.

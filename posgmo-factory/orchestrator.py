@@ -18,27 +18,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# ---------------------------------------------------------------------------
-# GenAI Core API Client Hotfix (Monkey Patching)
-# ---------------------------------------------------------------------------
-from google.genai._api_client import BaseApiClient
-
-_original_async_request = BaseApiClient.async_request
-
-async def _patched_async_request(self, method: str, path: str, *args, **kwargs):
-    if "gemini-2.0-flash" in path:
-        path = path.replace("gemini-2.0-flash", "gemini-2.5-flash")
-        
-    if "json" in kwargs and kwargs["json"]:
-        if isinstance(kwargs["json"], dict) and kwargs["json"].get("model") == "models/gemini-2.0-flash":
-            kwargs["json"]["model"] = "models/gemini-2.5-flash"
-        elif isinstance(kwargs["json"], str) and "gemini-2.0-flash" in kwargs["json"]:
-            kwargs["json"] = kwargs["json"].replace("gemini-2.0-flash", "gemini-2.5-flash")
-
-    return await _original_async_request(self, method, path, *args, **kwargs)
-
-BaseApiClient.async_request = _patched_async_request
-# ---------------------------------------------------------------------------
 
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService

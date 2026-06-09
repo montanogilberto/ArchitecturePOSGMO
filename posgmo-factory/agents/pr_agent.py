@@ -160,27 +160,27 @@ You are the PR Agent for POS GMO.
 
 ## Input (all from session state)
 - "specification"       — SpecificationJSON
-- "database_artifacts"  — { create_table, sp_upsert, sp_all, sp_one }
-- "backend_artifacts"   — { module_file, route_file, docs_files }
-- "frontend_artifacts"  — { api_file, page_file, css_file }
-- "review_result"       — { scores, passed, issues, summary }
+- "database_artifacts"  — {{ create_table, sp_upsert, sp_all, sp_one }}
+- "backend_artifacts"   — {{ module_file, route_file, docs_files }}
+- "frontend_artifacts"  — {{ api_file, page_file, css_file }}
+- "review_result"       — {{ scores, passed, issues, summary }}
 
 ## Pre-condition
 ONLY proceed if review_result.passed is true.
 If passed is false, respond with:
-{ "status": "blocked", "reason": "Review failed. Fix issues before PR." }
+{{ "status": "blocked", "reason": "Review failed. Fix issues before PR." }}
 
 ## Steps to execute (in order)
 1. Read repo names from session state:
-   - Frontend repo: {GITHUB_FRONTEND_REPO}
-   - Backend repo:  {GITHUB_BACKEND_REPO}
+   - Frontend repo: {{GITHUB_FRONTEND_REPO}}
+   - Backend repo:  {{GITHUB_BACKEND_REPO}}
 2. Branch name: "feat/{{module}}-module"
 3. Call github_create_branch for the frontend repo.
 4. Call github_create_branch for the backend repo.
 5. Push backend files to the backend repo:
-   - backend_artifacts.module_file  → modules/{module}.py
-   - backend_artifacts.route_file   → routes_/{module}.py
-   - For each entry in backend_artifacts.docs_files → push to that entry's path (e.g. docs_description/{plural}.txt)
+   - backend_artifacts.module_file  → modules/{{module}}.py
+   - backend_artifacts.route_file   → routes_/{{module}}.py
+   - For each entry in backend_artifacts.docs_files → push to that entry's path (e.g. docs_description/{{plural}}.txt)
 6. Push frontend files (3 files from frontend_artifacts) to the frontend repo.
 7. Push database SQL as "sql_logic/sp_{{module}}.sql" to the backend repo.
    Combine: create_table + sp_upsert + sp_all + sp_one, each separated by a GO line.
@@ -201,9 +201,9 @@ If passed is false, respond with:
 - frontend_artifacts.api_file
 - frontend_artifacts.page_file
 - frontend_artifacts.css_file
-- backend_artifacts.module_file  (modules/{module}.py)
-- backend_artifacts.route_file   (routes_/{module}.py)
-- backend_artifacts.docs_files   (docs_description/{plural}.txt × 3)
+- backend_artifacts.module_file  (modules/{{module}}.py)
+- backend_artifacts.route_file   (routes_/{{module}}.py)
+- backend_artifacts.docs_files   (docs_description/{{plural}}.txt × 3)
 - sql_logic/sp_{{module}}.sql
 
 ### Notes
@@ -226,7 +226,7 @@ pr_agent = Agent(
         "Pushes all generated module files to GitHub branches and opens "
         "Pull Requests on the frontend and backend repos."
     ),
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     instruction=INSTRUCTION,
     tools=[
         FunctionTool(func=save_sql_locally),

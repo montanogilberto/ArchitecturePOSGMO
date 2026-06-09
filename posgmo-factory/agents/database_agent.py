@@ -108,23 +108,23 @@ Read the SpecificationJSON from session state key "specification".
 
 ### CREATE TABLE
 - Schema: always dbo.
-- Primary key: {module}Id INT IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{Table} PRIMARY KEY CLUSTERED.
+- Primary key: {{module}}Id INT IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{{Table}} PRIMARY KEY CLUSTERED.
 - companyId INT NOT NULL — always present after PK.
 - Column names: snake_case (e.g. first_name, last_name, created_At, updated_at).
 - created_At DATETIME NOT NULL DEFAULT GETDATE()
 - updated_at DATETIME NULL
 - Use DATETIME (not DATETIME2) for POS domain tables.
-- FK constraints: CONSTRAINT FK_{Table}_{Parent} FOREIGN KEY (col) REFERENCES dbo.{parent}(col).
+- FK constraints: CONSTRAINT FK_{{Table}}_{{Parent}} FOREIGN KEY (col) REFERENCES dbo.{{parent}}(col).
 - NONCLUSTERED INDEX for every column listed in spec.db.indexes.
 
-### sp_{plural} — CRUD stored procedure
+### sp_{{plural}} — CRUD stored procedure
 Parameter: @pjsonfile VARCHAR(MAX)  (VARCHAR not NVARCHAR)
 
 Output template variable declared at top:
 ```sql
 DECLARE @Outputmessage NVARCHAR(MAX) = '{
   "result": [
-    { "value": "", "msg": "", "error": "" }
+    {{ "value": "", "msg": "", "error": "" }}
   ]
 }'
 ```
@@ -133,14 +133,14 @@ Action is an integer read from the JSON:
 ```sql
 SET @action = (
     SELECT TOP 1 TRY_CONVERT(INT, JSON_VALUE(value, '$.action'))
-    FROM OPENJSON(@pjsonfile, '$.{plural}')
+    FROM OPENJSON(@pjsonfile, '$.{{plural}}')
 );
 ```
 
 Declare a @payload table variable with all module columns (nullable):
 ```sql
 DECLARE @payload TABLE (
-    {module}Id  INT NULL,
+    {{module}}Id  INT NULL,
     companyId   INT NULL,
     first_name  NVARCHAR(100) NULL,
     ...
@@ -148,21 +148,21 @@ DECLARE @payload TABLE (
 
 INSERT INTO @payload (...)
 SELECT
-    TRY_CONVERT(INT, JSON_VALUE(value, '$.{module}Id')),
+    TRY_CONVERT(INT, JSON_VALUE(value, '$.{{module}}Id')),
     TRY_CONVERT(INT, JSON_VALUE(value, '$.companyId')),
     JSON_VALUE(value, '$.first_name'),
     ...
-FROM OPENJSON(@pjsonfile, '$.{plural}');
+FROM OPENJSON(@pjsonfile, '$.{{plural}}');
 ```
 
 Actions:
-- 1 = INSERT: run duplicate validations, then INSERT INTO dbo.{plural} SELECT ... FROM @payload
-- 2 = UPDATE: run duplicate validations (exclude self), then UPDATE dbo.{plural} INNER JOIN @payload
-- 3 = DELETE: DELETE dbo.{plural} INNER JOIN @payload ON {module}Id
+- 1 = INSERT: run duplicate validations, then INSERT INTO dbo.{{plural}} SELECT ... FROM @payload
+- 2 = UPDATE: run duplicate validations (exclude self), then UPDATE dbo.{{plural}} INNER JOIN @payload
+- 3 = DELETE: DELETE dbo.{{plural}} INNER JOIN @payload ON {{module}}Id
 
 Duplicate validations (for fields that must be unique within a company):
 - Check for duplicates within the payload itself first (GROUP BY companyId, field HAVING COUNT(*) > 1)
-- Check for conflicts against the existing table (INNER JOIN dbo.{plural} on companyId + field)
+- Check for conflicts against the existing table (INNER JOIN dbo.{{plural}} on companyId + field)
 - On conflict: SET @Outputmessage error='1' and msg=<reason>, COMMIT, GOTO Finish
 
 Set success message: SET @Outputmessage = JSON_MODIFY(@Outputmessage, '$.result[0].msg', 'Inserted/Updated/Deleted Successfully')
@@ -179,61 +179,61 @@ Finish:
     FROM OPENJSON(@Outputmessage,'$.result');
 ```
 
-### sp_{plural}_all — SELECT all
+### sp_{{plural}}_all — SELECT all
 No parameter. Pattern:
 ```sql
-CREATE PROC [dbo].[sp_{plural}_all]
+CREATE PROC [dbo].[sp_{{plural}}_all]
 AS
 SET NOCOUNT ON
 BEGIN
     SELECT
-        [{module}Id],
+        [{{module}}Id],
         ISNULL([companyId], 0)   AS companyId,
         ISNULL([first_name], '') AS first_name,
         ...
         [created_At],
         [updated_at]
-    FROM dbo.{plural}
-    FOR JSON AUTO, ROOT('{plural}');
+    FROM dbo.{{plural}}
+    FOR JSON AUTO, ROOT('{{plural}}');
 END
 ```
 - Wrap every nullable column with ISNULL(col, default) — use 0 for ints, '' for strings.
-- Use FOR JSON AUTO, ROOT('{plural}') — NOT FOR JSON PATH.
+- Use FOR JSON AUTO, ROOT('{{plural}}') — NOT FOR JSON PATH.
 
-### sp_{plural}_one — SELECT by PK
+### sp_{{plural}}_one — SELECT by PK
 Parameter: @pjsonfile VARCHAR(MAX)
 
 Pattern:
 ```sql
-ALTER PROC [dbo].[sp_{plural}_one] (@pjsonfile VARCHAR(MAX))
+ALTER PROC [dbo].[sp_{{plural}}_one] (@pjsonfile VARCHAR(MAX))
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @{module}Id INT;
-    SET @{module}Id = CAST(
-        (SELECT TOP 1 JSON_VALUE(value, '$.{module}Id')
-         FROM OPENJSON(@pjsonfile, '$.{plural}')) AS INT
+    DECLARE @{{module}}Id INT;
+    SET @{{module}}Id = CAST(
+        (SELECT TOP 1 JSON_VALUE(value, '$.{{module}}Id')
+         FROM OPENJSON(@pjsonfile, '$.{{plural}}')) AS INT
     );
     SELECT
-        {module}Id,
+        {{module}}Id,
         ISNULL(companyId, 0)   AS companyId,
         ISNULL(first_name, '') AS first_name,
         ...
         created_At,
         ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') AS updated_at
-    FROM dbo.{plural}
-    WHERE {module}Id = @{module}Id
-    FOR JSON AUTO, ROOT('{plural}');
+    FROM dbo.{{plural}}
+    WHERE {{module}}Id = @{{module}}Id
+    FOR JSON AUTO, ROOT('{{plural}}');
 END
 ```
 - updated_at uses ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') to handle NULLs.
-- Use FOR JSON AUTO, ROOT('{plural}').
+- Use FOR JSON AUTO, ROOT('{{plural}}').
 
 ## JSON input contract (caller must send):
 ```json
 {
-  "{plural}": [
-    { "action": 1, "companyId": 5, "first_name": "...", ... }
+  "{{plural}}": [
+    {{ "action": 1, "companyId": 5, "first_name": "...", ... }}
   ]
 }
 ```
@@ -242,9 +242,9 @@ Action values: 1=INSERT, 2=UPDATE, 3=DELETE.
 ## Execution step (MANDATORY — do this after generating SQL)
 After generating all four SQL blocks, call execute_sql_on_server with:
 - create_table = the CREATE TABLE + index SQL
-- sp_upsert    = the sp_{plural} SQL
-- sp_all       = the sp_{plural}_all SQL
-- sp_one       = the sp_{plural}_one SQL
+- sp_upsert    = the sp_{{plural}} SQL
+- sp_all       = the sp_{{plural}}_all SQL
+- sp_one       = the sp_{{plural}}_one SQL
 
 The tool connects to the SQL Server and executes each statement.
 If any statement returns an error, include it in the output's "execution" field.
@@ -253,9 +253,9 @@ If any statement returns an error, include it in the output's "execution" field.
 Respond with ONLY a JSON object — no prose, no markdown fences:
 {
   "create_table": "<full CREATE TABLE SQL>",
-  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{plural} SQL>",
-  "sp_all":       "<full CREATE PROC sp_{plural}_all SQL>",
-  "sp_one":       "<full ALTER PROC sp_{plural}_one SQL>",
+  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{{plural}} SQL>",
+  "sp_all":       "<full CREATE PROC sp_{{plural}}_all SQL>",
+  "sp_one":       "<full ALTER PROC sp_{{plural}}_one SQL>",
   "execution":    <result dict from execute_sql_on_server>
 }
 """
@@ -267,7 +267,7 @@ database_agent = Agent(
         "Generates CREATE TABLE and all stored procedures for a POS GMO module, "
         "then executes them directly against SQL Server."
     ),
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     instruction=INSTRUCTION,
     tools=[get_mcp_toolset(), FunctionTool(func=execute_sql_on_server)],
     output_key="database_artifacts",

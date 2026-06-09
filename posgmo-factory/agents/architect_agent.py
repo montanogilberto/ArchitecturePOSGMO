@@ -116,7 +116,7 @@ architect_agent = Agent(
         "Reads a PRD JSON, consults the POS GMO knowledge base via MCP, "
         "and produces a SpecificationJSON consumed by all downstream agents."
     ),
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     instruction=INSTRUCTION,
     tools=[get_mcp_toolset()],
     output_schema=SpecificationJSON,

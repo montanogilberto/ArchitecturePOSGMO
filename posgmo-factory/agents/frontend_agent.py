@@ -42,8 +42,8 @@ You are the Frontend Agent for POS GMO.
 
 ## React / Ionic rules (src/pages/{{Module}}Page.tsx)
 - Shell: IonPage > IonHeader > IonToolbar (with IonTitle + IonBackButton) > IonContent
-- Loading: IonLoading isOpen={loading}
-- Errors: IonToast isOpen={!!error} message={error} onDidDismiss={() => setError('')}
+- Loading: IonLoading isOpen={{loading}}
+- Errors: IonToast isOpen={{!!error}} message={{error}} onDidDismiss={{() => setError('')}}
 - Lists: IonList > IonItem. If has_list_view and expected records > 20: add IonInfiniteScroll.
 - Modal forms: IonModal with IonInput fields for create/edit. Use IonButton to open.
 - Delete: IonAlert for confirmation before calling delete API.
@@ -84,7 +84,7 @@ frontend_agent = Agent(
         "Generates the Ionic React API client, page component, and CSS for a POS GMO module, "
         "applying all existing UI patterns (UTC-7, IVA=0, infinite scroll)."
     ),
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     instruction=INSTRUCTION,
     tools=[get_mcp_toolset()],
     output_key="frontend_artifacts",

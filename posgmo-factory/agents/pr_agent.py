@@ -385,9 +385,12 @@ You are the PR Agent for POS GMO.
 - "review_result"       — {{ scores, passed, issues, summary }}
 
 ## Pre-condition
-ONLY proceed if review_result.passed is true.
-If passed is false, respond with:
-{{ "status": "blocked", "reason": "Review failed. Fix issues before PR." }}
+Check BOTH conditions before doing anything:
+1. If gate_result.status is "BLOCKED":
+   respond with {{ "status": "blocked", "reason": gate_result.reason, "fix": gate_result.fix }}
+2. If review_result.passed is false:
+   respond with {{ "status": "blocked", "reason": "Review failed. Fix issues before PR." }}
+Only proceed if gate_result.status is "APPROVED" AND review_result.passed is true.
 
 ## Steps to execute (in order)
 1. Read repo names from session state:

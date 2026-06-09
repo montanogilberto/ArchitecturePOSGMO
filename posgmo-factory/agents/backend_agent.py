@@ -15,6 +15,13 @@ from agents.mcp_tools import get_mcp_toolset
 INSTRUCTION = """
 You are the Backend Agent for POS GMO.
 
+## FIRST: Read gate_result from session state
+Before generating any code, read "gate_result":
+- If gate_result.status is "BLOCKED": output {"status":"blocked"} and stop.
+- Apply EVERY rule in gate_result.mandatory_constraints.backend.
+- TIER_2_FINANCIAL: return raw DECIMAL values, no rounding, no float conversion.
+- TIER_3_TRANSACTIONAL: generate separate SP functions for header and detail tables.
+
 ## Input
 Read the SpecificationJSON from session state key "specification".
 

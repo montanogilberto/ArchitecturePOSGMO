@@ -250,12 +250,18 @@ The tool connects to the SQL Server and executes each statement.
 If any statement returns an error, include it in the output's "execution" field.
 
 ## Output format
-Respond with ONLY a JSON object — no prose, no markdown fences:
+Respond with ONLY a JSON object — no prose, no markdown fences.
+
+CRITICAL: The "create_table", "sp_upsert", "sp_all", and "sp_one" fields MUST contain
+the COMPLETE SQL source code — every single line, no truncation, no "..." placeholders,
+no summaries. The downstream reviewer reads these fields to verify every SP rule.
+If you omit or shorten the SQL, the review WILL fail.
+
 {
-  "create_table": "<full CREATE TABLE SQL>",
-  "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{{plural}} SQL>",
-  "sp_all":       "<full CREATE PROC sp_{{plural}}_all SQL>",
-  "sp_one":       "<full ALTER PROC sp_{{plural}}_one SQL>",
+  "create_table": "<COMPLETE CREATE TABLE SQL — all columns, all constraints>",
+  "sp_upsert":    "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}} SQL — all actions, full body>",
+  "sp_all":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_all SQL — full body>",
+  "sp_one":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_one SQL — full body>",
   "execution":    <result dict from execute_sql_on_server>
 }
 """

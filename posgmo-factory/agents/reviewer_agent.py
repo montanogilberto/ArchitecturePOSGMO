@@ -82,10 +82,11 @@ FRONTEND checklist:
 □ IonPage > IonHeader > IonToolbar > IonContent shell present
 □ IonLoading for loading state
 □ IonToast for error display
-□ IonInfiniteScroll present if has_list_view is true
+□ IonInfiniteScroll present when has_list_view is true — MANDATORY, no exceptions
 □ UTC-7 offset applied to all date fields
 □ IVA = 0 (tax never computed from server)
-□ All state typed with TypeScript (no untyped `any`)
+□ All state typed with TypeScript (no untyped `any` anywhere)
+□ All event handler parameters explicitly typed with generic — bare `CustomEvent` (without generic) is an error; required: `CustomEvent<void>`, `CustomEvent<SearchbarInputEventDetail>`, `CustomEvent<InputInputEventDetail>`, `CustomEvent<ToggleChangeEventDetail>`, etc.
 □ API client uses plain fetch(), not axios
 □ TypeScript interfaces exported from api file
 □ CSS uses scoped class names only

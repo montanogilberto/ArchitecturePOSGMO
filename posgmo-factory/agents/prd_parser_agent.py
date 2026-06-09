@@ -26,7 +26,7 @@ def _gh_slug(env_var: str) -> str:
     return raw
 
 
-def store_prd_context(module: str, plural: str, tool_context: ToolContext) -> dict:
+def store_prd_context(module: str, plural: str, tool_context: ToolContext, parent: str = "") -> dict:
     """
     Store PRD-derived variables in session state for downstream agents.
 
@@ -38,6 +38,7 @@ def store_prd_context(module: str, plural: str, tool_context: ToolContext) -> di
         Confirmation dict with the stored keys.
     """
     Module = module[:1].upper() + module[1:] if module else ""
+    Parent = parent[:1].upper() + parent[1:] if parent else ""
     tool_context.state.update({
         # Core naming
         "module": module,
@@ -47,6 +48,9 @@ def store_prd_context(module: str, plural: str, tool_context: ToolContext) -> di
         "table": f"{Module}s",
         "Table": f"{Module}s",
         "id": f"{module}Id",
+        # Parent module (optional, empty string for top-level modules)
+        "parent": parent,
+        "Parent": Parent,
         # Generic placeholders (prevent inject_session_state KeyErrors)
         "col": "col",
         "fk_table": "fk_table",
@@ -71,7 +75,8 @@ You are the PRD Parser — the very first step of the POS GMO AI Factory pipelin
 2. Extract:
    - module: the camelCase singular name (e.g. "supplier")
    - plural: the plural form (e.g. "suppliers" — usually module + "s")
-3. Call store_prd_context(module=..., plural=...) IMMEDIATELY.
+   - parent: parent module if present in the PRD, otherwise empty string ""
+3. Call store_prd_context(module=..., plural=..., parent=...) IMMEDIATELY.
 4. Output ONLY a JSON confirmation, nothing else:
    {"status": "ready", "module": "<module>", "plural": "<plural>"}
 

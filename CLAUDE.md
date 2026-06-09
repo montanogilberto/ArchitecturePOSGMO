@@ -2,6 +2,54 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Commands
+
+All commands run from `posgmo-factory/`:
+
+```bash
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run the full factory pipeline against a PRD file
+python orchestrator.py tests/prd_supplier.json
+
+# Start the MCP knowledge server (stdio transport)
+python -m mcp_server.server
+
+# Start MCP server with HTTP transport
+MCP_TRANSPORT=http python -m mcp_server.server
+
+# Run all tests
+pytest
+
+# Run a single test file
+pytest tests/test_prd_schema.py -v
+```
+
+**Required env vars** (`.env` in `posgmo-factory/`):
+- `GOOGLE_API_KEY` — Gemini API key for ADK agents
+- `GITHUB_TOKEN`, `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME` — for PR agent
+- Any Azure / Twilio credentials the target backend modules use
+
+## Factory Code Architecture (`posgmo-factory/`)
+
+The factory itself is a **Google ADK** multi-agent pipeline written in Python:
+
+- `orchestrator.py` — CLI entry point; creates an ADK `Runner` with `InMemorySessionService`, validates the PRD via `PRDInput`, builds session state (template variable map), and streams the pipeline.
+- `prd_schema.py` — Pydantic models for PRD input (`PRDInput`) and Architect output (`SpecificationJSON`). `companyId` is always injected by SPs and must never appear in PRD fields.
+- `agents/agent.py` — Assembles `root_agent` as a `SequentialAgent` over the six sub-agents in pipeline order.
+- `agents/*.py` — One file per agent; each agent reads knowledge via MCP tools before generating artifacts and writes its output to ADK session state for the next agent.
+- `mcp_server/server.py` — `FastMCP` server that exposes architecture knowledge files as callable tools. Resolves paths relative to the repo root (`KNOWLEDGE_ROOT = Path(__file__).parent.parent.parent`).
+
+**Session state keys written by agents** (consumed by downstream agents):
+- `spec` — `SpecificationJSON` dict from Architect Agent
+- `sql_output` — SQL DDL + SPs from Database Agent
+- `backend_output` — Python model/schema/route files from Backend Agent
+- `frontend_output` — TS/TSX/CSS files from Frontend Agent
+- `review_output` — Score JSON from Reviewer Agent
+
+**Monkey-patch note:** `orchestrator.py` patches `google.genai._api_client.BaseApiClient.async_request` to redirect `gemini-2.0-flash` calls to `gemini-2.5-flash`. Do not remove this unless the ADK default model is updated.
+
 ## What This Repo Is
 
 This is the **POS GMO AI Factory** — an autonomous software factory that generates production-ready modules (frontend, backend, SQL, stored procedures, docs, tests, PRs) for the POS GMO platform while strictly following its existing architecture. The repo contains JSON/CSV knowledge files that agents must read before generating any code.

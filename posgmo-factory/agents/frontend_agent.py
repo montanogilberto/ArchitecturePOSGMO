@@ -44,7 +44,16 @@ You are the Frontend Agent for POS GMO.
 - Shell: IonPage > IonHeader > IonToolbar (with IonTitle + IonBackButton) > IonContent
 - Loading: IonLoading isOpen={{loading}}
 - Errors: IonToast isOpen={{!!error}} message={{error}} onDidDismiss={{() => setError('')}}
-- Lists: IonList > IonItem. If has_list_view and expected records > 20: add IonInfiniteScroll.
+- Lists: IonList > IonItem. If has_list_view is true: ALWAYS add IonInfiniteScroll — do not
+  skip it based on expected record count. Pattern:
+  ```typescript
+  <IonInfiniteScroll onIonInfinite={(ev: CustomEvent<void>) => {
+    loadMoreItems();
+    (ev.target as HTMLIonInfiniteScrollElement).complete();
+  }}>
+    <IonInfiniteScrollContent />
+  </IonInfiniteScroll>
+  ```
 - Modal forms: IonModal with IonInput fields for create/edit. Use IonButton to open.
 - Delete: IonAlert for confirmation before calling delete API.
 - State: useState for data, loading, error, search text, modal open flag.
@@ -60,7 +69,14 @@ You are the Frontend Agent for POS GMO.
   Never display raw date strings directly — always pass through toHermosillo().
 - IVA = 0 always. Never compute tax.
 - useEffect on mount: fetch list, handle errors.
-- TypeScript: all props and state typed — no `any` unless unavoidable.
+- TypeScript: ZERO untyped parameters — every event handler must have an explicit generic type:
+    - IonInfiniteScroll: `ev: CustomEvent<void>`
+    - IonSearchbar onIonChange/onIonInput: `e: CustomEvent<SearchbarInputEventDetail>`
+    - IonInput onIonChange: `e: CustomEvent<InputInputEventDetail>`
+    - IonToggle onIonChange: `e: CustomEvent<ToggleChangeEventDetail>`
+    - IonSelect onIonChange: `e: CustomEvent<SelectChangeEventDetail>`
+    - IonButton onClick: `() => void`
+    - Never use bare `CustomEvent` without a generic — always `CustomEvent<SomeDetail>`.
 - No inline styles — all styling goes in the CSS file.
 
 ## CSS rules (src/pages/{{Module}}Page.css)

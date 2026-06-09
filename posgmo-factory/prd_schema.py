@@ -138,8 +138,8 @@ class DBSpec(BaseModel):
 
 
 class BackendSpec(BaseModel):
-    module_file: str                # e.g. "modules/supplier.py"  — business logic / SP calls
-    route_file: str                 # e.g. "routes_/supplier.py"  — FastAPI router
+    module_file: str                # e.g. "modules/suppliers.py"  — PLURAL, business logic / SP calls
+    route_file: str                 # e.g. "routes_/supplier.py"   — singular, FastAPI router
     router_prefix: str              # e.g. "/suppliers"
     sp_calls: List[str]             # e.g. ["sp_suppliers", "sp_suppliers_all", "sp_suppliers_one"]
 
@@ -165,22 +165,48 @@ class SpecificationJSON(BaseModel):
     frontend: FrontendSpec
 
     @model_validator(mode="after")
-    def files_follow_naming(self) -> "SpecificationJSON":
-        m = self.module
+    def enforce_naming_standards(self) -> "SpecificationJSON":
+        m = self.module       # singular e.g. "supplier"
+        plural = f"{m}s"      # simple plural e.g. "suppliers"
 
-        # Coerce common LLM mistakes so the pipeline never crashes on minor path deviations.
-        # "models/" is a frequent mistake — silently correct it to "modules/".
+        # ── SP naming: always plural ────────────────────────────────────────
+        self.db.sp_prefix = f"sp_{plural}"
+        self.backend.sp_calls = [
+            f"sp_{plural}",
+            f"sp_{plural}_all",
+            f"sp_{plural}_one",
+        ]
+
+        # ── Audit fields: enforce exact casing ──────────────────────────────
+        # Map every forbidden variant → canonical name
+        _AUDIT_CORRECTIONS = {
+            "createdAt":  "created_At",
+            "created_at": "created_At",
+            "updated_At": "updated_at",
+            "updatedAt":  "updated_at",
+        }
+        for col in self.db.columns:
+            if col.name in _AUDIT_CORRECTIONS:
+                col.name = _AUDIT_CORRECTIONS[col.name]
+
+        # Ensure both audit columns are present with correct types
+        existing_names = {c.name for c in self.db.columns}
+        if "created_At" not in existing_names:
+            self.db.columns.append(
+                DBColumnSpec(name="created_At", sql_type="datetime", nullable=False)
+            )
+        if "updated_at" not in existing_names:
+            self.db.columns.append(
+                DBColumnSpec(name="updated_at", sql_type="datetime", nullable=True)
+            )
+
+        # ── File paths ───────────────────────────────────────────────────────
         self.backend.module_file = self.backend.module_file.replace("models/", "modules/")
-        # "routes/" without underscore — correct to "routes_/"
         if self.backend.route_file.startswith("routes/"):
             self.backend.route_file = "routes_/" + self.backend.route_file[len("routes/"):]
 
-        # Enforce canonical paths after coercion.
-        if self.backend.module_file != f"modules/{m}.py":
-            self.backend.module_file = f"modules/{m}.py"
-        if self.backend.route_file != f"routes_/{m}.py":
-            self.backend.route_file = f"routes_/{m}.py"
-        if self.frontend.api_file != f"src/api/{m}Api.ts":
-            self.frontend.api_file = f"src/api/{m}Api.ts"
+        self.backend.module_file = f"modules/{plural}.py"
+        self.backend.route_file  = f"routes_/{m}.py"
+        self.frontend.api_file   = f"src/api/{m}Api.ts"
 
         return self

@@ -10,8 +10,87 @@ Reads the SpecificationJSON from session state and generates:
 Output stored in session state under key "database_artifacts".
 """
 
+import os
+import re
+
+import pyodbc
+from dotenv import load_dotenv
 from google.adk.agents import Agent
+from google.adk.tools import FunctionTool
 from agents.mcp_tools import get_mcp_toolset
+
+load_dotenv()
+
+
+def execute_sql_on_server(
+    create_table: str,
+    sp_upsert: str,
+    sp_all: str,
+    sp_one: str,
+) -> dict:
+    """
+    Executes the generated CREATE TABLE and three stored procedures directly
+    against the POS GMO SQL Server using credentials from environment variables.
+
+    Each statement is split on GO and executed individually, which is required
+    by pyodbc (it does not support GO as a batch separator).
+
+    Args:
+        create_table: Full SQL for CREATE TABLE + indexes.
+        sp_upsert:    Full SQL for sp_{plural} (INSERT/UPDATE/DELETE).
+        sp_all:       Full SQL for sp_{plural}_all.
+        sp_one:       Full SQL for sp_{plural}_one.
+
+    Returns:
+        dict with "success" bool and "details" list of per-statement results.
+    """
+    server   = os.environ["LOCAL_DB_SERVER"]
+    database = os.environ["LOCAL_DB_NAME"]
+    user     = os.environ["LOCAL_DB_USER"]
+    password = os.environ["LOCAL_DB_PASSWORD"]
+
+    conn_str = (
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER={server};DATABASE={database};"
+        f"UID={user};PWD={password};"
+        "TrustServerCertificate=yes;"
+    )
+
+    combined = "\n".join([create_table, sp_upsert, sp_all, sp_one])
+    # Split on GO (case-insensitive, on its own line) — pyodbc cannot handle GO
+    batches = [b.strip() for b in re.split(r"^\s*GO\s*$", combined, flags=re.MULTILINE) if b.strip()]
+
+    # SQL Server error numbers that mean "already exists" — safe to skip on re-runs
+    _ALREADY_EXISTS_CODES = {
+        2714,   # object with that name already exists
+        1913,   # index with that name already exists
+        2705,   # column name already exists
+    }
+
+    details = []
+    try:
+        with pyodbc.connect(conn_str, autocommit=True) as conn:
+            cursor = conn.cursor()
+            for batch in batches:
+                try:
+                    cursor.execute(batch)
+                    details.append({"status": "ok", "batch_preview": batch[:80]})
+                except pyodbc.Error as e:
+                    err_str = str(e)
+                    # Extract SQL Server native error number (last number in the tuple repr)
+                    native = None
+                    try:
+                        native = int(re.search(r"\((\d+)\) \(SQL", err_str).group(1))
+                    except Exception:
+                        pass
+                    if native in _ALREADY_EXISTS_CODES:
+                        details.append({"status": "skipped (already exists)", "batch_preview": batch[:80]})
+                    else:
+                        details.append({"status": "error", "message": err_str, "batch_preview": batch[:80]})
+        success = all(d["status"] in ("ok", "skipped (already exists)") for d in details)
+        return {"success": success, "details": details}
+    except pyodbc.Error as e:
+        return {"success": False, "details": [{"status": "connection_error", "message": str(e)}]}
 
 INSTRUCTION = """
 You are the Database Agent for POS GMO.
@@ -160,13 +239,24 @@ END
 ```
 Action values: 1=INSERT, 2=UPDATE, 3=DELETE.
 
+## Execution step (MANDATORY — do this after generating SQL)
+After generating all four SQL blocks, call execute_sql_on_server with:
+- create_table = the CREATE TABLE + index SQL
+- sp_upsert    = the sp_{plural} SQL
+- sp_all       = the sp_{plural}_all SQL
+- sp_one       = the sp_{plural}_one SQL
+
+The tool connects to the SQL Server and executes each statement.
+If any statement returns an error, include it in the output's "execution" field.
+
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences:
 {
   "create_table": "<full CREATE TABLE SQL>",
   "sp_upsert":    "<full CREATE OR ALTER PROCEDURE sp_{plural} SQL>",
   "sp_all":       "<full CREATE PROC sp_{plural}_all SQL>",
-  "sp_one":       "<full ALTER PROC sp_{plural}_one SQL>"
+  "sp_one":       "<full ALTER PROC sp_{plural}_one SQL>",
+  "execution":    <result dict from execute_sql_on_server>
 }
 """
 
@@ -175,10 +265,10 @@ database_agent = Agent(
     name="database_agent",
     description=(
         "Generates CREATE TABLE and all stored procedures for a POS GMO module, "
-        "following the integer-action, @payload table variable, and GOTO Finish pattern."
+        "then executes them directly against SQL Server."
     ),
     model="gemini-2.0-flash",
     instruction=INSTRUCTION,
-    tools=[get_mcp_toolset()],
+    tools=[get_mcp_toolset(), FunctionTool(func=execute_sql_on_server)],
     output_key="database_artifacts",
 )

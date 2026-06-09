@@ -89,9 +89,16 @@ TIER_2_FINANCIAL — money involved
   - No rounding in frontend (display raw value from DB)
   - Add "amount" to SP_one SELECT with ISNULL(col, 0.00) wrapping
 
-TIER_3_TRANSACTIONAL — header + detail relationship
-  Signals: description mentions "order", "purchase", "sale", "invoice",
-  "receipt", FK pointing to a TIER_2 table, or spec has a detail/items array
+TIER_3_TRANSACTIONAL — header + detail business transaction
+  Signals (ALL must be true, not just one):
+    1. Business domain is sales, purchases, orders, invoices, receipts, or billing
+    2. Spec explicitly describes line items, order details, or an items[] array
+    3. A financial TIER_2 parent table is referenced as FK
+  NOT a signal for TIER_3:
+    - PRD database.tables listing multiple tables (those are author hints, not requirements)
+    - Multi-step wizard UI (that is a frontend pattern, not a DB tier)
+    - Complex workflows or external API integrations (those → CRUD_AND_CONNECTOR)
+    - Descriptions mentioning "process", "workflow", "steps", "wizard"
   MANDATORY extra rules:
   - Generate TWO tables: header + detail (if not already in spec)
   - SP_upsert must handle both tables in one transaction

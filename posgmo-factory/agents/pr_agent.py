@@ -222,7 +222,9 @@ def patch_app_tsx(
             break
 
     # Check it's not already there
-    menu_check = private_route.split('"')[3] if '"' in private_route else ""
+    # Extract route path from private_route (e.g. "/client-face-recognition") for duplicate check
+    parts = private_route.split('"')
+    menu_check = parts[1] if len(parts) >= 2 else ""
     already_has_menu = any(menu_check in ln for ln in lines) if menu_check else False
     if not already_has_menu:
         indent = "            "

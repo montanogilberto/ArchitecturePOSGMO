@@ -286,7 +286,7 @@ async def verify_{{module}}_connector(payload: dict) -> JSONResponse:
             r3.raise_for_status()
             result = r3.json()
 
-        confidence  = round(result.get("confidence", 0.0), 4)
+        confidence  = result.get("confidence", 0.0)   # NO rounding — return raw value
         is_verified = result.get("isIdentical", False) and confidence >= _CONFIDENCE_THRESHOLD
 
         return JSONResponse(

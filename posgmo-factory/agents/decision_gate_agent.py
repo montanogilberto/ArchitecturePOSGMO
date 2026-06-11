@@ -1,244 +1,421 @@
 """
-Decision Gate Agent
+Decision Gate — deterministic Python classifier.
 
-Sits between Architect and Database. Reads the SpecificationJSON + schema_analysis
-and makes architectural decisions BEFORE any code is generated.
+Replaces the LLM-based gate entirely. All tier classification, backend pattern
+detection, constraint generation, and hard-block checks are pure Python logic —
+no LLM involved. Output is written directly to session state as 'gate_result'.
 
-Classifies the module into a complexity tier, flags risks, adds mandatory
-constraints that all downstream agents must follow, and hard-blocks generation
-if a critical problem is detected.
-
-Tiers:
-  TIER_1_CATALOG    — simple CRUD master data (suppliers, categories, clients)
-  TIER_2_FINANCIAL  — amounts, totals, DECIMAL(10,2), audit trail required
-  TIER_3_TRANSACTIONAL — header + detail tables, FK to TIER_2 or sales
-  TIER_4_IOT        — sensor data, high-volume inserts, no soft delete
-
-Hard blocks:
-  - Table already exists (from schema_analysis.table_conflict)
-  - FK target not in live DB (risky_references)
-  - DECIMAL column without scale=2
-  - Missing companyId in any tier
+This removes the #1 source of cascading pipeline failures: an LLM re-reasoning
+classification rules differently on each run.
 """
+
+from __future__ import annotations
+
+import json
+from typing import Any
 
 from google.adk.agents import Agent
+from google.adk.tools import FunctionTool
+from google.adk.tools.tool_context import ToolContext
 
-INSTRUCTION = """
-You are the Decision Gate for POS GMO AI Factory.
 
-You are the last quality checkpoint BEFORE code generation starts.
-You read the SpecificationJSON and schema_analysis, make all critical
-architectural decisions, and output a gate_result that every downstream
-agent (Database, Backend, Frontend, Reviewer) must obey.
+# ---------------------------------------------------------------------------
+# Constants — keyword sets used by all classifiers
+# ---------------------------------------------------------------------------
 
-## Inputs from session state
-- "specification"     — full SpecificationJSON from Architect
-- "schema_analysis"   — live DB analysis: conflicts, valid FKs, risks
-
-## Step 1 — Hard block checks (STOP generation if any are true)
-
-Check these in order:
-
-1. TABLE ALREADY EXISTS
-   If schema_analysis.table_already_exists is true:
-   → This is a WARNING, NOT a block. The Database Agent uses CREATE OR ALTER
-     which handles re-runs gracefully. Add a warning to the warnings list.
-
-2. INVALID FK REFERENCES
-   For each FK column in specification.db.columns where fk_table is set:
-   → Check if fk_table appears in schema_analysis.valid_fk_targets
-   → If NOT found: BLOCK with reason: "FK target '{fk_table}' does not exist
-     in the live database. Remove the FK or create that table first."
-
-3. MISSING companyId
-   If "companyId" is NOT in specification.db.columns (it is added automatically,
-   but verify):
-   → Add a WARNING (not a block) — it will be auto-injected.
-
-If any hard block triggers, output ONLY this JSON (no other keys):
-{
-  "status": "BLOCKED",
-  "tier": "BLOCKED",
-  "tier_reason": "<classification not applicable>",
-  "backend_pattern": "CRUD_ONLY",
-  "connector_endpoints": [],
-  "mandatory_constraints": { "database": [], "backend": [], "frontend": [] },
-  "soft_delete_parents": [],
-  "index_recommendations": [],
-  "warnings": [],
-  "reason": "<clear human-readable explanation>",
-  "fix": "<exact step the user must take before re-running>",
-  "summary": "<one sentence explaining the block>"
+_TIER4_SIGNALS = {
+    "sensor", "telemetry", "iot", "hardware", "reading", "water level",
+    "temperature", "led", "high-frequency", "device", "actuator", "firmware",
 }
-Do NOT skip any field — the schema requires all keys even when blocked.
 
-## Step 2 — Classify the module tier
+_TIER3_SALES_DOMAIN = {
+    "sale", "sales", "invoice", "order", "purchase", "billing", "receipt",
+    "checkout", "cart",
+}
 
-Read the columns, relationships, and description to determine the tier:
+_TIER3_LINE_ITEMS = {
+    "line item", "line-item", "items[]", "order detail", "order line",
+    "detail table", "item list",
+}
 
-TIER_1_CATALOG — master data, lookup tables, no amounts
-  Signals: no DECIMAL/MONEY columns, no parent-child FK, description mentions
-  "catalog", "list", "manage", "suppliers", "categories", "clients", "users"
+# Tables that are known TIER_2 financial parents
+_KNOWN_FINANCIAL_TABLES = {
+    "sales", "invoices", "orders", "purchases", "expenses", "incomes",
+    "payments", "receipts", "cashregistersessions",
+}
 
-TIER_2_FINANCIAL — money involved
-  Signals: any column with type decimal/money/float, description mentions
-  "expense", "income", "payment", "amount", "total", "price", "cost"
-  MANDATORY extra rules:
-  - All amount columns: DECIMAL(10,2) — no exceptions
-  - SP must wrap mutations in BEGIN TRY / BEGIN TRANSACTION / COMMIT
-  - No rounding in frontend (display raw value from DB)
-  - Add "amount" to SP_one SELECT with ISNULL(col, 0.00) wrapping
+_TIER2_MONETARY_WORDS = {
+    "expense", "income", "payment", "amount", "total", "price", "cost",
+    "revenue", "balance", "fee", "charge", "subtotal", "tax", "discount",
+    "refund", "deposit", "withdrawal",
+}
 
-TIER_3_TRANSACTIONAL — header + detail business transaction
-  Signals (ALL must be true, not just one):
-    1. Business domain is sales, purchases, orders, invoices, receipts, or billing
-    2. Spec explicitly describes line items, order details, or an items[] array
-    3. A financial TIER_2 parent table is referenced as FK
-  NOT a signal for TIER_3:
-    - PRD database.tables listing multiple tables (those are author hints, not requirements)
-    - Multi-step wizard UI (that is a frontend pattern, not a DB tier)
-    - Complex workflows or external API integrations (those → CRUD_AND_CONNECTOR)
-    - Descriptions mentioning "process", "workflow", "steps", "wizard"
-  MANDATORY extra rules:
-  - Generate TWO tables: header + detail (if not already in spec)
-  - SP_upsert must handle both tables in one transaction
-  - Frontend must show a master-detail view (IonModal for line items)
-  - Total computed server-side only — never in frontend
+# Column names that represent ratios/scores — NEVER financial
+_RATIO_FIELD_NAMES = {
+    "confidencescore", "confidence", "score", "probability", "ratio",
+    "percentage", "rate", "accuracy", "precision", "recall", "latitude",
+    "longitude", "lat", "lng",
+}
 
-TIER_4_IOT — physical sensor/device data from hardware
-  Signals: description mentions "sensor", "device", "reading", "telemetry",
-  "water level", "temperature", "led", "IoT", "hardware", "high-frequency inserts"
-  NOT a signal: using Azure APIs, cloud services, AI models, or blob storage.
-  External service integration (Azure Face API, Stripe, etc.) is backend_pattern=CRUD_AND_CONNECTOR
-  and does NOT determine the tier — it is orthogonal.
-  MANDATORY extra rules:
-  - No soft delete (no active flag) — readings are immutable
-  - SP_all must support date range filter parameters
-  - Use DATETIME2(3) not DATETIME for precision
-  - Frontend: chart/graph view instead of IonList
+_CONNECTOR_TRIGGER_WORDS = {
+    "azure", "aws", "stripe", "twilio", "firebase", "openai", "blob storage",
+    "face api", "payment gateway", "webhook", "third-party", "orchestrate",
+    "upload", "external", "ai model", "iot broker", "smtp", "sendgrid",
+}
 
-## Step 3 — Detect soft-delete parent references
+_STANDARD_CRUD_PATHS = {"/{plural}", "/all_{plural}", "/one_{plural}"}
 
-For each FK column pointing to an existing table:
-- Check if that table has an 'active' column (from schema_analysis.table_details)
-- If yes: the SP_all for this module MUST add:
-    INNER JOIN {fk_table} ON ... WHERE {fk_table}.active = '1'
-  Flag this as a mandatory SP constraint.
 
-## Step 4 — Index recommendations
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-Always recommend:
-- companyId index (every module filters by company)
-For TIER_2+:
-- created_At DESC index (financial reports sort by date)
-For TIER_3:
-- Both header PK and foreign key on detail table
+def _words(text: str) -> str:
+    return text.lower() if text else ""
 
-## Step 5 — Classify backend pattern
 
-Read `specification.prd_hints.backend_endpoints` — these are the custom endpoints
-the PRD author explicitly defined. Use this as the primary signal:
+def _has_any(text: str, keywords: set) -> bool:
+    t = _words(text)
+    return any(kw in t for kw in keywords)
 
-CRUD_ONLY — use when:
-  - prd_hints.backend_endpoints is empty or missing, OR
-  - Every endpoint path matches the standard CRUD pattern
-    (/plural, /all_plural, /one_plural) with no external service
 
-CRUD_AND_CONNECTOR — use when prd_hints.backend_endpoints contains entries where:
-  - The description mentions an external service (Azure, AWS, Stripe, IoT broker, etc.)
-  - The path is custom (does NOT follow /plural / /all_plural / /one_plural)
-  - requestSchema or responseSchema is named differently from standard SP output
-  - The description uses words: "orchestrate", "validate against AI", "upload",
-    "webhook", "third-party", "blob storage", "face API", "payment gateway"
+def _is_ratio_column(col_name: str, sql_type: str) -> bool:
+    """Return True if this decimal column is clearly a ratio/score, NOT money."""
+    name_lower = col_name.lower().replace("_", "")
+    if name_lower in _RATIO_FIELD_NAMES:
+        return True
+    # decimal(5,x) or decimal(x,4+) → almost certainly a ratio, not money
+    if "decimal" in sql_type.lower():
+        import re
+        m = re.search(r"decimal\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)", sql_type.lower())
+        if m:
+            scale = int(m.group(2))
+            if scale >= 4:
+                return True
+    return False
 
-When CRUD_AND_CONNECTOR is selected, populate `connector_endpoints` — one entry
-per qualifying endpoint in prd_hints.backend_endpoints:
-- method: from prd_hints entry
-- path: from prd_hints entry
-- description: from prd_hints entry
-- external_service: infer from description (e.g. "Azure Face API", "Azure Blob Storage")
-- request_fields: infer from requestSchema name + specification.db.columns
-- response_fields: infer from responseSchema name + what frontend needs
-- notes: any special handling (auth env vars, async, file upload, threshold logic)
 
-## Step 6 — Output the gate_result
+# ---------------------------------------------------------------------------
+# Core classifier
+# ---------------------------------------------------------------------------
 
-IMPORTANT — scope of mandatory_constraints:
-- mandatory_constraints.database: SQL-level rules only (column types, ISNULL, SP structure)
-- mandatory_constraints.backend: rules about Python code — either CRUD functions OR connector
-  logic. For connectors, specify the external service and expected behavior.
-- mandatory_constraints.frontend: display/format rules and UX flow constraints.
+def _classify_tier(spec: dict, schema_analysis: dict) -> tuple[str, str]:
+    """
+    Returns (tier, reason) deterministically.
+    Priority: TIER_4 > TIER_3 > TIER_2 > TIER_1
+    """
+    desc = _words(spec.get("description", ""))
+    columns = spec.get("db", {}).get("columns", [])
+    prd_hints = spec.get("prd_hints", {})
 
-{
-  "status": "APPROVED",
-  "tier": "TIER_1_CATALOG | TIER_2_FINANCIAL | TIER_3_TRANSACTIONAL | TIER_4_IOT",
-  "tier_reason": "<one sentence explaining the classification>",
-  "backend_pattern": "CRUD_ONLY | CRUD_AND_CONNECTOR",
-  "connector_endpoints": [
-    {
-      "method": "POST",
-      "path": "/api/example/action",
-      "description": "<what this endpoint does>",
-      "external_service": "<Azure Face API | Azure Blob Storage | Stripe | etc.>",
-      "request_fields": ["field1", "field2"],
-      "response_fields": ["result_field1", "result_field2"],
-      "notes": "<auth, async, file handling, error cases>"
+    # ── TIER_4: physical hardware only ──────────────────────────────────────
+    if _has_any(desc, _TIER4_SIGNALS):
+        # Make sure it's not just "Azure API" language misread as hardware
+        azure_only = _has_any(desc, {"azure", "aws", "api", "blob"}) and not _has_any(
+            desc, {"sensor", "hardware", "device", "telemetry", "iot"}
+        )
+        if not azure_only:
+            return "TIER_4_IOT", "Description mentions physical hardware/sensor signals."
+
+    # ── TIER_3: ALL three conditions required ────────────────────────────────
+    has_sales_domain = _has_any(desc, _TIER3_SALES_DOMAIN)
+    has_line_items = _has_any(desc, _TIER3_LINE_ITEMS)
+    fk_tables = {
+        c.get("fk_table", "").lower()
+        for c in columns
+        if c.get("fk_table")
     }
-  ],
-  "mandatory_constraints": {
-    "database": [
-      "<SQL rule — e.g. 'All DECIMAL columns must be DECIMAL(10,2)'>"
-    ],
-    "backend": [
-      "<CRUD rule — e.g. 'return raw DECIMAL values, no rounding'>",
-      "<connector rule if CRUD_AND_CONNECTOR — e.g. 'verify endpoint must call Azure Face API and return isVerified + confidenceScore'>"
-    ],
-    "frontend": [
-      "<display rule — e.g. 'Display amounts with toFixed(2)'>"
+    has_financial_fk = bool(fk_tables & _KNOWN_FINANCIAL_TABLES)
+
+    if has_sales_domain and has_line_items and has_financial_fk:
+        return (
+            "TIER_3_TRANSACTIONAL",
+            "Business domain is sales/orders, spec describes line items, and has FK to a financial parent table.",
+        )
+
+    # ── TIER_2: monetary decimal columns ────────────────────────────────────
+    # A column is financial only if its NAME suggests money AND it's decimal/money type
+    for col in columns:
+        col_name = col.get("name", "")
+        sql_type = col.get("sql_type", "").lower()
+        is_decimal = any(t in sql_type for t in ("decimal", "money", "numeric", "float"))
+        if not is_decimal:
+            continue
+        if _is_ratio_column(col_name, sql_type):
+            continue  # skip scores, probabilities, GPS coords
+        if _has_any(col_name, _TIER2_MONETARY_WORDS) or _has_any(desc, _TIER2_MONETARY_WORDS):
+            return (
+                "TIER_2_FINANCIAL",
+                f"Column '{col_name}' is a monetary decimal ({sql_type}) and description/name indicates financial data.",
+            )
+
+    return "TIER_1_CATALOG", "No financial amounts, no line-items, no hardware signals — simple master data."
+
+
+def _classify_backend_pattern(spec: dict) -> tuple[str, list[dict]]:
+    """
+    Returns (backend_pattern, connector_endpoints[]).
+    CRUD_AND_CONNECTOR when PRD declares custom endpoints that mention external services.
+    """
+    prd_hints = spec.get("prd_hints", {})
+    endpoints = prd_hints.get("backend_endpoints", [])
+    module = spec.get("module", "module")
+    columns = spec.get("db", {}).get("columns", [])
+    plural = f"{module}s"
+
+    connectors = []
+    for ep in endpoints:
+        path = ep.get("path", "")
+        desc = ep.get("description", "")
+        req_schema = ep.get("requestSchema", "")
+        res_schema = ep.get("responseSchema", "")
+
+        # Skip if path matches standard CRUD pattern
+        normalized = path.replace(plural, "{plural}").replace(module, "{plural}")
+        if normalized in _STANDARD_CRUD_PATHS:
+            continue
+
+        # Flag as connector if description mentions external services
+        if _has_any(desc + " " + req_schema + " " + res_schema, _CONNECTOR_TRIGGER_WORDS):
+            # Infer external service from description
+            external = []
+            if "face api" in desc.lower() or "face" in desc.lower():
+                external.append("Azure Face API")
+            if "blob" in desc.lower() or "storage" in desc.lower():
+                external.append("Azure Blob Storage")
+            if "stripe" in desc.lower():
+                external.append("Stripe")
+            if not external:
+                external.append("External Service")
+
+            # Infer request/response fields from column names
+            col_names = [c.get("name") for c in columns if c.get("name")]
+            connectors.append({
+                "method": ep.get("method", "POST"),
+                "path": path,
+                "description": desc,
+                "external_service": ", ".join(external),
+                "request_fields": col_names[:5],
+                "response_fields": [c for c in col_names if c not in ("created_At", "updated_at", "companyId")],
+                "notes": f"Use os.getenv() for credentials. httpx.AsyncClient for HTTP calls.",
+            })
+
+    if connectors:
+        return "CRUD_AND_CONNECTOR", connectors
+    return "CRUD_ONLY", []
+
+
+def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endpoints: list) -> dict:
+    """Build mandatory_constraints dict deterministically from tier."""
+    db_rules = [
+        "companyId INT NOT NULL must be present in CREATE TABLE.",
+        "sp_all MUST accept @pjsonfile and filter WHERE companyId = @companyId.",
+        "Every nullable column in SELECT must be wrapped with ISNULL(col, default).",
+        "SP mutations must be wrapped in BEGIN TRY / BEGIN TRANSACTION / COMMIT / END TRY BEGIN CATCH ROLLBACK END CATCH.",
     ]
-  },
-  "soft_delete_parents": [
-    {
-      "fk_table": "<table>",
-      "fk_column": "<col>",
-      "has_active_flag": true,
-      "sp_filter_required": "INNER JOIN {table} p ON t.{col} = p.{pk} WHERE p.active = '1'"
+    backend_rules = [
+        "all_{plural}_sp(json_file: dict) must pass json_file to sp_all via @pjsonfile (never zero-arg).",
+        "Never use round() on any value returned from the database.",
+    ]
+    frontend_rules = [
+        "UTC-7 offset (toHermosillo) must be applied to every date field displayed.",
+        "IVA = 0 always. Never compute tax.",
+        "Use catch (err) with (err as Error).message — never catch (err: any).",
+        "All event handlers must use specific CustomEvent generic types — never bare CustomEvent or CustomEvent<any>.",
+    ]
+
+    if tier == "TIER_2_FINANCIAL":
+        db_rules.append("All monetary DECIMAL columns (amounts, totals, prices) must be DECIMAL(10,2).")
+        db_rules.append("Non-monetary decimal columns (scores, ratios, coordinates) keep their original precision (e.g. DECIMAL(5,4)).")
+        backend_rules.append("Return raw DECIMAL values — no rounding, no float conversion.")
+        frontend_rules.append("Display monetary amounts with .toFixed(2). Do not recompute totals client-side.")
+
+    elif tier == "TIER_3_TRANSACTIONAL":
+        db_rules.append("Generate TWO tables: header + detail. SP_upsert handles both in one transaction.")
+        frontend_rules.append("Master-detail view: IonModal for line items. Total from server only.")
+
+    elif tier == "TIER_4_IOT":
+        db_rules.append("Use DATETIME2(3) instead of DATETIME for all timestamp columns.")
+        db_rules.append("No soft delete (no active flag) — sensor readings are immutable.")
+        frontend_rules.append("Chart/graph view — no IonList.")
+
+    if backend_pattern == "CRUD_AND_CONNECTOR":
+        for ep in connector_endpoints:
+            backend_rules.append(
+                f"Connector '{ep['path']}': use httpx.AsyncClient, os.getenv() for secrets, "
+                f"call {ep['external_service']}. Match response_fields: {ep['response_fields']}."
+            )
+
+    return {"database": db_rules, "backend": backend_rules, "frontend": frontend_rules}
+
+
+def _build_index_recommendations(tier: str, columns: list) -> list[dict]:
+    indexes = [{"column": "companyId", "reason": "every query filters by company"}]
+    if tier in ("TIER_2_FINANCIAL", "TIER_3_TRANSACTIONAL"):
+        indexes.append({"column": "created_At", "reason": "financial reports sort by date"})
+    # Add indexes for FK columns
+    for col in columns:
+        if col.get("fk_table") and col["name"] != "companyId":
+            indexes.append({"column": col["name"], "reason": f"FK to {col['fk_table']}"})
+    return indexes
+
+
+def _detect_soft_delete_parents(spec: dict, schema_analysis: dict) -> list[dict]:
+    """Check schema_analysis.table_details for parent tables that have an 'active' column."""
+    result = []
+    table_details = schema_analysis.get("table_details", {})
+    columns = spec.get("db", {}).get("columns", [])
+
+    for col in columns:
+        fk_table = col.get("fk_table")
+        if not fk_table or fk_table == "companies":
+            continue
+        details = table_details.get(fk_table, {})
+        has_active = "active" in [c.lower() for c in details.get("columns", [])]
+        if has_active:
+            result.append({
+                "fk_table": fk_table,
+                "fk_column": col["name"],
+                "has_active_flag": True,
+                "sp_filter_required": (
+                    f"INNER JOIN dbo.{fk_table} p ON t.{col['name']} = p.{col.get('fk_column','id')}"
+                    f" WHERE p.active = '1'"
+                ),
+            })
+    return result
+
+
+def _hard_block_check(spec: dict, schema_analysis: dict) -> dict | None:
+    """
+    Returns a BLOCKED gate_result if a hard block condition is met, else None.
+    Current hard blocks: invalid FK targets.
+    (table_already_exists is a warning, not a block — CREATE OR ALTER handles it.)
+    """
+    valid_fk_targets = {t["table"].lower() for t in schema_analysis.get("valid_fk_targets", [])}
+    columns = spec.get("db", {}).get("columns", [])
+
+    for col in columns:
+        fk_table = col.get("fk_table")
+        if fk_table and fk_table.lower() not in valid_fk_targets:
+            return {
+                "status": "BLOCKED",
+                "tier": "BLOCKED",
+                "tier_reason": "Hard block — invalid FK target.",
+                "backend_pattern": "CRUD_ONLY",
+                "connector_endpoints": [],
+                "mandatory_constraints": {"database": [], "backend": [], "frontend": []},
+                "soft_delete_parents": [],
+                "index_recommendations": [],
+                "warnings": [],
+                "reason": f"FK target '{fk_table}' does not exist in the live database.",
+                "fix": f"Create table '{fk_table}' first, or remove the FK from the spec.",
+                "summary": f"Pipeline blocked: FK target '{fk_table}' not found in DB.",
+            }
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Main tool — called by the thin Agent wrapper below
+# ---------------------------------------------------------------------------
+
+def run_decision_gate(tool_context: ToolContext) -> dict:
+    """
+    Deterministic Decision Gate. Reads specification + schema_analysis from
+    session state, classifies tier, detects backend pattern, builds constraints,
+    and writes gate_result back to session state.
+    """
+    raw_spec = tool_context.state.get("specification", "{}")
+    raw_schema = tool_context.state.get("schema_analysis", "{}")
+
+    spec = json.loads(raw_spec) if isinstance(raw_spec, str) else raw_spec
+    schema = json.loads(raw_schema) if isinstance(raw_schema, str) else raw_schema
+
+    if not spec:
+        blocked = {
+            "status": "BLOCKED",
+            "tier": "BLOCKED",
+            "tier_reason": "No specification found in session state.",
+            "backend_pattern": "CRUD_ONLY",
+            "connector_endpoints": [],
+            "mandatory_constraints": {"database": [], "backend": [], "frontend": []},
+            "soft_delete_parents": [],
+            "index_recommendations": [],
+            "warnings": [],
+            "reason": "specification key missing from session state.",
+            "fix": "Ensure Architect Agent ran successfully before Decision Gate.",
+            "summary": "Pipeline blocked: specification not found.",
+        }
+        tool_context.state["gate_result"] = json.dumps(blocked)
+        return blocked
+
+    # Hard block check first
+    hard_block = _hard_block_check(spec, schema)
+    if hard_block:
+        tool_context.state["gate_result"] = json.dumps(hard_block)
+        return hard_block
+
+    # Classify tier
+    tier, tier_reason = _classify_tier(spec, schema)
+
+    # Classify backend pattern
+    backend_pattern, connector_endpoints = _classify_backend_pattern(spec)
+
+    # Build all outputs
+    columns = spec.get("db", {}).get("columns", [])
+    mandatory_constraints = _build_mandatory_constraints(tier, backend_pattern, connector_endpoints)
+    soft_delete_parents = _detect_soft_delete_parents(spec, schema)
+    index_recommendations = _build_index_recommendations(tier, columns)
+
+    # Warnings (non-blocking)
+    warnings = []
+    if schema.get("table_already_exists"):
+        warnings.append(
+            f"Table already exists — Database Agent will use CREATE OR ALTER. No action needed."
+        )
+    for ref in schema.get("risky_references", []):
+        warnings.append(f"PRD references '{ref}' but it was not found in the DB — will not be generated.")
+    prd_hints = spec.get("prd_hints", {})
+    if prd_hints.get("frontend_ui_pattern") == "Wizard Flow Layout":
+        warnings.append("Wizard Flow Layout detected — Camera capture (Capacitor) must be wired manually after generation.")
+
+    gate_result = {
+        "status": "APPROVED",
+        "tier": tier,
+        "tier_reason": tier_reason,
+        "backend_pattern": backend_pattern,
+        "connector_endpoints": connector_endpoints,
+        "mandatory_constraints": mandatory_constraints,
+        "soft_delete_parents": soft_delete_parents,
+        "index_recommendations": index_recommendations,
+        "warnings": warnings,
+        "summary": (
+            f"Module classified as {tier} with {backend_pattern}. "
+            f"{'Key constraint: ' + mandatory_constraints['database'][0] if mandatory_constraints['database'] else ''}"
+        ),
     }
-  ],
-  "index_recommendations": [
-    { "column": "companyId",  "reason": "every query filters by company" },
-    { "column": "<col>",      "reason": "<why>" }
-  ],
-  "warnings": [
-    "<non-blocking issue — e.g. 'Camera capture (Capacitor) must be wired manually after generation'>"
-  ],
-  "summary": "<2 sentences: tier + backend_pattern + most important constraint>"
-}
 
-connector_endpoints MUST be [] when backend_pattern is CRUD_ONLY.
+    tool_context.state["gate_result"] = json.dumps(gate_result)
+    return gate_result
 
-## Downstream agent rules
-The gate_result is stored in session state. Downstream agents MUST:
-- Database Agent:  apply every item in mandatory_constraints.database
-- Backend Agent:   read backend_pattern; if CRUD_AND_CONNECTOR generate both CRUD functions
-  AND connector functions/routes for every entry in connector_endpoints
-- Frontend Agent:  apply every item in mandatory_constraints.frontend
-- Reviewer Agent:  verify all mandatory_constraints were applied; fail if any missed
 
-If status is BLOCKED, the PR Agent must output status="blocked" without creating
-any branches or PRs.
+# ---------------------------------------------------------------------------
+# Thin Agent wrapper — just calls the Python tool, no LLM reasoning
+# ---------------------------------------------------------------------------
+
+_INSTRUCTION = """
+You are the Decision Gate Agent. Your ONLY job is to call run_decision_gate().
+Do not reason, do not classify anything yourself.
+Call run_decision_gate() immediately and output the result as-is.
 """
-
 
 decision_gate_agent = Agent(
     name="decision_gate_agent",
     description=(
-        "Quality gate between Architect and Database. Classifies module complexity "
-        "(CATALOG/FINANCIAL/TRANSACTIONAL/IOT), detects hard-block conditions "
-        "(table conflicts, invalid FKs), and emits mandatory constraints that all "
-        "downstream agents must follow."
+        "Deterministic quality gate: classifies module tier, detects backend pattern, "
+        "emits mandatory constraints. Pure Python — no LLM classification."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=_INSTRUCTION,
+    tools=[FunctionTool(func=run_decision_gate)],
     output_key="gate_result",
 )

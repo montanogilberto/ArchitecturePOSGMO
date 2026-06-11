@@ -154,8 +154,11 @@ const dismissMailPopover = () =>
     - IonInput onIonChange: `e: CustomEvent<InputInputEventDetail>`
     - IonToggle onIonChange: `e: CustomEvent<ToggleChangeEventDetail>`
     - IonSelect onIonChange: `e: CustomEvent<SelectChangeEventDetail>`
+    - IonRadioGroup onIonChange: `e: CustomEvent<RadioGroupChangeEventDetail>`  ← import RadioGroupChangeEventDetail
+    - IonCheckbox onIonChange: `e: CustomEvent<CheckboxChangeEventDetail>`       ← import CheckboxChangeEventDetail
     - IonButton onClick: `() => void`
-    - Never use bare `CustomEvent` without a generic — always `CustomEvent<SomeDetail>`.
+    - NEVER use bare `CustomEvent` without a generic — always `CustomEvent<SomeDetail>`.
+    - NEVER use `CustomEvent<any>` — `any` is forbidden, use the specific detail type above.
 - No inline styles — all styling goes in the CSS file.
 
 ## CSS rules (src/pages/{Module}Page.css)

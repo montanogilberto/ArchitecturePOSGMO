@@ -45,6 +45,7 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 
 def _build_agent_map():
+    from google.adk.agents import ParallelAgent
     from agents.prd_parser_agent import prd_parser_agent
     from agents.schema_analyst_agent import schema_analyst_agent
     from agents.architect_agent import architect_agent
@@ -56,22 +57,26 @@ def _build_agent_map():
     from agents.reviewer_agent import reviewer_agent
     from agents.pr_agent import pr_agent
 
+    generation_stage = ParallelAgent(
+        name="generation_stage",
+        description="Concurrent SQL, Python, and design extraction",
+        sub_agents=[database_agent, backend_agent, design_consistency_agent],
+    )
+
     return {
-        "prd_parser":    prd_parser_agent,
+        "prd_parser":     prd_parser_agent,
         "schema_analyst": schema_analyst_agent,
-        "architect":     architect_agent,
-        "gate":          decision_gate_agent,
-        "database":      database_agent,
-        "backend":       backend_agent,
-        "design":        design_consistency_agent,
-        "frontend":      frontend_agent,
-        "reviewer":      reviewer_agent,
-        "pr":            pr_agent,
+        "architect":      architect_agent,
+        "gate":           decision_gate_agent,
+        "generation":     generation_stage,   # database + backend + design in parallel
+        "frontend":       frontend_agent,
+        "reviewer":       reviewer_agent,
+        "pr":             pr_agent,
     }
 
 _AGENT_ORDER = [
     "prd_parser", "schema_analyst", "architect", "gate",
-    "database", "backend", "design", "frontend", "reviewer", "pr",
+    "generation", "frontend", "reviewer", "pr",
 ]
 
 # ---------------------------------------------------------------------------

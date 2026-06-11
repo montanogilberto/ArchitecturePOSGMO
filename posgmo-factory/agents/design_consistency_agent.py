@@ -46,15 +46,21 @@ def _gh_headers() -> dict[str, str]:
 
 def _fetch_file(client: httpx.Client, repo: str, path: str) -> str | None:
     """Fetch a single file from GitHub main branch. Returns content or None."""
-    r = client.get(
-        f"{_GH_API}/repos/{repo}/contents/{path}",
-        headers=_gh_headers(),
-        params={"ref": "main"},
-    )
-    if r.status_code == 404:
-        return None
-    r.raise_for_status()
-    return base64.b64decode(r.json()["content"]).decode("utf-8")
+    for attempt in range(3):
+        try:
+            r = client.get(
+                f"{_GH_API}/repos/{repo}/contents/{path}",
+                headers=_gh_headers(),
+                params={"ref": "main"},
+                timeout=30.0,
+            )
+            if r.status_code == 404:
+                return None
+            r.raise_for_status()
+            return base64.b64decode(r.json()["content"]).decode("utf-8")
+        except (httpx.ConnectTimeout, httpx.ReadTimeout):
+            if attempt == 2:
+                return None  # give up after 3 attempts, don't crash the pipeline
 
 
 def _extract_patterns(source: str, filename: str) -> dict:
@@ -175,7 +181,7 @@ def fetch_design_reference(tool_context: ToolContext) -> dict:
 
     results: dict = {"repo": repo, "pages": [], "css": [], "summary": {}}
 
-    with httpx.Client(timeout=20) as client:
+    with httpx.Client(timeout=60) as client:
         # Fetch TSX pages
         for path in _REFERENCE_PAGES:
             content = _fetch_file(client, repo, path)

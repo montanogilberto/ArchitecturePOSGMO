@@ -150,5 +150,10 @@ if __name__ == "__main__":
 
     result = asyncio.run(run_factory(prd_data))
 
+    # Save state for partial re-runs: python run_partial.py --from database --state last_state.json
+    state_path = Path("last_state.json")
+    state_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+    print(f"Session state saved → {state_path}", flush=True)
+
     print("\n=== FACTORY RESULT ===")
     print(json.dumps(result, indent=2, default=str))

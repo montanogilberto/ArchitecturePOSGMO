@@ -61,10 +61,10 @@ def suppliers_sp(json_file: dict):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
-def all_suppliers_sp():
+def all_suppliers_sp(json_file: dict):
     try:
         cursor = conn.cursor()
-        cursor.execute("EXEC [dbo].[sp_suppliers_all]")
+        cursor.execute("EXEC [dbo].[sp_suppliers_all] @pjsonfile = %s", (json.dumps(json_file),))
         rows = cursor.fetchall()
         json_result = "".join(row[0] for row in rows)
         result = json.loads(json_result)
@@ -118,9 +118,9 @@ def {{plural}}(json: dict):
 
 with open("./docs_description/{{plural}}_all.txt", "r") as file:
     {{plural}}_all_docstring = file.read()
-@router.get("/all_{{plural}}", summary="all {{plural}}", description={{plural}}_all_docstring)
-def all_{{plural}}():
-    return all_{{plural}}_sp()
+@router.post("/all_{{plural}}", summary="all {{plural}}", description={{plural}}_all_docstring)
+def all_{{plural}}(json: dict):
+    return all_{{plural}}_sp(json)
 
 
 with open("./docs_description/{{plural}}_one.txt", "r") as file:

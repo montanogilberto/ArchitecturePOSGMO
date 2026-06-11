@@ -91,14 +91,15 @@ BACKEND checklist (SCOPE: read gate_result.backend_pattern first.
 □ module_file has conn = connection() at module level
 □ Three functions: {{plural}}_sp, all_{{plural}}_sp, one_{{plural}}_sp (all use PLURAL)
 □ No raw SQL — only EXEC [dbo].[sp_*] @pjsonfile = %s via cursor.execute
-□ all_{{plural}}_sp: fetchall(), concatenate row[0] strings, json.loads
+□ all_{{plural}}_sp(json_file: dict): accepts json_file, passes it to sp_all via @pjsonfile, fetchall(), concatenate row[0] strings, json.loads
+□ all_{{plural}}_sp MUST NOT be a zero-argument function — missing json_file is an automatic error
 □ {{plural}}_sp: fetchall(), return json_result[0][0]  ← column index 0 (the 'value' string from
   the SP's Finish block). The Finish block SELECTs 3 columns (value, msg, error) but [0][0]
   correctly returns just the 'value' column. This IS correct — do NOT flag json_result[0][0] as wrong.
 □ one_{{plural}}_sp: fetchone()[0], json.loads
 □ route_file: `from modules.{{plural}} import ...` (import from PLURAL module file)
 □ router = APIRouter() with NO prefix and NO tags
-□ Exactly 3 endpoints: POST /{{plural}}, GET /all_{{plural}}, POST /one_{{plural}}
+□ Exactly 3 endpoints: POST /{{plural}}, POST /all_{{plural}}, POST /one_{{plural}}
 □ No Pydantic, no HTTPException, no async, no response_model in routes_
 □ Each endpoint reads its description from docs_description/{{plural}}*.txt
 □ docs_files contains 3 txt files in docs_description/

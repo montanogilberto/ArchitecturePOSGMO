@@ -189,21 +189,33 @@ Finish:
     FROM OPENJSON(@Outputmessage,'$.result');
 ```
 
-### sp_{{plural}}_all — SELECT all
-No parameter. Pattern:
+### sp_{{plural}}_all — SELECT all rows for a given company
+Parameter: @pjsonfile VARCHAR(MAX)  — caller MUST pass {"{{plural}}":[{"companyId": N}]}
+
+MULTI-TENANCY RULE (mandatory, no exceptions):
+sp_{{plural}}_all MUST accept @pjsonfile, extract companyId from it, and filter
+with WHERE companyId = @companyId. Never return cross-company data.
+
+Pattern:
 ```sql
-CREATE PROC [dbo].[sp_{{plural}}_all]
+CREATE PROC [dbo].[sp_{{plural}}_all] (@pjsonfile VARCHAR(MAX))
 AS
 SET NOCOUNT ON
 BEGIN
+    DECLARE @companyId INT;
+    SET @companyId = TRY_CONVERT(INT,
+        (SELECT TOP 1 JSON_VALUE(value, '$.companyId')
+         FROM OPENJSON(@pjsonfile, '$.{{plural}}'))
+    );
     SELECT
         [{{module}}Id],
         ISNULL([companyId], 0)   AS companyId,
         ISNULL([first_name], '') AS first_name,
         ...
         [created_At],
-        [updated_at]
+        ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') AS updated_at
     FROM dbo.{{plural}}
+    WHERE companyId = @companyId
     FOR JSON AUTO, ROOT('{{plural}}');
 END
 ```
@@ -247,11 +259,12 @@ END
 ```json
 {
   "{{plural}}": [
-    {{ "action": 1, "companyId": 5, "first_name": "...", ... }}
+    { "action": 1, "companyId": 5, "first_name": "...", ... }
   ]
 }
 ```
 Action values: 1=INSERT, 2=UPDATE, 3=DELETE.
+sp_{{plural}}_all also uses this same envelope: {"{{plural}}":[{"companyId": 5}]}
 
 ## Execution step (MANDATORY — do this after generating SQL)
 After generating all four SQL blocks, call execute_sql_on_server with:

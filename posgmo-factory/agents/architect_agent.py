@@ -152,7 +152,8 @@ architect_agent = Agent(
     model="gemini-2.5-flash",
     instruction=INSTRUCTION,
     tools=[get_mcp_toolset()],
-    output_schema=SpecificationJSON,
+    # output_schema removed — it disables tool calling in ADK when set alongside tools.
+    # The prompt enforces the SpecificationJSON format; Decision Gate's _safe_load parses the text output.
     output_key="specification",
     generate_content_config={
         "temperature": 0,

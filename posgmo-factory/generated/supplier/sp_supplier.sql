@@ -1,33 +1,18 @@
-CREATE TABLE [dbo].[Suppliers] (
-    supplierId    INT            IDENTITY (1, 1) NOT NULL,
-    companyId     INT            NOT NULL,
-    supplierName  VARCHAR (200)  NOT NULL,
-    contactName   VARCHAR (100)  NULL,
-    phone         VARCHAR (20)   NULL,
-    email         VARCHAR (100)  NULL,
-    address       TEXT           NULL,
-    active        VARCHAR (1)    NOT NULL,
-    created_At    DATETIME       DEFAULT (GETDATE()) NULL,
-    updated_at    DATETIME       DEFAULT (GETDATE()) NULL,
-    PRIMARY KEY CLUSTERED (supplierId ASC)
+CREATE TABLE dbo.Suppliers (
+    supplierId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    companyId INT NOT NULL,
+    supplierName VARCHAR(200) NOT NULL,
+    contactName VARCHAR(100) NULL,
+    phone VARCHAR(20) NULL,
+    email VARCHAR(100) NULL,
+    address TEXT NULL,
+    active VARCHAR(1) NOT NULL,
+    created_At DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
 );
+CREATE UNIQUE INDEX IX_Suppliers_companyId_supplierName ON dbo.Suppliers (companyId, supplierName);
+CREATE INDEX IX_Suppliers_active ON dbo.Suppliers (active);
 
-GO
-
-CREATE NONCLUSTERED INDEX IX_Suppliers_companyId
-ON [dbo].[Suppliers] (companyId);
-GO
-
-CREATE NONCLUSTERED INDEX IX_Suppliers_supplierName
-ON [dbo].[Suppliers] (supplierName);
-GO
-
-CREATE NONCLUSTERED INDEX IX_Suppliers_email
-ON [dbo].[Suppliers] (email);
-GO
-
-CREATE NONCLUSTERED INDEX IX_Suppliers_active
-ON [dbo].[Suppliers] (active);
 GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_suppliers]
@@ -35,133 +20,127 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_suppliers]
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    -- Temporary table to hold JSON data
-    DECLARE @payload TABLE (
-        action INT,
-        supplierId INT,
-        companyId INT,
-        supplierName VARCHAR(200),
-        contactName VARCHAR(100),
-        phone VARCHAR(20),
-        email VARCHAR(100),
-        address TEXT,
-        active VARCHAR(1)
-    );
-
-    -- Insert data from JSON into the payload table
-    INSERT INTO @payload (action, supplierId, companyId, supplierName, contactName, phone, email, address, active)
-    SELECT
-        JSON_VALUE(value, '$.action'),
-        JSON_VALUE(value, '$.supplierId'),
-        JSON_VALUE(value, '$.companyId'),
-        JSON_VALUE(value, '$.supplierName'),
-        JSON_VALUE(value, '$.contactName'),
-        JSON_VALUE(value, '$.phone'),
-        JSON_VALUE(value, '$.email'),
-        JSON_VALUE(value, '$.address'),
-        JSON_VALUE(value, '$.active')
-    FROM OPENJSON(@pjsonfile, '$.suppliers');
-
-    -- Declare a variable to hold the output message
-    DECLARE @OutputMessage NVARCHAR(MAX);
+    DECLARE @Outputmessage NVARCHAR(MAX);
 
     BEGIN TRY
-        BEGIN TRANSACTION;
-
-        -- Action 1: INSERT
-        IF EXISTS (SELECT 1 FROM @payload WHERE action = 1)
+        IF ISJSON(@pjsonfile) = 0
         BEGIN
-            -- Validate for duplicate supplierName within the same company
-            IF EXISTS (SELECT p.supplierName, p.companyId FROM @payload AS p WHERE p.action = 1 AND EXISTS (SELECT 1 FROM dbo.Suppliers AS s WHERE s.supplierName = p.supplierName AND s.companyId = p.companyId))
-            BEGIN
-                SET @OutputMessage = (SELECT '{"status": "error", "message": "A supplier with this name already exists for this company."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-                THROW 50000, 'Duplicate supplier name', 1;
-            END;
-
-            INSERT INTO dbo.Suppliers (companyId, supplierName, contactName, phone, email, address, active, created_At, updated_at)
-            SELECT
-                p.companyId,
-                p.supplierName,
-                p.contactName,
-                p.phone,
-                p.email,
-                p.address,
-                p.active,
-                GETDATE(),
-                GETDATE()
-            FROM @payload AS p
-            WHERE p.action = 1;
-
-            SET @OutputMessage = (SELECT '{"status": "success", "message": "Supplier(s) inserted successfully."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            SET @Outputmessage = JSON_QUERY('{\"error\": \"Invalid JSON format provided.\"}');
+            GOTO Finish;
         END;
 
-        -- Action 2: UPDATE
-        IF EXISTS (SELECT 1 FROM @payload WHERE action = 2)
+        DECLARE @action INT;
+        SELECT @action = TRY_CONVERT(INT, JSON_VALUE(value, '$.action'))
+        FROM OPENJSON(@pjsonfile, '$.suppliers');
+
+        IF @action IS NULL
         BEGIN
-            -- Validate if supplier exists
-            IF NOT EXISTS (SELECT 1 FROM @payload AS p JOIN dbo.Suppliers AS s ON p.supplierId = s.supplierId WHERE p.action = 2)
+            SET @Outputmessage = JSON_QUERY('{\"error\": \"Action is missing or invalid.\"}');
+            GOTO Finish;
+        END;
+
+        DECLARE @payload TABLE (
+            action INT,
+            companyId INT,
+            supplierId INT,
+            supplierName VARCHAR(200),
+            contactName VARCHAR(100),
+            phone VARCHAR(20),
+            email VARCHAR(100),
+            address TEXT,
+            active VARCHAR(1)
+        );
+
+        INSERT INTO @payload (action, companyId, supplierId, supplierName, contactName, phone, email, address, active)
+        SELECT
+            TRY_CONVERT(INT, JSON_VALUE(value, '$.action')),
+            TRY_CONVERT(INT, JSON_VALUE(value, '$.companyId')),
+            TRY_CONVERT(INT, JSON_VALUE(value, '$.supplierId')),
+            JSON_VALUE(value, '$.supplierName'),
+            JSON_VALUE(value, '$.contactName'),
+            JSON_VALUE(value, '$.phone'),
+            JSON_VALUE(value, '$.email'),
+            JSON_VALUE(value, '$.address'),
+            JSON_VALUE(value, '$.active')
+        FROM OPENJSON(@pjsonfile, '$.suppliers');
+
+        IF @action = 1 -- INSERT
+        BEGIN
+            -- Duplicate validation for supplierName within the same companyId
+            IF EXISTS (SELECT 1 FROM dbo.Suppliers s JOIN @payload p ON s.companyId = p.companyId AND s.supplierName = p.supplierName WHERE p.action = 1)
             BEGIN
-                SET @OutputMessage = (SELECT '{"status": "error", "message": "Supplier not found for update."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-                THROW 50000, 'Supplier not found', 1;
+                SET @Outputmessage = JSON_QUERY('{\"error\": \"A supplier with this name already exists for this company.\"}');
+                GOTO Finish;
             END;
 
-            -- Validate for duplicate supplierName within the same company, excluding the current supplier being updated
-            IF EXISTS (SELECT p.supplierName, p.companyId FROM @payload AS p WHERE p.action = 2 AND EXISTS (SELECT 1 FROM dbo.Suppliers AS s WHERE s.supplierName = p.supplierName AND s.companyId = p.companyId AND s.supplierId <> p.supplierId))
+            INSERT INTO dbo.Suppliers (companyId, supplierName, contactName, phone, email, address, active)
+            SELECT p.companyId, p.supplierName, p.contactName, p.phone, p.email, p.address, p.active
+            FROM @payload p
+            WHERE p.action = 1;
+
+            SET @Outputmessage = JSON_QUERY('{\"message\": \"Supplier created successfully.\"}');
+        END
+        ELSE IF @action = 2 -- UPDATE
+        BEGIN
+            -- Duplicate validation for supplierName (excluding the current supplier being updated)
+            IF EXISTS (SELECT 1 FROM dbo.Suppliers s JOIN @payload p ON s.companyId = p.companyId AND s.supplierName = p.supplierName WHERE p.action = 2 AND s.supplierId <> p.supplierId)
             BEGIN
-                SET @OutputMessage = (SELECT '{"status": "error", "message": "Another supplier with this name already exists for this company."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-                THROW 50000, 'Duplicate supplier name', 1;
+                SET @Outputmessage = JSON_QUERY('{\"error\": \"A different supplier with this name already exists for this company.\"}');
+                GOTO Finish;
             END;
 
             UPDATE s
             SET
-                s.supplierName = ISNULL(p.supplierName, s.supplierName),
-                s.contactName = ISNULL(p.contactName, s.contactName),
-                s.phone = ISNULL(p.phone, s.phone),
-                s.email = ISNULL(p.email, s.email),
-                s.address = ISNULL(p.address, s.address),
-                s.active = ISNULL(p.active, s.active),
+                s.supplierName = p.supplierName,
+                s.contactName = p.contactName,
+                s.phone = p.phone,
+                s.email = p.email,
+                s.address = p.address,
+                s.active = p.active,
                 s.updated_at = GETDATE()
-            FROM dbo.Suppliers AS s
-            JOIN @payload AS p ON s.supplierId = p.supplierId
+            FROM dbo.Suppliers s
+            INNER JOIN @payload p ON s.supplierId = p.supplierId
             WHERE p.action = 2;
 
-            SET @OutputMessage = (SELECT '{"status": "success", "message": "Supplier(s) updated successfully."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-        END;
-
-        -- Action 3: DELETE
-        IF EXISTS (SELECT 1 FROM @payload WHERE action = 3)
-        BEGIN
-            -- Validate if supplier exists
-            IF NOT EXISTS (SELECT 1 FROM @payload AS p JOIN dbo.Suppliers AS s ON p.supplierId = s.supplierId WHERE p.action = 3)
+            IF @@ROWCOUNT = 0
             BEGIN
-                SET @OutputMessage = (SELECT '{"status": "error", "message": "Supplier not found for deletion."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-                THROW 50000, 'Supplier not found', 1;
+                SET @Outputmessage = JSON_QUERY('{\"error\": \"Supplier not found or no changes made.\"}');
+                GOTO Finish;
             END;
 
+            SET @Outputmessage = JSON_QUERY('{\"message\": \"Supplier updated successfully.\"}');
+        END
+        ELSE IF @action = 3 -- DELETE
+        BEGIN
             DELETE s
-            FROM dbo.Suppliers AS s
-            JOIN @payload AS p ON s.supplierId = p.supplierId
+            FROM dbo.Suppliers s
+            INNER JOIN @payload p ON s.supplierId = p.supplierId
             WHERE p.action = 3;
 
-            SET @OutputMessage = (SELECT '{"status": "success", "message": "Supplier(s) deleted successfully."}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            IF @@ROWCOUNT = 0
+            BEGIN
+                SET @Outputmessage = JSON_QUERY('{\"error\": \"Supplier not found.\"}');
+                GOTO Finish;
+            END;
+
+            SET @Outputmessage = JSON_QUERY('{\"message\": \"Supplier deleted successfully.\"}');
+        END
+        ELSE
+        BEGIN
+            SET @Outputmessage = JSON_QUERY('{\"error\": \"Invalid action specified.\"}');
+            GOTO Finish;
         END;
 
-        COMMIT TRANSACTION;
-
-        SELECT @OutputMessage AS jsonResult;
+        SELECT @Outputmessage AS result;
 
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-
-        -- Return error message as JSON
-        SET @OutputMessage = (SELECT '{"status": "error", "message": "' + ERROR_MESSAGE() + '"}' FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-        SELECT @OutputMessage AS jsonResult;
+        SET @Outputmessage = JSON_QUERY('{\"error\": \"' + ERROR_MESSAGE() + '\"}');
+        SELECT @Outputmessage AS result;
     END CATCH;
 
-    RETURN 0;
+Finish:
+    SELECT @Outputmessage AS result;
 END;
 
 GO
@@ -174,25 +153,23 @@ BEGIN
 
     DECLARE @companyId INT;
 
-    SELECT @companyId = JSON_VALUE(value, '$.companyId')
-    FROM OPENJSON(@pjsonfile, '$.plural');
+    SELECT @companyId = TRY_CONVERT(INT, JSON_VALUE(value, '$.companyId'))
+    FROM OPENJSON(@pjsonfile, '$.suppliers');
 
     SELECT
-        supplierId,
-        companyId,
-        supplierName,
-        ISNULL(contactName, '') AS contactName,
-        ISNULL(phone, '') AS phone,
-        ISNULL(email, '') AS email,
-        ISNULL(address, '') AS address,
-        active,
-        CONVERT(VARCHAR(30), created_At, 126) AS created_At,
-        ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') AS updated_at
-    FROM dbo.Suppliers
-    WHERE companyId = @companyId
+        s.supplierId,
+        s.companyId,
+        s.supplierName,
+        ISNULL(s.contactName, '') AS contactName,
+        ISNULL(s.phone, '') AS phone,
+        ISNULL(s.email, '') AS email,
+        ISNULL(s.address, '') AS address,
+        s.active,
+        CONVERT(VARCHAR(30), s.created_At, 126) AS created_At,
+        ISNULL(CONVERT(VARCHAR(30), s.updated_at, 126), '') AS updated_at
+    FROM dbo.Suppliers s
+    WHERE s.companyId = @companyId
     FOR JSON AUTO, ROOT('suppliers');
-
-    RETURN 0;
 END;
 
 GO
@@ -207,23 +184,22 @@ BEGIN
     DECLARE @companyId INT;
 
     SELECT
-        @supplierId = JSON_VALUE(@pjsonfile, '$.supplierId'),
-        @companyId = JSON_VALUE(@pjsonfile, '$.companyId');
+        @supplierId = TRY_CONVERT(INT, JSON_VALUE(value, '$.supplierId')),
+        @companyId = TRY_CONVERT(INT, JSON_VALUE(value, '$.companyId'))
+    FROM OPENJSON(@pjsonfile, '$.suppliers');
 
     SELECT
-        supplierId,
-        companyId,
-        supplierName,
-        ISNULL(contactName, '') AS contactName,
-        ISNULL(phone, '') AS phone,
-        ISNULL(email, '') AS email,
-        ISNULL(address, '') AS address,
-        active,
-        CONVERT(VARCHAR(30), created_At, 126) AS created_At,
-        ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '') AS updated_at
-    FROM dbo.Suppliers
-    WHERE supplierId = @supplierId AND companyId = @companyId
+        s.supplierId,
+        s.companyId,
+        s.supplierName,
+        ISNULL(s.contactName, '') AS contactName,
+        ISNULL(s.phone, '') AS phone,
+        ISNULL(s.email, '') AS email,
+        ISNULL(s.address, '') AS address,
+        s.active,
+        CONVERT(VARCHAR(30), s.created_At, 126) AS created_At,
+        ISNULL(CONVERT(VARCHAR(30), s.updated_at, 126), '') AS updated_at
+    FROM dbo.Suppliers s
+    WHERE s.supplierId = @supplierId AND s.companyId = @companyId
     FOR JSON AUTO, ROOT('suppliers');
-
-    RETURN 0;
 END;

@@ -12,11 +12,11 @@ classification rules differently on each run.
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, AsyncGenerator
 
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
-from google.adk.tools.tool_context import ToolContext
+from google.adk.agents import BaseAgent
+from google.adk.agents.invocation_context import InvocationContext
+from google.adk.events import Event
 
 
 # ---------------------------------------------------------------------------
@@ -315,39 +315,44 @@ def _hard_block_check(spec: dict, schema_analysis: dict) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
-# Main tool — called by the thin Agent wrapper below
+# Core gate logic — pure Python, no LLM
 # ---------------------------------------------------------------------------
 
-def run_decision_gate(tool_context: ToolContext) -> dict:
-    """
-    Deterministic Decision Gate. Reads specification + schema_analysis from
-    session state, classifies tier, detects backend pattern, builds constraints,
-    and writes gate_result back to session state.
-    """
-    def _safe_load(raw, default=None) -> dict:
-        if default is None:
-            default = {}
-        if not isinstance(raw, str):
-            return raw if isinstance(raw, dict) else default
-        raw = raw.strip()
-        if not raw:
-            return default
-        if raw.startswith("```"):
-            lines = [l for l in raw.splitlines() if not l.strip().startswith("```")]
-            raw = "\n".join(lines).strip()
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            return default
+def _safe_load(raw: Any, default: dict | None = None) -> dict:
+    if default is None:
+        default = {}
+    if not isinstance(raw, str):
+        return raw if isinstance(raw, dict) else default
+    raw = raw.strip()
+    if not raw:
+        return default
+    if raw.startswith("```"):
+        lines = [l for l in raw.splitlines() if not l.strip().startswith("```")]
+        raw = "\n".join(lines).strip()
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return default
 
-    raw_spec = tool_context.state.get("specification", "")
-    raw_schema = tool_context.state.get("schema_analysis", "")
+
+def compute_gate_result(state: dict) -> dict:
+    """
+    Pure-Python gate logic. Reads 'specification' and 'schema_analysis' from
+    the given state dict and returns the gate_result dict.
+    """
+    raw_spec = state.get("specification", "")
+    raw_schema = state.get("schema_analysis", "")
+    print(
+        f"[gate] specification type={type(raw_spec).__name__} "
+        f"len={len(str(raw_spec))} preview={str(raw_spec)[:120]!r}",
+        flush=True,
+    )
 
     spec = _safe_load(raw_spec)
     schema = _safe_load(raw_schema)
 
     if not spec:
-        blocked = {
+        return {
             "status": "BLOCKED",
             "tier": "BLOCKED",
             "tier_reason": "No specification found in session state.",
@@ -361,40 +366,28 @@ def run_decision_gate(tool_context: ToolContext) -> dict:
             "fix": "Ensure Architect Agent ran successfully before Decision Gate.",
             "summary": "Pipeline blocked: specification not found.",
         }
-        tool_context.state["gate_result"] = json.dumps(blocked)
-        return blocked
 
-    # Hard block check first
     hard_block = _hard_block_check(spec, schema)
     if hard_block:
-        tool_context.state["gate_result"] = json.dumps(hard_block)
         return hard_block
 
-    # Classify tier
     tier, tier_reason = _classify_tier(spec, schema)
-
-    # Classify backend pattern
     backend_pattern, connector_endpoints = _classify_backend_pattern(spec)
-
-    # Build all outputs
     columns = spec.get("db", {}).get("columns", [])
     mandatory_constraints = _build_mandatory_constraints(tier, backend_pattern, connector_endpoints)
     soft_delete_parents = _detect_soft_delete_parents(spec, schema)
     index_recommendations = _build_index_recommendations(tier, columns)
 
-    # Warnings (non-blocking)
     warnings = []
     if schema.get("table_already_exists"):
-        warnings.append(
-            f"Table already exists — Database Agent will use CREATE OR ALTER. No action needed."
-        )
+        warnings.append("Table already exists — Database Agent will use CREATE OR ALTER. No action needed.")
     for ref in schema.get("risky_references", []):
         warnings.append(f"PRD references '{ref}' but it was not found in the DB — will not be generated.")
     prd_hints = spec.get("prd_hints", {})
     if prd_hints.get("frontend_ui_pattern") == "Wizard Flow Layout":
         warnings.append("Wizard Flow Layout detected — Camera capture (Capacitor) must be wired manually after generation.")
 
-    gate_result = {
+    return {
         "status": "APPROVED",
         "tier": tier,
         "tier_reason": tier_reason,
@@ -410,30 +403,36 @@ def run_decision_gate(tool_context: ToolContext) -> dict:
         ),
     }
 
-    tool_context.state["gate_result"] = json.dumps(gate_result)
-    return gate_result
-
 
 # ---------------------------------------------------------------------------
-# Thin Agent wrapper — just calls the Python tool, no LLM reasoning
+# Pure BaseAgent — no LLM, no tool call required
 # ---------------------------------------------------------------------------
 
-_INSTRUCTION = """
-You are the Decision Gate Agent. Your ONLY job is to call run_decision_gate().
-Do not reason, do not classify anything yourself.
-Call run_decision_gate() immediately and output the result as-is.
-"""
+class _DecisionGateAgent(BaseAgent):
+    """
+    Runs compute_gate_result() directly — zero LLM calls.
+    Writes gate_result into session state via Event state_delta.
+    """
 
-decision_gate_agent = Agent(
+    async def _run_async_impl(
+        self, ctx: InvocationContext
+    ) -> AsyncGenerator[Event, None]:
+        state_dict = dict(ctx.session.state)
+        gate_result = compute_gate_result(state_dict)
+        gate_json = json.dumps(gate_result)
+        print(f"[gate] result status={gate_result['status']} tier={gate_result.get('tier')}", flush=True)
+
+        # Write via Event state_delta — the ADK main loop persists it to session
+        yield Event(
+            author=self.name,
+            state={"gate_result": gate_json},
+        )
+
+
+decision_gate_agent = _DecisionGateAgent(
     name="decision_gate_agent",
     description=(
         "Deterministic quality gate: classifies module tier, detects backend pattern, "
         "emits mandatory constraints. Pure Python — no LLM classification."
     ),
-    model="gemini-2.5-flash",
-    instruction=_INSTRUCTION,
-    tools=[FunctionTool(func=run_decision_gate)],
-    # output_key intentionally omitted — run_decision_gate() writes directly to
-    # tool_context.state["gate_result"]. Adding output_key here would overwrite
-    # the tool's JSON with the LLM's text explanation.
 )

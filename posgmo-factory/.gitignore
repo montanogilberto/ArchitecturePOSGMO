@@ -17,4 +17,7 @@ agents/.adk/
 *.sqlite
 
 # macOS
-.DS_Storelast_state.json
+.DS_Store
+
+# Pipeline output — may contain secrets from session state
+last_state.json

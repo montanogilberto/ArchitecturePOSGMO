@@ -1,37 +1,11 @@
-"""
-Post-Generation Fixer Agent
-
-Runs deterministically after generation_stage and before frontend_agent.
-Reads database_artifacts and backend_artifacts from session state, applies
-targeted fixes for the most common LLM generation violations, and writes
-the corrected artifacts back to session state.
-
-No LLM involved — pure Python regex and string transforms.
-
-Fixer 1 — Database SQL:
-  - DATETIME2 → DATETIME for non-IOT modules
-  - sp_all: inject @pjsonfile param + WHERE companyId filter if missing
-  - sp_all: ensure updated_at uses ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '')
-
-Fixer 2 — Backend Python:
-  - Remove round() wrapping from any numeric return value
-  - all_{plural}_sp() with no args → all_{plural}_sp(json_file: dict)
-  - Pass json_file to sp_all EXEC call
-  - router.get("/all_") → router.post("/all_")
-
-Fixer 3 — Frontend TypeScript:
-  - catch (err: any) → catch (err)
-  - CustomEvent<any> → correct typed generic based on JSX context
-  - JSON.parse(await res.json()) double-parse → await res.json()
-"""
+﻿# Fixer Agent — deterministic SQL/Python/TypeScript fixers.
+# No LLM involved. All transforms are regex/string operations.
 
 from __future__ import annotations
 
 import json
 import re
 
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 
@@ -533,22 +507,3 @@ def run_all_fixers(tool_context: ToolContext) -> dict:
 # ============================================================================
 # Thin Agent wrapper
 # ============================================================================
-
-_INSTRUCTION = """
-You are the Post-Generation Fixer. Your ONLY job is to call run_all_fixers().
-Do not reason or modify anything yourself.
-Call run_all_fixers() immediately and return its result as-is.
-"""
-
-fixer_agent = Agent(
-    name="fixer_agent",
-    description=(
-        "Deterministic post-generation fixer. Corrects SQL, Python, and TypeScript "
-        "artifacts for the most common LLM generation violations — no LLM involved."
-    ),
-    model="gemini-2.5-flash",
-    instruction=_INSTRUCTION,
-    tools=[FunctionTool(func=run_all_fixers)],
-    # output_key omitted — run_all_fixers() writes corrected artifacts directly to
-    # tool_context.state. Adding output_key would overwrite artifacts with LLM text.
-)

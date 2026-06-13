@@ -1,14 +1,5 @@
-"""
-Design Consistency Agent
-
-Runs BEFORE the Frontend Agent. Fetches 2-3 real existing pages from the
-frontend GitHub repo and extracts the exact patterns used in this codebase:
-component structure, CSS class naming, modal patterns, form fields, API call
-style, state management, etc.
-
-Stores a 'design_context' in session state that the Frontend Agent uses to
-generate a page that matches what was ACTUALLY built, not generic Ionic docs.
-"""
+﻿# Design Consistency Agent — tool functions.
+# fetch_design_reference fetches real pages from GitHub and extracts patterns.
 
 from __future__ import annotations
 
@@ -17,8 +8,6 @@ import os
 import re
 
 import httpx
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 _GH_API = "https://api.github.com"
@@ -235,61 +224,3 @@ def fetch_design_reference(tool_context: ToolContext) -> dict:
 # ---------------------------------------------------------------------------
 # Agent definition
 # ---------------------------------------------------------------------------
-
-INSTRUCTION = """
-You are the Design Consistency Agent for POS GMO.
-
-## Your job
-Fetch real existing pages from the frontend repo and extract the exact design
-patterns used in this codebase, so the Frontend Agent generates a page that
-looks and feels like it was written by the same developer.
-
-## Steps
-1. Call fetch_design_reference() — this fetches real TSX/CSS files from GitHub.
-2. Read the patterns carefully.
-3. Output a design brief in this exact JSON format:
-
-{
-  "component_shell": "<IonPage structure — header component name, IonContent class>",
-  "state_pattern": "<how useState is organized in these pages>",
-  "api_call_pattern": "<how async calls are structured: try/catch, loading flag, etc.>",
-  "modal_pattern": "<how IonModal is opened/closed if used>",
-  "list_pattern": "<IonList/IonItem/IonCard structure>",
-  "search_pattern": "<IonSearchbar usage if found>",
-  "css_naming": "<prefix convention, e.g. 'clients-' → 'suppliers-'>",
-  "css_class_examples": ["<class from reference>", "..."],
-  "ionic_components_to_import": ["<component>", "..."],
-  "critical_differences_from_docs": [
-    "<thing this codebase does differently from standard Ionic docs>"
-  ],
-  "consistency_rules": [
-    "<rule derived from observing the real pages>"
-  ]
-}
-
-## What to look for
-- Does the codebase use a custom <Header> component or IonHeader directly?
-- How many useState hooks per page on average?
-- Is IonInfiniteScroll used? What exact pattern?
-- What CSS class naming prefix does each page use? (e.g. clients-page, expenses-card)
-- How are modals triggered — state boolean or IonModal trigger prop?
-- How are API errors displayed — IonToast? IonAlert? console.error?
-- Does every page use canAccess for role-based rendering?
-- Are there any patterns that differ from standard Ionic React docs?
-
-Anything the Frontend Agent should copy exactly — not adapt, COPY.
-"""
-
-
-design_consistency_agent = Agent(
-    name="design_consistency_agent",
-    description=(
-        "Fetches real existing pages from the frontend GitHub repo, extracts "
-        "exact design patterns (component structure, CSS naming, modal style, "
-        "API call patterns), and stores a design_context for the Frontend Agent."
-    ),
-    model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
-    tools=[FunctionTool(func=fetch_design_reference)],
-    output_key="design_brief",
-)

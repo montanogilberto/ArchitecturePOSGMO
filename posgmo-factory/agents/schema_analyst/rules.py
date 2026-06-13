@@ -1,17 +1,5 @@
-"""
-Schema Analyst Agent
-
-Runs BEFORE the Architect. Connects to the live SQL Server, reads the real
-schema (tables, columns, PKs, FKs, indexes), and stores a db_context dict
-in session state that the Architect uses to make correct FK decisions.
-
-Detects:
-  - Table name conflicts (module table already exists)
-  - Valid FK targets (only tables that actually exist)
-  - Orphaned FK references (tables that were deleted)
-  - Suggested relationships based on module type
-  - Existing indexes to avoid duplication
-"""
+﻿# Schema Analyst — tool functions.
+# Extracted for package structure.
 
 from __future__ import annotations
 
@@ -20,8 +8,6 @@ import os
 from typing import Any
 
 import pyodbc
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 
@@ -219,52 +205,3 @@ def analyze_database_schema(module: str, plural: str, tool_context: ToolContext)
 # ---------------------------------------------------------------------------
 # Agent definition
 # ---------------------------------------------------------------------------
-
-INSTRUCTION = """
-You are the Schema Analyst for POS GMO.
-
-## Your job
-Query the live SQL Server database and produce a complete schema analysis
-that the Architect Agent will use to make correct FK and table decisions.
-
-## Steps
-1. Call analyze_database_schema(module=<module from PRD>, plural=<plural from PRD>).
-2. Read the result carefully.
-3. Output a concise analysis report in this JSON format:
-
-{
-  "table_conflict":  true|false,
-  "conflict_detail": "<message if conflict>",
-  "valid_fk_targets": [
-    { "table": "<name>", "pk_column": "<col>", "use_for": "<reason>" }
-  ],
-  "risky_references": [
-    "<table referenced in PRD but NOT found in DB>"
-  ],
-  "index_recommendations": [
-    "<colName> — reason"
-  ],
-  "summary": "<2 sentences: what is safe to generate, what needs attention>"
-}
-
-## Critical rules
-- If table_exists is true: set table_conflict=true and warn the Architect to
-  rename the module or use ALTER TABLE.
-- Only list tables in valid_fk_targets that appear in all_tables from the analysis.
-- If the PRD references a table not in all_tables, list it in risky_references.
-- Always suggest an index on companyId (every table filters by company).
-- Suggest additional indexes on FK columns and any field likely used in WHERE clauses.
-"""
-
-
-schema_analyst_agent = Agent(
-    name="schema_analyst_agent",
-    description=(
-        "Connects to the live SQL Server, reads all tables/columns/FKs/indexes, "
-        "detects conflicts, validates FK targets, and stores a db_context for the Architect."
-    ),
-    model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
-    tools=[FunctionTool(func=analyze_database_schema)],
-    output_key="schema_analysis",
-)

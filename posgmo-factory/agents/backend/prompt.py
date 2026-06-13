@@ -1,16 +1,4 @@
-"""
-Backend Agent
-
-Reads the SpecificationJSON from session state and generates two Python files
-following the actual POS GMO backend pattern:
-  - modules/{{module}}.py  — business logic: direct SP calls via pyodbc, returns JSONResponse
-  - routes_/{{module}}.py  — FastAPI APIRouter: thin HTTP layer that calls module functions
-
-Output stored in session state under key "backend_artifacts".
-"""
-
-from google.adk.agents import Agent
-from agents.mcp_tools import get_mcp_toolset
+﻿# Backend Agent — system instruction.
 
 INSTRUCTION = '''
 You are the Backend Agent for POS GMO.
@@ -34,68 +22,97 @@ Read the SpecificationJSON from session state key "specification".
 
 ## Files to generate
 
-### modules/{{plural}}.py — Business logic layer  (file name is PLURAL, e.g. modules/suppliers.py)
-This file contains all direct SP calls. It imports `connection` from `databases`,
-holds a module-level `conn = connection()`, and exposes three functions.
+### modules/{{plural}}.py -- Business logic layer  (file name is PLURAL, e.g. modules/suppliers.py)
+This file contains all direct SP calls. It imports `connection` from `databases`.
+Each function opens its OWN connection per request and closes it in a finally block.
+NEVER declare a module-level conn = connection() -- stale connections cause every
+subsequent request to return 500 after the DB drops the idle connection.
 
-Exact pattern to follow (replace {{module}}/{{Module}}/{{plural}} from the spec):
-
-CONCRETE EXAMPLE for module=supplier, plural=suppliers — follow this naming EXACTLY:
+CONCRETE EXAMPLE for module=supplier, plural=suppliers -- follow this naming EXACTLY:
 
 ```python
 from fastapi.responses import JSONResponse
 from databases import connection
 import json
 
-conn = connection()
-
 
 def suppliers_sp(json_file: dict):
+    conn = None
     try:
+        conn = connection()
         cursor = conn.cursor()
         cursor.execute("EXEC [dbo].[sp_suppliers] @pjsonfile = %s", (json.dumps(json_file),))
-        json_result = cursor.fetchall()
-        # SP returns ONE row, ONE column ([jsonResult]) → [0][0], NEVER [0][1]
-        return JSONResponse(content=json_result[0][0], status_code=200)
+        # Upsert SP returns ONE row, ONE column -- use fetchone()[0]
+        row = cursor.fetchone()
+        json_result = row[0] if row else '{"message": "ok"}'
+        return JSONResponse(content=json.loads(json_result), status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    finally:
+        if conn:
+            conn.close()
 
 
 def all_suppliers_sp(json_file: dict):
+    conn = None
     try:
+        conn = connection()
         cursor = conn.cursor()
         cursor.execute("EXEC [dbo].[sp_suppliers_all] @pjsonfile = %s", (json.dumps(json_file),))
         rows = cursor.fetchall()
-        json_result = "".join(row[0] for row in rows)
+        # SQL Server may split large FOR JSON output across multiple rows -- always join.
+        # Guard against None cells and empty tables (empty table is NOT an error).
+        json_result = "".join(row[0] for row in rows if row and row[0])
+        if not json_result:
+            return JSONResponse(content={"suppliers": []}, status_code=200)
         result = json.loads(json_result)
         return JSONResponse(content=result, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    finally:
+        if conn:
+            conn.close()
 
 
 def one_suppliers_sp(json_file: dict):
+    conn = None
     try:
+        conn = connection()
         cursor = conn.cursor()
         cursor.execute("EXEC [dbo].[sp_suppliers_one] @pjsonfile = %s", (json.dumps(json_file),))
-        row = cursor.fetchone()
-        json_result = row[0] if row else "{}"
+        rows = cursor.fetchall()
+        json_result = "".join(row[0] for row in rows if row and row[0])
+        if not json_result:
+            return JSONResponse(content={"suppliers": []}, status_code=200)
         result = json.loads(json_result)
         return JSONResponse(content=result, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    finally:
+        if conn:
+            conn.close()
 ```
 
-CRITICAL naming rules — ALL three function names use {{plural}} (NEVER singular {{module}}):
-- Upsert function: `{{plural}}_sp`        ← e.g. suppliers_sp, NOT supplier_sp
-- List function:   `all_{{plural}}_sp`    ← e.g. all_suppliers_sp
-- One function:    `one_{{plural}}_sp`    ← e.g. one_suppliers_sp, NOT one_supplier_sp
+CRITICAL naming rules -- ALL three function names use {{plural}} (NEVER singular {{module}}):
+- Upsert function: `{{plural}}_sp`        e.g. suppliers_sp, NOT supplier_sp
+- List function:   `all_{{plural}}_sp`    e.g. all_suppliers_sp
+- One function:    `one_{{plural}}_sp`    e.g. one_suppliers_sp, NOT one_supplier_sp
+
+CRITICAL connection rules (violations cause 500 errors in production):
+- NEVER conn = connection() at module level -- always inside the function.
+- ALWAYS conn = None before the try, then conn = connection() first line of try.
+- ALWAYS close in finally: if conn: conn.close()
+- all_*_sp and one_*_sp: use fetchall() + join, NEVER fetchone()[0].
+- Empty resultset guard MANDATORY: if not json_result return JSONResponse({plural: []}).
+  Calling json.loads("") raises JSONDecodeError -> 500. Never skip this guard.
+- {{plural}}_sp (upsert): use fetchone() -- upsert SP always returns exactly one row.
 
 Other rules:
-- `from fastapi.responses import JSONResponse` IS required.
-- `from databases import connection` IS required.
+- from fastapi.responses import JSONResponse IS required.
+- from databases import connection IS required.
 - NEVER import BaseModel, Pydantic, APIRouter, or HTTPException in the module file.
-- NEVER write raw SQL — only EXEC [dbo].[sp_*] calls.
-- The caller passes all fields (including "action") directly in json_file.
+- NEVER write raw SQL -- only EXEC [dbo].[sp_*] calls.
+- The caller passes all fields (including action) directly in json_file.
 
 ### routes_/{{module}}.py — FastAPI router layer
 Three endpoints only. Reads descriptions from txt files. Delegates everything to module functions.
@@ -443,16 +460,3 @@ Respond with ONLY a JSON object — no prose, no markdown fences:
   ]
 }
 '''
-
-
-backend_agent = Agent(
-    name="backend_agent",
-    description=(
-        "Generates modules/{module}.py (SP business logic) and routes_/{module}.py "
-        "(FastAPI router) for a POS GMO module, following the existing pyodbc + JSONResponse pattern."
-    ),
-    model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
-    tools=[get_mcp_toolset()],
-    output_key="backend_artifacts",
-)

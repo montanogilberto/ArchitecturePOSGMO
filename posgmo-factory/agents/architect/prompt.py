@@ -1,17 +1,4 @@
-"""
-Architect Agent
-
-First agent in the pipeline. Receives a PRDInput JSON, reads all
-knowledge files via MCP, and produces a SpecificationJSON that all
-downstream agents consume.
-
-The agent NEVER writes code. Its only output is the SpecificationJSON
-stored in session state under the key "specification".
-"""
-
-from google.adk.agents import Agent
-from prd_schema import SpecificationJSON
-from agents.mcp_tools import get_mcp_toolset
+﻿# Architect Agent — system instruction.
 
 INSTRUCTION = """
 You are the Architect Agent for POS GMO — an autonomous software factory.
@@ -141,21 +128,3 @@ SpecificationJSON schema:
   }
 }
 """
-
-
-architect_agent = Agent(
-    name="architect_agent",
-    description=(
-        "Reads a PRD JSON, consults the POS GMO knowledge base via MCP, "
-        "and produces a SpecificationJSON consumed by all downstream agents."
-    ),
-    model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
-    tools=[get_mcp_toolset()],
-    # output_schema removed — it disables tool calling in ADK when set alongside tools.
-    # The prompt enforces the SpecificationJSON format; Decision Gate's _safe_load parses the text output.
-    output_key="specification",
-    generate_content_config={
-        "temperature": 0,
-    },
-)

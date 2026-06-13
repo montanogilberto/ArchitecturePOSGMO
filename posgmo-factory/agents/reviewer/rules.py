@@ -1,15 +1,5 @@
-"""
-Reviewer Agent — deterministic Python validator.
-
-Replaces the LLM-based reviewer entirely. Every rule from the original
-checklist is implemented as a Python check. Score = 100 - (errors × deduction).
-Output written to session state as 'review_result'.
-
-Scoring weights:
-  - automatic_error  → -20 pts  (critical architecture violation)
-  - error            → -10 pts
-  - warning          →  -0 pts  (logged but not penalised)
-"""
+﻿# Reviewer Agent — deterministic checklist scoring logic.
+# No LLM involved. All checks are regex/string operations.
 
 from __future__ import annotations
 
@@ -18,8 +8,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
 from google.adk.tools.tool_context import ToolContext
 
 
@@ -472,22 +460,3 @@ def run_review(tool_context: ToolContext) -> dict:
 # ============================================================================
 # Thin Agent wrapper
 # ============================================================================
-
-_INSTRUCTION = """
-You are the Reviewer Agent. Your ONLY job is to call run_review().
-Do not evaluate anything yourself.
-Call run_review() immediately and return its result as-is.
-"""
-
-reviewer_agent = Agent(
-    name="reviewer_agent",
-    description=(
-        "Deterministic Python reviewer. Scores database/backend/frontend artifacts "
-        "0-100 using a fixed checklist. Pipeline proceeds only when all scores >= 90."
-    ),
-    model="gemini-2.5-flash",
-    instruction=_INSTRUCTION,
-    tools=[FunctionTool(func=run_review)],
-    # output_key omitted — run_review() writes review_result directly to
-    # tool_context.state. Adding output_key would overwrite it with LLM text.
-)

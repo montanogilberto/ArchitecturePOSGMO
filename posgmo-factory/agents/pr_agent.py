@@ -595,6 +595,17 @@ def github_create_pr(repo: str, branch: str, title: str, body: str,
             headers=_gh_headers(),
             json={"title": title, "body": body, "head": branch, "base": base_branch},
         )
+        if r.status_code == 422:
+            # PR already exists for this branch — fetch it and return its URL
+            existing = client.get(
+                f"{_GH_API}/repos/{repo}/pulls",
+                headers=_gh_headers(),
+                params={"head": branch, "state": "open"},
+            )
+            if existing.status_code == 200 and existing.json():
+                pr = existing.json()[0]
+                return {"status": "already_exists", "html_url": pr["html_url"], "number": pr["number"]}
+            return {"status": "already_exists", "html_url": "", "detail": r.text}
         r.raise_for_status()
         return r.json()
 

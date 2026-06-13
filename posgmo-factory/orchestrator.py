@@ -88,6 +88,17 @@ def _build_session_state(prd: PRDInput) -> dict[str, str]:
         "GITHUB_FRONTEND_REPO": frontend_repo,
         "GITHUB_BACKEND_REPO":  backend_repo,
 
+        # Pipeline artifact keys — seeded as empty JSON so json.loads() never crashes
+        # on a key that a previous agent hasn't written yet.
+        "schema_analysis":    "{}",
+        "specification":      "{}",
+        "gate_result":        "{}",
+        "database_artifacts": "{}",
+        "backend_artifacts":  "{}",
+        "frontend_artifacts": "{}",
+        "design_brief":       "{}",
+        "review_result":      "{}",
+
         # Placeholders usados como literales en instrucciones de agentes
         # (evita KeyError durante inject_session_state cuando aparezcan {col}, etc.)
         "col": "col",

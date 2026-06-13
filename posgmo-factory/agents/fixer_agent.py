@@ -228,34 +228,25 @@ def _fix_all_sp_signature(code: str, plural: str) -> tuple[str, list[str]]:
     fixes = []
     fn_name = f"all_{plural}_sp"
 
-    # Fix: def all_X_sp(): → def all_X_sp(json_file: dict):
+    # Fix zero-arg: def all_X_sp(): → def all_X_sp(json_file: dict):
     no_arg = re.compile(rf'(def {re.escape(fn_name)})\(\s*\)\s*:', re.IGNORECASE)
     new = no_arg.sub(rf'\1(json_file: dict):', code)
     if new != code:
         fixes.append(f"Added json_file: dict param to {fn_name}()")
         code = new
 
-    # Fix: EXEC [dbo].[sp_X_all]" ) → EXEC [dbo].[sp_X_all] @pjsonfile = %s", (json.dumps(json_file),)
+    # Fix EXEC call missing @pjsonfile
     exec_no_param = re.compile(
-        rf'(cursor\.execute\s*\(\s*"EXEC\s+\[?dbo\]?\.\[?sp_{re.escape(plural)}_all\]?")\s*\)',
-        re.IGNORECASE,
-    )
-    new = exec_no_param.sub(
-        rf'\1 + " @pjsonfile = %s", (json.dumps(json_file),))',
-        code,
-    )
-    # Also fix the simpler variant without string concat
-    exec_no_param2 = re.compile(
         rf'(cursor\.execute\s*\(\s*"EXEC\s+\[?dbo\]?\.\[?sp_{re.escape(plural)}_all\]?"\s*)\)',
         re.IGNORECASE,
     )
-    new2 = exec_no_param2.sub(
+    new = exec_no_param.sub(
         rf'cursor.execute("EXEC [dbo].[sp_{plural}_all] @pjsonfile = %s", (json.dumps(json_file),))',
-        new,
+        code,
     )
-    if new2 != code:
+    if new != code:
         fixes.append(f"Fixed {fn_name} EXEC call to pass @pjsonfile")
-        code = new2
+        code = new
 
     return code, fixes
 
@@ -286,6 +277,7 @@ def fix_backend(backend_artifacts: dict, gate_result: dict) -> tuple[dict, list[
     all_fixes.extend(f1)
 
     # 2. Fix all_sp signature + EXEC call
+    # 3. Ensure /all_ route is POST (not GET)
     if plural:
         module_content, f2 = _fix_all_sp_signature(module_content, plural)
         route_content,  f3 = _fix_route_get_to_post(route_content, plural)
@@ -488,7 +480,10 @@ def run_all_fixers(tool_context: ToolContext) -> dict:
     """
     def _load(key: str):
         raw = tool_context.state.get(key, "{}")
-        return json.loads(raw) if isinstance(raw, str) else (raw or {})
+        if isinstance(raw, str):
+            raw = raw.strip()
+            return json.loads(raw) if raw else {}
+        return raw or {}
 
     gate_result      = _load("gate_result")
     db_artifacts     = _load("database_artifacts")

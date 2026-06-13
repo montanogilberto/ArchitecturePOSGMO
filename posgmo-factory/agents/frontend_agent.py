@@ -215,8 +215,11 @@ Rules for App.tsx patches:
 - canAccess key: use the plural in lowercase, e.g. `'suppliers'`
 - icon: pick ONE from the already-imported list in App.tsx:
     cash, settings, barChart, home, qrCode, bulb, logOutOutline,
-    people, cube, notifications, mail, grid, person, menu, water
+    people, cube, notifications, mail, grid, person, menu, water, storefront
   Choose the most semantically appropriate icon.
+- icon_name: the BASE name WITHOUT "Outline" suffix (e.g. "storefront", "people", "cube").
+  The PR agent appends "Outline" automatically when adding to the ionicons import.
+- canAccess_key: plural lowercase, same as the route path without "/" (e.g. "suppliers")
 - menu_label: Spanish label, e.g. "Proveedores"
 - menu_section: pick the best IonItemDivider section:
     "Catálogo" — master data (suppliers, categories, products, clients)
@@ -232,11 +235,12 @@ Respond with ONLY a JSON object — no prose, no markdown fences:
   "page_file": { "path": "src/pages/{Module}Page.tsx", "content": "<full TSX source>" },
   "css_file":  { "path": "src/pages/{Module}Page.css", "content": "<full CSS source>" },
   "app_patches": {
-    "import_line":   "import {Module}Page from './pages/{Module}Page';",
-    "private_route": "<PrivateRoute exact path=\"/{plural}\" component={{Module}Page} />",
-    "menu_item":     "<full IonMenuToggle JSX block with canAccess guard, IonIcon using the chosen icon variable, and IonLabel with the Spanish label>",
-    "menu_section":  "Catálogo",
-    "icon_name":     "people"
+    "import_line":    "import {Module}Page from './pages/{Module}Page';",
+    "private_route":  "<PrivateRoute exact path=\"/{plural}\" component={{Module}Page} />",
+    "menu_item":      "<full IonMenuToggle JSX block with canAccess guard, IonIcon using the chosen icon variable, and IonLabel with the Spanish label>",
+    "menu_section":   "Catálogo",
+    "icon_name":      "storefront",
+    "canAccess_key":  "{plural}"
   },
   "setting_patch": {
     "section":    "Catálogo",

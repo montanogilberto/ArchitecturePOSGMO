@@ -135,19 +135,22 @@ def patch_app_tsx(
     private_route: str,
     menu_item: str,
     menu_section: str,
+    icon_name: str = "",
 ) -> dict:
     """
     Fetches App.tsx from the frontend repo on the given branch, inserts the
-    new module's import, PrivateRoute, and IonMenuToggle menu item, then
-    pushes the updated file back.
+    new module's import, icon (into ionicons/icons import), PrivateRoute,
+    and IonMenuToggle menu item, then pushes the updated file back.
 
     Args:
         repo:          Frontend repo slug, e.g. "montanogilberto/POSVending".
         branch:        Feature branch to push to.
         import_line:   Full import statement, e.g. "import SupplierPage from './pages/SupplierPage';"
-        private_route: Full PrivateRoute JSX line, e.g. '<PrivateRoute exact path="/suppliers" component={SupplierPage} />'
+        private_route: Full PrivateRoute JSX line.
         menu_item:     Full IonMenuToggle JSX block (may be multi-line).
         menu_section:  IonItemDivider label to insert AFTER, e.g. "Catálogo".
+        icon_name:     Outline icon variable name WITHOUT 'Outline' suffix (e.g. "storefront").
+                       Will be imported as "{icon_name}Outline" from ionicons/icons.
 
     Returns:
         dict with "status" and GitHub push response.
@@ -165,6 +168,30 @@ def patch_app_tsx(
         original = base64.b64decode(data["content"]).decode("utf-8")
 
     lines = original.splitlines(keepends=True)
+
+    # --- 0. Add icon to ionicons/icons import block ---
+    if icon_name:
+        icon_outline = f"{icon_name}Outline"
+        # Check if icon already imported
+        already_icon = any(icon_outline in ln for ln in lines)
+        if not already_icon:
+            # Find the ionicons/icons import line(s) and insert the icon
+            for i, line in enumerate(lines):
+                if "from 'ionicons/icons'" in line or 'from "ionicons/icons"' in line:
+                    # Single-line: `import { a, b } from 'ionicons/icons';`
+                    if "{" in line and "}" in line:
+                        lines[i] = line.replace("} from", f"  {icon_outline},\n}} from", 1)
+                    else:
+                        # Multi-line import — find closing brace line
+                        for j in range(i, min(i + 30, len(lines))):
+                            if "}" in lines[j]:
+                                stripped = lines[j].rstrip()
+                                lines[j] = stripped.rstrip("}").rstrip().rstrip(",") + f",\n  {icon_outline},\n}}\n"
+                                break
+                    break
+
+        content = "".join(lines)
+        lines = content.splitlines(keepends=True)
 
     # --- 1. Insert import after last "./pages/" import line ---
     last_page_import = -1
@@ -349,6 +376,204 @@ def patch_setting_tsx(
         return {"status": "patched", "file": "src/pages/Setting.tsx", "added": code}
 
 
+def patch_ui_feature_type(
+    repo: str,
+    branch: str,
+    feature_code: str,
+    type_file_path: str = "src/config/rolePermissions.ts",
+) -> dict:
+    """
+    Fetches the file that declares 'export type UiFeature' and adds the new
+    feature code as a union member (| 'feature_code'), then pushes it back.
+
+    Args:
+        repo:           Frontend repo slug, e.g. "montanogilberto/POSVending".
+        branch:         Feature branch to push to.
+        feature_code:   Plural lowercase code, e.g. "suppliers".
+        type_file_path: Repo-relative path to the file containing UiFeature.
+                        Defaults to "src/config/rolePermissions.ts". Try
+                        "src/utils/canAccess.ts" or "src/types/roles.ts" if 404.
+
+    Returns:
+        dict with "status".
+    """
+    with httpx.Client(timeout=30) as client:
+        r = client.get(
+            f"{_GH_API}/repos/{repo}/contents/{type_file_path}",
+            headers=_gh_headers(),
+            params={"ref": branch},
+        )
+        if r.status_code == 404:
+            # Try alternate locations in priority order
+            for alt in ("src/utils/canAccess.ts", "src/types/roles.ts"):
+                r = client.get(
+                    f"{_GH_API}/repos/{repo}/contents/{alt}",
+                    headers=_gh_headers(),
+                    params={"ref": branch},
+                )
+                if r.status_code == 200:
+                    type_file_path = alt
+                    break
+            else:
+                return {"status": "skipped", "detail": f"UiFeature type file not found at {type_file_path} or alternates"}
+            type_file_path = alt
+        r.raise_for_status()
+        data = r.json()
+        file_sha = data["sha"]
+        original = base64.b64decode(data["content"]).decode("utf-8")
+
+    # Idempotent
+    if f"'{feature_code}'" in original:
+        return {"status": "already_present", "feature": feature_code}
+
+    lines = original.splitlines(keepends=True)
+
+    # Find the UiFeature type declaration and insert before its closing semicolon
+    # Pattern:
+    #   export type UiFeature =
+    #     | 'existing'
+    #     | 'another';     ← insert new entry before the final semicolon member
+    in_ui_feature = False
+    last_member_line = -1
+    for i, line in enumerate(lines):
+        if "export type UiFeature" in line:
+            in_ui_feature = True
+        if in_ui_feature:
+            stripped = line.strip()
+            if stripped.startswith("|") and ("'" in stripped or '"' in stripped):
+                last_member_line = i
+            # Stop at blank line or next export/const that closes the type
+            if i > 0 and in_ui_feature and last_member_line >= 0:
+                next_stripped = line.strip()
+                if next_stripped and not next_stripped.startswith("|") and not next_stripped.startswith("export type UiFeature"):
+                    break
+
+    if last_member_line == -1:
+        return {"status": "error", "detail": "Could not locate UiFeature union members"}
+
+    # Detect indentation from existing member lines
+    indent = "  "
+    ref_line = lines[last_member_line]
+    indent = " " * (len(ref_line) - len(ref_line.lstrip()))
+
+    # Remove trailing semicolon from last member if present, add comma/union
+    lines[last_member_line] = lines[last_member_line].rstrip().rstrip(";") + "\n"
+    lines.insert(last_member_line + 1, f"{indent}| '{feature_code}';\n")
+
+    new_content = "".join(lines)
+    encoded = base64.b64encode(new_content.encode()).decode()
+
+    with httpx.Client(timeout=30) as client:
+        r = client.put(
+            f"{_GH_API}/repos/{repo}/contents/{type_file_path}",
+            headers=_gh_headers(),
+            json={
+                "message": f"feat: add '{feature_code}' to UiFeature type",
+                "content": encoded,
+                "branch": branch,
+                "sha": file_sha,
+            },
+        )
+        r.raise_for_status()
+        return {"status": "patched", "file": type_file_path, "added": feature_code}
+
+
+def patch_main_py(
+    repo: str,
+    branch: str,
+    module: str,
+    route_module: str,
+) -> dict:
+    """
+    Fetches main.py from the backend repo, inserts the new router's import
+    and app.include_router() call, then pushes the updated file back.
+
+    Args:
+        repo:         Backend repo slug, e.g. "montanogilberto/smartloans_backend".
+        branch:       Feature branch to push to.
+        module:       Module name (singular snake_case), e.g. "supplier".
+        route_module: Python module name inside routes_/, e.g. "supplier"
+                      (becomes `from routes_ import ... , supplier`).
+
+    Returns:
+        dict with "status" and GitHub push response.
+    """
+    with httpx.Client(timeout=30) as client:
+        r = client.get(
+            f"{_GH_API}/repos/{repo}/contents/main.py",
+            headers=_gh_headers(),
+            params={"ref": branch},
+        )
+        r.raise_for_status()
+        data = r.json()
+        file_sha = data["sha"]
+        original = base64.b64decode(data["content"]).decode("utf-8")
+
+    # Idempotent — skip if already patched
+    if f" {route_module}," in original or f" {route_module}\n" in original or f",{route_module}" in original:
+        return {"status": "already_present", "module": route_module}
+
+    lines = original.splitlines(keepends=True)
+
+    # --- 1. Add to the from routes_ import (...) block ---
+    # Find the closing paren of the import block
+    import_close = -1
+    in_import = False
+    for i, line in enumerate(lines):
+        if "from routes_ import" in line:
+            in_import = True
+        if in_import and ")" in line:
+            import_close = i
+            break
+
+    if import_close == -1:
+        return {"status": "error", "detail": "Could not locate 'from routes_ import' block in main.py"}
+
+    # Detect indentation from the line above the closing paren
+    indent = "    "
+    if import_close > 0:
+        prev = lines[import_close - 1]
+        indent = " " * (len(prev) - len(prev.lstrip()))
+
+    # Insert new import entry before the closing paren line
+    lines.insert(import_close, f"{indent}{route_module},\n")
+
+    content = "".join(lines)
+    lines = content.splitlines(keepends=True)
+
+    # --- 2. Add app.include_router() call ---
+    # Find the last app.include_router line and insert after it
+    last_router = -1
+    for i, line in enumerate(lines):
+        if "app.include_router(" in line:
+            last_router = i
+
+    if last_router == -1:
+        return {"status": "error", "detail": "Could not locate app.include_router() calls in main.py"}
+
+    router_line = f"app.include_router({route_module}.router)\n"
+    # Idempotent check
+    if not any(f"include_router({route_module}" in ln for ln in lines):
+        lines.insert(last_router + 1, router_line)
+
+    new_content = "".join(lines)
+    encoded = base64.b64encode(new_content.encode()).decode()
+
+    with httpx.Client(timeout=30) as client:
+        r = client.put(
+            f"{_GH_API}/repos/{repo}/contents/main.py",
+            headers=_gh_headers(),
+            json={
+                "message": f"feat: register {route_module} router in main.py",
+                "content": encoded,
+                "branch": branch,
+                "sha": file_sha,
+            },
+        )
+        r.raise_for_status()
+        return {"status": "patched", "file": "main.py", "added": route_module}
+
+
 def github_create_pr(repo: str, branch: str, title: str, body: str,
                      base_branch: str = "main") -> dict:
     """
@@ -407,6 +632,13 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - backend_artifacts.module_file  → modules/{{module}}.py
    - backend_artifacts.route_file   → routes_/{{module}}.py
    - For each entry in backend_artifacts.docs_files → push to that entry's path
+5b. Call patch_main_py with:
+   - repo: backend repo slug
+   - branch: the feature branch
+   - module: {{module}} (singular snake_case, e.g. "supplier")
+   - route_module: {{module}} (same value — the Python file name in routes_/)
+   This patches main.py: adds the import to the routes_ import block and
+   registers the router with app.include_router({{module}}.router).
 6. Push the 3 module frontend files (api_file, page_file, css_file) to the frontend repo.
 7. Call patch_app_tsx with:
    - repo: frontend repo slug
@@ -415,7 +647,14 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - private_route: frontend_artifacts.app_patches.private_route
    - menu_item: frontend_artifacts.app_patches.menu_item
    - menu_section: frontend_artifacts.app_patches.menu_section
-   This patches src/App.tsx: adds import, PrivateRoute, and side-menu IonMenuToggle.
+   - icon_name: frontend_artifacts.app_patches.icon_name  (e.g. "storefront" — WITHOUT "Outline")
+   This patches src/App.tsx: adds import, icon to ionicons import, PrivateRoute,
+   and side-menu IonMenuToggle.
+7b. Call patch_ui_feature_type with:
+   - repo: frontend repo slug
+   - branch: the feature branch
+   - feature_code: frontend_artifacts.app_patches.canAccess_key  (plural lowercase, e.g. "suppliers")
+   This adds | 'suppliers' to the UiFeature union type so canAccess() recognises the new module.
 8. Call patch_setting_tsx with:
    - repo: frontend repo slug
    - branch: the feature branch
@@ -455,6 +694,7 @@ If review_result.passed is true, use this body:
 - routes_/{{module}}.py
 - docs_description/{{plural}}*.txt (×3)
 - sql_logic/sp_{{plural}}.sql
+- main.py ← import + app.include_router registered
 ```
 
 If review_result.passed is false, use this body (add the issues section):
@@ -483,6 +723,7 @@ For each item in review_result.issues, add a line:
 - routes_/{{module}}.py
 - docs_description/{{plural}}*.txt (×3)
 - sql_logic/sp_{{plural}}.sql
+- main.py ← import + app.include_router registered
 ```
 
 ## Output format
@@ -507,7 +748,9 @@ pr_agent = Agent(
         FunctionTool(func=save_sql_locally),
         FunctionTool(func=github_create_branch),
         FunctionTool(func=github_push_file),
+        FunctionTool(func=patch_main_py),
         FunctionTool(func=patch_app_tsx),
+        FunctionTool(func=patch_ui_feature_type),
         FunctionTool(func=patch_setting_tsx),
         FunctionTool(func=github_create_pr),
     ],

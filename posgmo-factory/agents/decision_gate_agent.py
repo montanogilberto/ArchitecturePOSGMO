@@ -324,11 +324,19 @@ def run_decision_gate(tool_context: ToolContext) -> dict:
     session state, classifies tier, detects backend pattern, builds constraints,
     and writes gate_result back to session state.
     """
-    raw_spec = tool_context.state.get("specification", "{}")
-    raw_schema = tool_context.state.get("schema_analysis", "{}")
+    def _safe_load(raw, default=None):
+        if default is None:
+            default = {}
+        if isinstance(raw, str):
+            raw = raw.strip()
+            return json.loads(raw) if raw else default
+        return raw if raw is not None else default
 
-    spec = json.loads(raw_spec) if isinstance(raw_spec, str) else raw_spec
-    schema = json.loads(raw_schema) if isinstance(raw_schema, str) else raw_schema
+    raw_spec = tool_context.state.get("specification", "")
+    raw_schema = tool_context.state.get("schema_analysis", "")
+
+    spec = _safe_load(raw_spec)
+    schema = _safe_load(raw_schema)
 
     if not spec:
         blocked = {

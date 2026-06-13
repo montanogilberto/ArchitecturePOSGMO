@@ -12,7 +12,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +73,9 @@ class FieldDef(BaseModel):
         return self
 
 
+from pydantic import field_validator
+from typing import Union
+
 class RelationshipDef(BaseModel):
     """Rich relationship object — parentModule, cardinality, notes."""
     parentModule: Optional[str] = None
@@ -129,6 +132,14 @@ class PRDInput(BaseModel):
         default_factory=list,
         description="Parent modules this module depends on (rich object or plain string).",
     )
+
+    @field_validator("relationships", mode="before")
+    @classmethod
+    def _coerce_relationships(cls, v):
+        """Allow plain strings: "companies" → RelationshipDef(parentModule="companies")"""
+        if not isinstance(v, list):
+            return v
+        return [{"parentModule": item} if isinstance(item, str) else item for item in v]
     roles_allowed: List[AllowedRole] = Field(
         default_factory=lambda: [AllowedRole.admin, AllowedRole.manager],
         description="Frontend roles that may access this module's page.",

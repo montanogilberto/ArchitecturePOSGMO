@@ -133,9 +133,9 @@ def one_{{plural}}(json: dict):
 Rules:
 - File path MUST be routes_/{{module}}.py (note the underscore in routes_).
 - `router = APIRouter()` with NO prefix and NO tags.
-- Only 3 endpoints: POST /{{plural}}, GET /all_{{plural}}, POST /one_{{plural}}.
+- 3 endpoints: POST /{{plural}}, POST /all_{{plural}}, POST /one_{{plural}}.
+- All three are POST with a JSON body containing companyId and other fields.
 - No Pydantic, no HTTPException, no async, no response_model.
-- The caller sends all needed fields (action, companyId, etc.) in the JSON body.
 - Import from `modules.{{plural}}` (plural form), NOT `modules.{{module}}`.
 
 ### Connector endpoints — only when gate_result.backend_pattern == "CRUD_AND_CONNECTOR"
@@ -388,15 +388,48 @@ Rules for connector routes:
 - All connector imports are added to the existing import line from modules.{{plural}}
 
 ### docs_description/ — OpenAPI description txt files
-Generate 3 plain-text files, one per endpoint, describing what the endpoint does.
+Generate 3 plain-text files, one per endpoint. Each file must contain:
+1. One sentence describing what the endpoint does.
+2. The exact SQL Server stored procedure being called (sp name).
+3. A curl example showing a real call with realistic field values.
 
+Use this exact template for each file (replace placeholders):
+
+docs_description/{{plural}}.txt  (POST /{{plural}} — INSERT/UPDATE/DELETE):
 ```
-docs_description/{{plural}}.txt       — describes the CRUD (INSERT/UPDATE/DELETE) endpoint
-docs_description/{{plural}}_all.txt   — describes the GET ALL endpoint
-docs_description/{{plural}}_one.txt   — describes the GET ONE endpoint
+Performs INSERT, UPDATE, or DELETE on the {{plural}} table via sp_{{plural}}.
+Stored procedure: EXEC [dbo].[sp_{{plural}}] @pjsonfile = '<json>'
+
+Example:
+curl -X POST "https://smartloansbackend.azurewebsites.net/{{plural}}" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"INSERT","companyId":1,"<field1>":"<value1>","<field2>":"<value2>"}'
 ```
 
-Each file is 2–4 sentences of plain English. No markdown, no code.
+docs_description/{{plural}}_all.txt  (POST /all_{{plural}} — list all by company):
+```
+Returns all {{plural}} records for the given company filtered by companyId via sp_{{plural}}_all.
+Stored procedure: EXEC [dbo].[sp_{{plural}}_all] @pjsonfile = '<json>'
+
+Example:
+curl -X POST "https://smartloansbackend.azurewebsites.net/all_{{plural}}" \
+  -H "Content-Type: application/json" \
+  -d '{"plural":[{"companyId":1}]}'
+```
+
+docs_description/{{plural}}_one.txt  (POST /one_{{plural}} — get single record):
+```
+Returns a single {{module}} record by its primary key via sp_{{plural}}_one.
+Stored procedure: EXEC [dbo].[sp_{{plural}}_one] @pjsonfile = '<json>'
+
+Example:
+curl -X POST "https://smartloansbackend.azurewebsites.net/one_{{plural}}" \
+  -H "Content-Type: application/json" \
+  -d '{"companyId":1,"{{module}}Id":1}'
+```
+
+Replace <field1>, <field2>, <value1>, <value2> with actual column names and realistic sample values from the spec.
+No markdown headers. Plain text only — the content goes directly into FastAPI's description field.
 
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences:

@@ -224,7 +224,7 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
         if not re.search(rf'\bdef {re.escape(fn)}\b', mod_content):
             E(mod_path, f"Missing function: {fn}()", auto=True)
 
-    # ── all_sp must accept json_file ──────────────────────────────────────
+    # ── all_sp must accept json_file: dict ───────────────────────────────────
     if re.search(rf'\bdef all_{re.escape(plural)}_sp\s*\(\s*\)', mod_content):
         E(mod_path, f"all_{plural}_sp() must accept json_file: dict (zero-arg is forbidden)", auto=True)
 
@@ -251,7 +251,7 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
     if not re.search(r'router\s*=\s*APIRouter\s*\(\s*\)', rt_content):
         E(rt_path, "router = APIRouter() must have NO prefix and NO tags")
 
-    # ── 3 CRUD endpoints ─────────────────────────────────────────────────
+    # ── 3 CRUD endpoints — all POST ───────────────────────────────────────
     for path, method in [
         (f"/{plural}", "post"),
         (f"/all_{plural}", "post"),
@@ -412,8 +412,11 @@ def run_review(tool_context: ToolContext) -> dict:
     runs Python checklist for each, scores 0-100, writes review_result.
     """
     def _load(key: str):
-        raw = tool_context.state.get(key, "{}")
-        return json.loads(raw) if isinstance(raw, str) else (raw or {})
+        raw = tool_context.state.get(key, "")
+        if isinstance(raw, str):
+            raw = raw.strip()
+            return json.loads(raw) if raw else {}
+        return raw or {}
 
     gate     = _load("gate_result")
     spec     = _load("specification")

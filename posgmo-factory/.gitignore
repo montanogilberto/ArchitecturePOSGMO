@@ -17,4 +17,4 @@ agents/.adk/
 *.sqlite
 
 # macOS
-.DS_Store
+.DS_Storelast_state.json

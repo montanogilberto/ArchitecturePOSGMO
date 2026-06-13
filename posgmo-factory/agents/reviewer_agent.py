@@ -411,12 +411,20 @@ def run_review(tool_context: ToolContext) -> dict:
     Deterministic reviewer. Reads all artifacts from session state,
     runs Python checklist for each, scores 0-100, writes review_result.
     """
-    def _load(key: str):
+    def _load(key: str) -> dict:
         raw = tool_context.state.get(key, "")
-        if isinstance(raw, str):
-            raw = raw.strip()
-            return json.loads(raw) if raw else {}
-        return raw or {}
+        if not isinstance(raw, str):
+            return raw if isinstance(raw, dict) else {}
+        raw = raw.strip()
+        if not raw:
+            return {}
+        if raw.startswith("```"):
+            lines = [l for l in raw.splitlines() if not l.strip().startswith("```")]
+            raw = "\n".join(lines).strip()
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return {}
 
     gate     = _load("gate_result")
     spec     = _load("specification")
@@ -480,5 +488,6 @@ reviewer_agent = Agent(
     model="gemini-2.5-flash",
     instruction=_INSTRUCTION,
     tools=[FunctionTool(func=run_review)],
-    output_key="review_result",
+    # output_key omitted — run_review() writes review_result directly to
+    # tool_context.state. Adding output_key would overwrite it with LLM text.
 )

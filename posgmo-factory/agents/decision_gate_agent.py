@@ -324,13 +324,21 @@ def run_decision_gate(tool_context: ToolContext) -> dict:
     session state, classifies tier, detects backend pattern, builds constraints,
     and writes gate_result back to session state.
     """
-    def _safe_load(raw, default=None):
+    def _safe_load(raw, default=None) -> dict:
         if default is None:
             default = {}
-        if isinstance(raw, str):
-            raw = raw.strip()
-            return json.loads(raw) if raw else default
-        return raw if raw is not None else default
+        if not isinstance(raw, str):
+            return raw if isinstance(raw, dict) else default
+        raw = raw.strip()
+        if not raw:
+            return default
+        if raw.startswith("```"):
+            lines = [l for l in raw.splitlines() if not l.strip().startswith("```")]
+            raw = "\n".join(lines).strip()
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return default
 
     raw_spec = tool_context.state.get("specification", "")
     raw_schema = tool_context.state.get("schema_analysis", "")
@@ -425,5 +433,7 @@ decision_gate_agent = Agent(
     model="gemini-2.5-flash",
     instruction=_INSTRUCTION,
     tools=[FunctionTool(func=run_decision_gate)],
-    output_key="gate_result",
+    # output_key intentionally omitted — run_decision_gate() writes directly to
+    # tool_context.state["gate_result"]. Adding output_key here would overwrite
+    # the tool's JSON with the LLM's text explanation.
 )

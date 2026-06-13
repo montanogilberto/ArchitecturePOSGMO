@@ -478,12 +478,22 @@ def run_all_fixers(tool_context: ToolContext) -> dict:
     Applies all three fixers. Writes corrected artifacts back to session state.
     Returns a summary of every fix applied.
     """
-    def _load(key: str):
+    def _load(key: str) -> dict:
         raw = tool_context.state.get(key, "{}")
-        if isinstance(raw, str):
-            raw = raw.strip()
-            return json.loads(raw) if raw else {}
-        return raw or {}
+        if not isinstance(raw, str):
+            return raw if isinstance(raw, dict) else {}
+        raw = raw.strip()
+        if not raw:
+            return {}
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            lines = raw.splitlines()
+            lines = [l for l in lines if not l.strip().startswith("```")]
+            raw = "\n".join(lines).strip()
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return {}
 
     gate_result      = _load("gate_result")
     db_artifacts     = _load("database_artifacts")
@@ -539,5 +549,6 @@ fixer_agent = Agent(
     model="gemini-2.5-flash",
     instruction=_INSTRUCTION,
     tools=[FunctionTool(func=run_all_fixers)],
-    output_key="fixer_report",
+    # output_key omitted — run_all_fixers() writes corrected artifacts directly to
+    # tool_context.state. Adding output_key would overwrite artifacts with LLM text.
 )

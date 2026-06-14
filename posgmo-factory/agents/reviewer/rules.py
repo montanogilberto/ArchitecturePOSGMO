@@ -286,7 +286,7 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
             # Check route exists -- PRD uses hyphens, generated code uses camelCase.
             # Normalize both by removing all separators before comparing.
             norm_prd = path.lstrip('/').lower().replace('-', '').replace('_', '')
-            route_defs = re.findall(r'@router\.(post|get)\s*\(\s*["']([^"']+)', rt_content, re.IGNORECASE)
+            route_defs = re.findall(r"@router\.(post|get)\s*\(\s*['\"]([^'\"]+)", rt_content, re.IGNORECASE)
             found_route = any(
                 h[1].lower().replace('-', '').replace('_', '') == norm_prd
                 for h in route_defs

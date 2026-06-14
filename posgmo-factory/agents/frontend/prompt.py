@@ -58,10 +58,10 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "https://smartloansbackend.azur
 // Body: { "{plural}": [{ "companyId": companyId }] }
 // Response: { "{plural}": {Module}[] }  <-- unwrap .{plural} before returning
 export async function getAll{Module}s(companyId: number): Promise<{Module}[]> {
-  const res = await fetch(`${BASE_URL}/all_{plural}`, {
+  const res = await fetch(BASE_URL + "/all_{plural}", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ "{plural}": [{ companyId }] }),
+    body: JSON.stringify({ "{plural}": [{ "companyId": companyId }] }),
   });
   if (!res.ok) throw new Error(await res.text());
   const data: {Module}ListResponse = await res.json();
@@ -71,10 +71,10 @@ export async function getAll{Module}s(companyId: number): Promise<{Module}[]> {
 // CREATE -- POST /{plural}
 // Body: { "{plural}": [{ "action": 1, "companyId": ..., ...fields }] }
 export async function create{Module}(payload: Omit<{Module}, "{module}Id">): Promise<{Module}> {
-  const res = await fetch(`${BASE_URL}/{plural}`, {
+  const res = await fetch(BASE_URL + "/{plural}", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ "{plural}": [{ action: 1, ...payload }] }),
+    body: JSON.stringify({ "{plural}": [{ "action": 1, ...payload }] }),
   });
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
@@ -83,10 +83,10 @@ export async function create{Module}(payload: Omit<{Module}, "{module}Id">): Pro
 // UPDATE -- POST /{plural}
 // Body: { "{plural}": [{ "action": 2, "{module}Id": id, ...fields }] }
 export async function update{Module}(id: number, payload: Partial<{Module}>): Promise<{Module}> {
-  const res = await fetch(`${BASE_URL}/{plural}`, {
+  const res = await fetch(BASE_URL + "/{plural}", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ "{plural}": [{ action: 2, {module}Id: id, ...payload }] }),
+    body: JSON.stringify({ "{plural}": [{ "action": 2, "{module}Id": id, ...payload }] }),
   });
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
@@ -95,10 +95,10 @@ export async function update{Module}(id: number, payload: Partial<{Module}>): Pr
 // DELETE -- POST /{plural}
 // Body: { "{plural}": [{ "action": 3, "{module}Id": id, "companyId": companyId }] }
 export async function delete{Module}(id: number, companyId: number): Promise<void> {
-  const res = await fetch(`${BASE_URL}/{plural}`, {
+  const res = await fetch(BASE_URL + "/{plural}", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ "{plural}": [{ action: 3, {module}Id: id, companyId }] }),
+    body: JSON.stringify({ "{plural}": [{ "action": 3, "{module}Id": id, "companyId": companyId }] }),
   });
   if (!res.ok) throw new Error(await res.text());
 }

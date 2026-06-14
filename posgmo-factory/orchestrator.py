@@ -106,6 +106,7 @@ def _build_session_state(prd: PRDInput) -> dict[str, str]:
         "fk_column": "fk_column",
         "loading": "loading",
         "error": "error",
+        "BASE_URL": "BASE_URL",
         "GITHUB_REPO_OWNER": os.getenv("GITHUB_REPO_OWNER", ""),
         "GITHUB_REPO_NAME": os.getenv("GITHUB_REPO_NAME", ""),
         "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN", ""),

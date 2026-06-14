@@ -203,9 +203,14 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
         if forbidden in mod_content:
             E(mod_path, f"Forbidden import '{forbidden}' in module_file", auto=True)
 
-    # ── Module-level conn ─────────────────────────────────────────────────
-    if not re.search(r'^conn\s*=\s*connection\(\)', mod_content, re.MULTILINE):
-        E(mod_path, "Missing module-level: conn = connection()")
+    # -- Connection pattern: per-request (module-level conn is FORBIDDEN) ----------
+    # Module-level conn = connection() causes 500 after DB idle timeout.
+    if re.search(r"^conn\s*=\s*connection\(\)", mod_content, re.MULTILINE):
+        E(mod_path, "Module-level conn = connection() is forbidden -- must be inside each function", auto=True)
+    if not re.search(r"conn\s*=\s*connection\(\)", mod_content):
+        E(mod_path, "Missing per-request conn = connection() inside CRUD functions")
+    if not re.search(r"finally", mod_content):
+        E(mod_path, "DB connection must be closed in finally block: if conn: conn.close()")
 
     # ── Three CRUD functions ──────────────────────────────────────────────
     for fn in (f"{plural}_sp", f"all_{plural}_sp", f"one_{plural}_sp"):
@@ -223,10 +228,15 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
         if raw_sql:
             E(mod_path, "Raw SQL detected — only EXEC [dbo].[sp_*] calls allowed")
 
-    # ── json_result[0][0] pattern ─────────────────────────────────────────
-    if not re.search(r'json_result\[0\]\[0\]', mod_content):
-        E(mod_path, f"{plural}_sp must return json_result[0][0] (not [0][1] or other index)")
-
+    # -- SP return pattern: fetchone for upsert, fetchall+join for all/one --------
+    if re.search(r"json_result\[0\]\[0\]", mod_content):
+        E(mod_path, "json_result[0][0] is the old broken pattern -- use fetchone()+row[0] for upsert", auto=True)
+    if not re.search(r"cursor\.fetchone\(\)", mod_content):
+        E(mod_path, f"{plural}_sp (upsert) must use cursor.fetchone() for the single SP result row")
+    if not re.search(r"cursor\.fetchall\(\)", mod_content):
+        E(mod_path, f"all_{plural}_sp / one_{plural}_sp must use cursor.fetchall() for multi-row JSON")
+    if not re.search(r"if not json_result", mod_content):
+        E(mod_path, "Missing empty resultset guard (if not json_result) -- prevents json.loads crash")
     # ── No round() ────────────────────────────────────────────────────────
     if re.search(r'\bround\s*\(', mod_content):
         E(mod_path, "round() call found — return raw values, no rounding", auto=True)
@@ -273,10 +283,16 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
             if "httpx.AsyncClient" not in mod_content:
                 E(mod_path, "Connector must use httpx.AsyncClient for HTTP calls")
             # Check route exists
-            safe_path = re.escape(path.lstrip("/"))
-            if not re.search(rf'@router\.(post|get)\s*\(\s*["\']/?{safe_path}', rt_content, re.IGNORECASE):
-                E(rt_path, f"Missing connector route for '{path}'", auto=True)
-
+            # Check route exists -- PRD uses hyphens, generated code uses camelCase.
+            # Normalize both by removing all separators before comparing.
+            norm_prd = path.lstrip('/').lower().replace('-', '').replace('_', '')
+            route_defs = re.findall(r'@router\.(post|get)\s*\(\s*["']([^"']+)', rt_content, re.IGNORECASE)
+            found_route = any(
+                h[1].lower().replace('-', '').replace('_', '') == norm_prd
+                for h in route_defs
+            )
+            if not found_route:
+                E(rt_path, f"Missing connector route for {path!r} (or camelCase equivalent)", auto=True)
     return issues
 
 

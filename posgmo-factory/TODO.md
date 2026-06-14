@@ -1,8 +1,6 @@
-# TODO - Fix BASE_URL context KeyError in ADK prompt injection
+# TODO - Fix `_fix_updated_at_isnull` regex crash (variable-length lookbehind)
 
-- [x] Diagnose failing key from logs and locate placeholder usage (`{BASE_URL}`).
-- [x] Patch `orchestrator.py` session state seeding to include `BASE_URL` placeholder.
-- [ ] Harden prompt templates (if needed) to avoid unintended context substitution for literal braces.
-- [ ] Add/adjust regression test for required seeded context keys.
-- [ ] Run targeted tests and verify no KeyError for `BASE_URL`.
-- [ ] Mark TODO complete.
+- [x] Diagnose traceback and identify invalid regex in `agents/fixer/rules.py` (`(?<!\bCONVERT\b.*)`).
+- [x] Patch `_fix_updated_at_isnull` to remove unsupported lookbehind and preserve behavior.
+- [x] Run targeted tests and sanity-check fixer flow.
+- [x] Mark TODO complete.

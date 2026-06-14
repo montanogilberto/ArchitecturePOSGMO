@@ -103,18 +103,12 @@ def _fix_updated_at_isnull(sql: str) -> tuple[str, list[str]]:
     Fix raw [updated_at] references in SELECT statements.
     """
     fixes = []
-    # Match a raw [updated_at] or updated_at in SELECT that is NOT already wrapped in ISNULL
-    pattern = re.compile(
-        r'(?<!ISNULL\()(?<!\bCONVERT\b.*)\b(\[?updated_at\]?)\b(?!\s*\,\s*126)',
-        re.IGNORECASE,
-    )
-    # Only operate inside SELECT ... FOR JSON blocks to avoid touching WHERE/UPDATE clauses
-    # Simpler: just check if the canonical form is already present
     canonical = "ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '')"
     if canonical.lower() in sql.lower():
         return sql, fixes
 
-    # Replace bare updated_at in SELECT lines only
+    # Replace bare updated_at in SELECT lines only.
+    # Avoid Python regex lookbehind (must be fixed-width) by using line guards.
     lines = sql.split('\n')
     result = []
     in_select = False
@@ -125,16 +119,20 @@ def _fix_updated_at_isnull(sql: str) -> tuple[str, list[str]]:
             in_select = True
         if upper.startswith('FROM') or upper.startswith('WHERE') or 'FOR JSON' in upper:
             in_select = False
+
         if in_select and re.search(r'\bupdated_at\b', line, re.IGNORECASE):
-            if 'ISNULL' not in line.upper() and 'CONVERT' not in line.upper():
+            # Skip lines where updated_at is already handled
+            if 'ISNULL(' not in upper and 'CONVERT(' not in upper:
                 line = re.sub(
                     r'\[?updated_at\]?',
-                    "ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '')",
+                    canonical,
                     line,
                     flags=re.IGNORECASE,
                 )
                 changed = True
+
         result.append(line)
+
     if changed:
         fixes.append("Wrapped updated_at with ISNULL(CONVERT(VARCHAR(30), ..., 126), '')")
     return '\n'.join(result), fixes

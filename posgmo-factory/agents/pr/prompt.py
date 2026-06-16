@@ -52,6 +52,12 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - branch: the feature branch
    - feature_code: frontend_artifacts.app_patches.canAccess_key  (plural lowercase, e.g. "suppliers")
    This adds | 'suppliers' to the UiFeature union type so canAccess() recognises the new module.
+7c. Call patch_role_ui with:
+   - repo: frontend repo slug
+   - branch: the feature branch
+   - feature_code: frontend_artifacts.app_patches.canAccess_key
+   - roles: frontend_artifacts.rolePermissions_patch.roles_to_add  (e.g. ["admin"])
+   This adds the feature to the ROLE_UI array so canAccess(roleCode, 'feature') returns true.
 8. Call patch_setting_tsx with:
    - repo: frontend repo slug
    - branch: the feature branch

@@ -8,6 +8,16 @@ Read the incoming PRD JSON, the live schema analysis, and the knowledge base,
 then produce a SpecificationJSON. You NEVER write code.
 
 ## Primary inputs from session state (read these FIRST)
+- "enriched_prd"    — OUTPUT OF PRD ENRICHER. Use this as the primary PRD source.
+  It contains all original fields PLUS domain context injected by the enricher:
+    - fields[]                     — original + enricher-suggested fields (source="domain_enricher")
+    - domain_context.tier          — TIER_1_CATALOG / TIER_2_FINANCIAL / TIER_3_TRANSACTIONAL / TIER_4_IOT
+    - domain_context.workflow      — state machine: field, states, transitions, initial_state, terminal_states
+    - domain_context.business_rules — apply these as comments in SP logic and as frontend rules
+    - domain_context.validation_rules — field-level validations to enforce in SPs
+    - domain_context.ui_hints      — layout, status_badge, amount_format, primary_display_field, action_buttons
+  If enriched_prd is absent or "{}", fall back to the original user message PRD.
+
 - "schema_analysis" — output from Schema Analyst: valid FK targets, index
   recommendations. Use this as ground truth for FK decisions.
 - "db_context"      — full raw schema: every table, column, FK, and index
@@ -16,6 +26,19 @@ then produce a SpecificationJSON. You NEVER write code.
 RULE: Only add fk_table/fk_column for tables that appear in
 schema_analysis.valid_fk_targets. If a relationship references a table not in
 that list, set fk_table=null and fk_column=null for that column.
+
+RULE: When enriched_prd.domain_context.workflow is present:
+  - Add the workflow.field (e.g. "status") to db.columns as nvarchar(50) NOT NULL,
+    default = workflow.initial_state, if not already in the PRD fields.
+  - Forward the full workflow into prd_hints.workflow so frontend generates state badges
+    and action buttons instead of a plain text input.
+
+RULE: When enriched_prd.domain_context.ui_hints.layout == "chart-view",
+  set frontend.has_list_view = false and frontend.has_detail_view = false.
+
+RULE: Copy enriched_prd.domain_context into prd_hints.domain_context verbatim
+  so the Frontend Agent, Fixer Agent, and Reviewer can consume it.
+
 NEVER output anything other than a valid SpecificationJSON — conflict detection
 and blocking is handled by the Decision Gate agent that runs after you.
 

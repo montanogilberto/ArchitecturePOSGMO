@@ -9,6 +9,7 @@ from agents.pr.rules import (
     patch_main_py,
     patch_app_tsx,
     patch_ui_feature_type,
+    patch_role_ui,
     patch_setting_tsx,
     github_create_pr,
 )
@@ -28,6 +29,7 @@ pr_agent = Agent(
         FunctionTool(func=patch_main_py),
         FunctionTool(func=patch_app_tsx),
         FunctionTool(func=patch_ui_feature_type),
+        FunctionTool(func=patch_role_ui),
         FunctionTool(func=patch_setting_tsx),
         FunctionTool(func=github_create_pr),
     ],

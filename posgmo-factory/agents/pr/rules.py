@@ -470,6 +470,111 @@ def patch_ui_feature_type(
         return {"status": "patched", "file": type_file_path, "added": feature_code}
 
 
+def patch_role_ui(
+    repo: str,
+    branch: str,
+    feature_code: str,
+    roles: list | None = None,
+    type_file_path: str = "src/config/rolePermissions.ts",
+) -> dict:
+    """
+    Adds feature_code to the ROLE_UI array for each specified role in rolePermissions.ts.
+
+    Args:
+        repo:           Frontend repo slug, e.g. "montanogilberto/POSVending".
+        branch:         Feature branch to push to.
+        feature_code:   Plural lowercase code, e.g. "suppliers".
+        roles:          Role keys to grant. Defaults to ["admin"].
+        type_file_path: Repo-relative path. Defaults to "src/config/rolePermissions.ts".
+
+    Returns:
+        dict with "status".
+    """
+    if roles is None:
+        roles = ["admin"]
+
+    with httpx.Client(timeout=30) as client:
+        r = client.get(
+            f"{_GH_API}/repos/{repo}/contents/{type_file_path}",
+            headers=_gh_headers(),
+            params={"ref": branch},
+        )
+        if r.status_code == 404:
+            return {"status": "skipped", "detail": f"{type_file_path} not found"}
+        r.raise_for_status()
+        data = r.json()
+        file_sha = data["sha"]
+        original = base64.b64decode(data["content"]).decode("utf-8")
+
+    lines = original.splitlines(keepends=True)
+    modified = False
+
+    for role in roles:
+        # Find `  admin: [` or `  admin: [\n`
+        role_start = -1
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith(f"{role}:") and "[" in line:
+                role_start = i
+                break
+        if role_start == -1:
+            continue
+
+        # Find closing `]` of this role's array; bail if feature already present
+        depth = 0
+        role_end = -1
+        already_present = False
+        for i in range(role_start, len(lines)):
+            depth += lines[i].count("[") - lines[i].count("]")
+            if f"'{feature_code}'" in lines[i]:
+                already_present = True
+                break
+            if depth <= 0 and i > role_start:
+                role_end = i
+                break
+        if already_present or role_end == -1:
+            continue
+
+        # Detect indent from the nearest non-empty line before closing bracket
+        indent = "    "
+        for i in range(role_end - 1, role_start, -1):
+            if lines[i].strip():
+                indent = " " * (len(lines[i]) - len(lines[i].lstrip()))
+                break
+
+        # Ensure previous entry has a trailing comma
+        prev_line = role_end - 1
+        while prev_line > role_start and not lines[prev_line].strip():
+            prev_line -= 1
+        if prev_line > role_start:
+            stripped_prev = lines[prev_line].rstrip()
+            if not stripped_prev.endswith(",") and not stripped_prev.endswith("["):
+                lines[prev_line] = stripped_prev + ",\n"
+
+        lines.insert(role_end, f"{indent}'{feature_code}',\n")
+        modified = True
+
+    if not modified:
+        return {"status": "already_present", "feature": feature_code}
+
+    new_content = "".join(lines)
+    encoded = base64.b64encode(new_content.encode()).decode()
+
+    with httpx.Client(timeout=30) as client:
+        r = client.put(
+            f"{_GH_API}/repos/{repo}/contents/{type_file_path}",
+            headers=_gh_headers(),
+            json={
+                "message": f"feat: grant '{feature_code}' access to roles {roles}",
+                "content": encoded,
+                "branch": branch,
+                "sha": file_sha,
+            },
+        )
+        r.raise_for_status()
+        return {"status": "patched", "file": type_file_path, "added": feature_code, "roles": roles}
+
+
 def patch_main_py(
     repo: str,
     branch: str,

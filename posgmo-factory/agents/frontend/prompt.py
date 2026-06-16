@@ -208,6 +208,34 @@ const dismissMailPopover = () =>
 - Match the visual density and spacing of existing POS GMO pages.
 - No global selector overrides.
 
+## rolePermissions.ts integration — MANDATORY
+
+`src/config/rolePermissions.ts` gates every feature in the app. Two edits are required
+for every new module; failing to include both will cause the menu item to never render.
+
+1. **UiFeature union** — a TypeScript string-literal union. Add the plural key:
+   ```typescript
+   export type UiFeature =
+     | 'clients'
+     | ...
+     | '{plural}';   // ← add this line
+   ```
+
+2. **ROLE_UI admin array** — grants access for admin users:
+   ```typescript
+   admin: [
+     ...,
+     '{plural}',   // ← add here
+   ],
+   ```
+
+Rules:
+- code: plural lowercase, same as canAccess key and route path (e.g. `'loans'`, `'suppliers'`)
+- Always add to `admin`. Add to `manager` only when the spec explicitly names manager access.
+- Never add to `employee` unless the spec requires it.
+
+Output this as `rolePermissions_patch` in the JSON response.
+
 ## Setting.tsx integration — MANDATORY
 
 Setting.tsx has a MODULES array with sections: POS, Catálogo, Mensajes, Administración, IOT.
@@ -289,6 +317,10 @@ Respond with ONLY a JSON object — no prose, no markdown fences:
     "code":       "{plural}",
     "label":      "SPANISH_LABEL",
     "icon":       "peopleOutline"
+  },
+  "rolePermissions_patch": {
+    "ui_feature_literal": "'{plural}'",
+    "roles_to_add":       ["admin"]
   }
 }
 """

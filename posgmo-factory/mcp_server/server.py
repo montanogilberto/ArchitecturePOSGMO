@@ -297,6 +297,496 @@ def get_generation_rules() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Domain knowledge tool
+# ---------------------------------------------------------------------------
+
+# Canonical domain catalog keyed by module name (and common aliases).
+# The PRD Enricher Agent calls this to inject context before the Architect runs.
+_DOMAIN_CATALOG: dict[str, dict] = {
+    # ── FINANCIAL ─────────────────────────────────────────────────────────
+    "loan": {
+        "tier": "TIER_2_FINANCIAL",
+        "suggested_fields": [
+            {"name": "principal",       "type": "decimal", "required": True,  "description": "Loan principal amount"},
+            {"name": "interest_rate",   "type": "decimal", "required": True,  "description": "Annual interest rate (e.g. 0.12 = 12%)"},
+            {"name": "term_months",     "type": "integer", "required": True,  "description": "Loan duration in months"},
+            {"name": "disbursement_date","type": "datetime","required": False, "description": "Date the loan was disbursed to the client"},
+            {"name": "due_date",        "type": "datetime","required": False,  "description": "Final payment due date"},
+            {"name": "status",          "type": "string",  "required": True,  "description": "Workflow state: pending/approved/active/paid/defaulted/rejected/cancelled"},
+            {"name": "clientId",        "type": "integer", "required": True,  "description": "FK → clients table for multi-tenant isolation"},
+            {"name": "notes",           "type": "text",    "required": False, "description": "Free-text remarks for the loan officer"},
+        ],
+        "relationships": ["clients", "companies"],
+        "workflow": {
+            "field": "status",
+            "states": ["pending", "approved", "active", "paid", "defaulted", "rejected", "cancelled"],
+            "transitions": {
+                "pending":  ["approved", "rejected"],
+                "approved": ["active", "cancelled"],
+                "active":   ["paid", "defaulted"],
+            },
+            "initial_state": "pending",
+            "terminal_states": ["paid", "defaulted", "rejected", "cancelled"],
+        },
+        "business_rules": [
+            "principal must be > 0",
+            "interest_rate must be between 0 and 1 (store as decimal, display as %)",
+            "term_months must be between 1 and 360",
+            "clientId must reference an existing client in the same company",
+            "Only admin/manager can approve or disburse — employee cannot change status",
+            "Once status=active, principal and interest_rate are immutable",
+        ],
+        "validation_rules": [
+            {"field": "principal",     "rule": "> 0",       "error_msg": "El monto debe ser mayor a cero"},
+            {"field": "interest_rate", "rule": "0 < x < 1", "error_msg": "La tasa debe estar entre 0 y 1"},
+            {"field": "term_months",   "rule": "1-360",     "error_msg": "El plazo debe ser entre 1 y 360 meses"},
+        ],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": True,
+            "amount_format": "currency",
+            "primary_display_field": "clientId",
+            "secondary_display_field": "principal",
+            "action_buttons": ["Approve", "Disburse", "Mark Paid"],
+            "status_colors": {
+                "pending": "warning", "approved": "primary", "active": "success",
+                "paid": "medium", "defaulted": "danger", "rejected": "dark", "cancelled": "light",
+            },
+        },
+    },
+    "income": {
+        "tier": "TIER_2_FINANCIAL",
+        "suggested_fields": [
+            {"name": "amount",       "type": "decimal",  "required": True,  "description": "Income amount"},
+            {"name": "concept",      "type": "string",   "required": True,  "description": "Income description/concept"},
+            {"name": "income_date",  "type": "datetime", "required": True,  "description": "Date of the income entry"},
+            {"name": "reference",    "type": "string",   "required": False, "description": "External reference or receipt number"},
+            {"name": "categoryId",   "type": "integer",  "required": False, "description": "FK → categories for reporting"},
+        ],
+        "relationships": ["companies", "categories"],
+        "workflow": None,
+        "business_rules": [
+            "amount must be > 0",
+            "income_date cannot be in the future",
+            "amounts are display-only on frontend — never recompute totals client-side",
+        ],
+        "validation_rules": [
+            {"field": "amount", "rule": "> 0", "error_msg": "El monto debe ser mayor a cero"},
+        ],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "currency",
+            "primary_display_field": "concept",
+            "secondary_display_field": "amount",
+            "action_buttons": [],
+        },
+    },
+    "expense": {
+        "tier": "TIER_2_FINANCIAL",
+        "suggested_fields": [
+            {"name": "amount",       "type": "decimal",  "required": True,  "description": "Expense amount"},
+            {"name": "concept",      "type": "string",   "required": True,  "description": "Expense description"},
+            {"name": "expense_date", "type": "datetime", "required": True,  "description": "Date of the expense"},
+            {"name": "reference",    "type": "string",   "required": False, "description": "Receipt or invoice reference"},
+            {"name": "categoryId",   "type": "integer",  "required": False, "description": "FK → categories"},
+        ],
+        "relationships": ["companies", "categories"],
+        "workflow": None,
+        "business_rules": [
+            "amount must be > 0",
+            "IVA is always 0 — never compute tax",
+            "amounts are display-only on frontend",
+        ],
+        "validation_rules": [
+            {"field": "amount", "rule": "> 0", "error_msg": "El monto debe ser mayor a cero"},
+        ],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "currency",
+            "primary_display_field": "concept",
+            "secondary_display_field": "amount",
+            "action_buttons": [],
+        },
+    },
+    # ── TRANSACTIONAL ─────────────────────────────────────────────────────
+    "sale": {
+        "tier": "TIER_3_TRANSACTIONAL",
+        "suggested_fields": [
+            {"name": "clientId",    "type": "integer",  "required": False, "description": "FK → clients (optional for anonymous sales)"},
+            {"name": "total",       "type": "decimal",  "required": True,  "description": "Total sale amount — computed server-side only"},
+            {"name": "status",      "type": "string",   "required": True,  "description": "draft/confirmed/paid/cancelled"},
+            {"name": "sale_date",   "type": "datetime", "required": True,  "description": "Date and time of the sale"},
+            {"name": "payment_method", "type": "string","required": False, "description": "cash/card/transfer"},
+        ],
+        "relationships": ["clients", "products", "companies"],
+        "workflow": {
+            "field": "status",
+            "states": ["draft", "confirmed", "paid", "cancelled"],
+            "transitions": {
+                "draft":     ["confirmed", "cancelled"],
+                "confirmed": ["paid", "cancelled"],
+            },
+            "initial_state": "draft",
+            "terminal_states": ["paid", "cancelled"],
+        },
+        "business_rules": [
+            "total is ALWAYS computed by the stored procedure — never by the frontend",
+            "Stock must be decremented when status transitions to paid",
+            "A cancelled sale must restore stock",
+            "IVA is always 0",
+        ],
+        "validation_rules": [
+            {"field": "total", "rule": ">= 0", "error_msg": "El total no puede ser negativo"},
+        ],
+        "ui_hints": {
+            "layout": "master-detail",
+            "status_badge": True,
+            "amount_format": "currency",
+            "primary_display_field": "sale_date",
+            "secondary_display_field": "total",
+            "action_buttons": ["Confirm", "Pay", "Cancel"],
+        },
+    },
+    "order": {
+        "tier": "TIER_3_TRANSACTIONAL",
+        "suggested_fields": [
+            {"name": "clientId",    "type": "integer",  "required": True,  "description": "FK → clients"},
+            {"name": "total",       "type": "decimal",  "required": True,  "description": "Order total — server-side only"},
+            {"name": "status",      "type": "string",   "required": True,  "description": "pending/processing/shipped/delivered/cancelled"},
+            {"name": "order_date",  "type": "datetime", "required": True,  "description": "Date the order was placed"},
+            {"name": "delivery_date","type": "datetime","required": False, "description": "Expected or actual delivery date"},
+        ],
+        "relationships": ["clients", "products", "companies"],
+        "workflow": {
+            "field": "status",
+            "states": ["pending", "processing", "shipped", "delivered", "cancelled"],
+            "transitions": {
+                "pending":    ["processing", "cancelled"],
+                "processing": ["shipped", "cancelled"],
+                "shipped":    ["delivered"],
+            },
+            "initial_state": "pending",
+            "terminal_states": ["delivered", "cancelled"],
+        },
+        "business_rules": [
+            "total computed server-side only",
+            "Stock reserved on creation, decremented on delivered",
+        ],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "master-detail",
+            "status_badge": True,
+            "amount_format": "currency",
+            "primary_display_field": "clientId",
+            "secondary_display_field": "total",
+            "action_buttons": ["Process", "Ship", "Mark Delivered"],
+        },
+    },
+    # ── CATALOG ───────────────────────────────────────────────────────────
+    "supplier": {
+        "tier": "TIER_1_CATALOG",
+        "suggested_fields": [
+            {"name": "active", "type": "string", "required": True, "description": "1=active 0=inactive — matches POS GMO convention"},
+        ],
+        "relationships": ["companies"],
+        "workflow": None,
+        "business_rules": [
+            "active field uses '1'/'0' strings — NOT boolean bit — matches existing POS GMO convention",
+        ],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "plain",
+            "primary_display_field": "supplierName",
+            "secondary_display_field": "contactName",
+            "action_buttons": [],
+        },
+    },
+    "product": {
+        "tier": "TIER_1_CATALOG",
+        "suggested_fields": [
+            {"name": "price",       "type": "decimal",  "required": True,  "description": "Sale price"},
+            {"name": "cost",        "type": "decimal",  "required": False, "description": "Purchase cost for margin tracking"},
+            {"name": "stock",       "type": "integer",  "required": False, "description": "Current stock quantity"},
+            {"name": "barcode",     "type": "string",   "required": False, "description": "EAN/UPC barcode for QR scanner"},
+            {"name": "categoryId",  "type": "integer",  "required": False, "description": "FK → categories"},
+            {"name": "active",      "type": "string",   "required": True,  "description": "1=active 0=inactive"},
+        ],
+        "relationships": ["categories", "companies"],
+        "workflow": None,
+        "business_rules": [
+            "price must be >= 0",
+            "IVA is always 0",
+            "stock is managed by sale/purchase SPs — not directly editable in this module",
+        ],
+        "validation_rules": [
+            {"field": "price", "rule": ">= 0", "error_msg": "El precio no puede ser negativo"},
+        ],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "currency",
+            "primary_display_field": "productName",
+            "secondary_display_field": "price",
+            "action_buttons": [],
+        },
+    },
+    "client": {
+        "tier": "TIER_1_CATALOG",
+        "suggested_fields": [
+            {"name": "first_name",  "type": "string",  "required": True,  "description": "Client first name"},
+            {"name": "last_name",   "type": "string",  "required": True,  "description": "Client last name"},
+            {"name": "cellphone",   "type": "string",  "required": False, "description": "Primary contact phone"},
+            {"name": "email",       "type": "string",  "required": False, "description": "Email address"},
+            {"name": "address",     "type": "text",    "required": False, "description": "Full address"},
+            {"name": "active",      "type": "string",  "required": True,  "description": "1=active 0=inactive"},
+        ],
+        "relationships": ["companies"],
+        "workflow": None,
+        "business_rules": [
+            "Client is referenced by loans, sales, and orders — do not delete, only deactivate",
+        ],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "plain",
+            "primary_display_field": "first_name",
+            "secondary_display_field": "cellphone",
+            "action_buttons": [],
+        },
+    },
+    "category": {
+        "tier": "TIER_1_CATALOG",
+        "suggested_fields": [
+            {"name": "categoryName", "type": "string", "required": True,  "description": "Category display name"},
+            {"name": "description",  "type": "text",   "required": False, "description": "Optional description"},
+            {"name": "active",       "type": "string", "required": True,  "description": "1=active 0=inactive"},
+        ],
+        "relationships": ["companies"],
+        "workflow": None,
+        "business_rules": [],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "plain",
+            "primary_display_field": "categoryName",
+            "secondary_display_field": "description",
+            "action_buttons": [],
+        },
+    },
+    "user": {
+        "tier": "TIER_1_CATALOG",
+        "suggested_fields": [
+            {"name": "first_name",  "type": "string", "required": True,  "description": "First name"},
+            {"name": "last_name",   "type": "string", "required": True,  "description": "Last name"},
+            {"name": "email",       "type": "string", "required": True,  "description": "Login email"},
+            {"name": "roleId",      "type": "integer","required": True,  "description": "FK → roles table"},
+            {"name": "active",      "type": "string", "required": True,  "description": "1=active 0=inactive"},
+        ],
+        "relationships": ["companies", "roles"],
+        "workflow": None,
+        "business_rules": [
+            "Passwords are NEVER stored in the module file — handled by auth service",
+            "Only admin can create/modify users",
+        ],
+        "validation_rules": [
+            {"field": "email", "rule": "valid email format", "error_msg": "Correo inválido"},
+        ],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": False,
+            "amount_format": "plain",
+            "primary_display_field": "first_name",
+            "secondary_display_field": "email",
+            "action_buttons": [],
+        },
+    },
+    # ── IOT ───────────────────────────────────────────────────────────────
+    "sensor": {
+        "tier": "TIER_4_IOT",
+        "suggested_fields": [
+            {"name": "sensor_name",  "type": "string",  "required": True,  "description": "Human-readable sensor identifier"},
+            {"name": "value",        "type": "decimal", "required": True,  "description": "Sensor reading value"},
+            {"name": "unit",         "type": "string",  "required": False, "description": "Unit of measurement (°C, %, psi)"},
+            {"name": "read_at",      "type": "datetime","required": True,  "description": "Timestamp of the reading — use DATETIME2(3)"},
+            {"name": "deviceId",     "type": "integer", "required": False, "description": "FK → devices table"},
+            {"name": "alert_flag",   "type": "string",  "required": False, "description": "0=normal 1=threshold exceeded"},
+        ],
+        "relationships": ["companies", "devices"],
+        "workflow": None,
+        "business_rules": [
+            "Use DATETIME2(3) for read_at — millisecond precision required for IoT",
+            "No IonInfiniteScroll — use IonCard chart view instead",
+            "Readings are INSERT-only — no UPDATE or DELETE actions",
+        ],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "chart-view",
+            "status_badge": False,
+            "amount_format": "plain",
+            "primary_display_field": "sensor_name",
+            "secondary_display_field": "value",
+            "action_buttons": [],
+        },
+    },
+    "device": {
+        "tier": "TIER_4_IOT",
+        "suggested_fields": [
+            {"name": "device_name",  "type": "string", "required": True,  "description": "Device display name"},
+            {"name": "mac_address",  "type": "string", "required": False, "description": "Hardware MAC address"},
+            {"name": "location",     "type": "string", "required": False, "description": "Physical location description"},
+            {"name": "active",       "type": "string", "required": True,  "description": "1=active 0=inactive"},
+            {"name": "last_seen",    "type": "datetime","required": False, "description": "Last heartbeat timestamp"},
+        ],
+        "relationships": ["companies"],
+        "workflow": None,
+        "business_rules": [
+            "Use DATETIME2(3) for last_seen",
+        ],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": True,
+            "amount_format": "plain",
+            "primary_display_field": "device_name",
+            "secondary_display_field": "location",
+            "action_buttons": [],
+        },
+    },
+    # ── LAUNDRY / VENDING ─────────────────────────────────────────────────
+    "laundry": {
+        "tier": "TIER_3_TRANSACTIONAL",
+        "suggested_fields": [
+            {"name": "clientId",     "type": "integer",  "required": False, "description": "FK → clients (optional)"},
+            {"name": "weight_kg",    "type": "decimal",  "required": False, "description": "Load weight in kilograms"},
+            {"name": "total",        "type": "decimal",  "required": True,  "description": "Total charge — server-side"},
+            {"name": "status",       "type": "string",   "required": True,  "description": "received/washing/drying/ready/delivered/cancelled"},
+            {"name": "received_at",  "type": "datetime", "required": True,  "description": "Drop-off timestamp"},
+            {"name": "delivery_at",  "type": "datetime", "required": False, "description": "Pickup timestamp"},
+        ],
+        "relationships": ["clients", "companies"],
+        "workflow": {
+            "field": "status",
+            "states": ["received", "washing", "drying", "ready", "delivered", "cancelled"],
+            "transitions": {
+                "received": ["washing", "cancelled"],
+                "washing":  ["drying"],
+                "drying":   ["ready"],
+                "ready":    ["delivered"],
+            },
+            "initial_state": "received",
+            "terminal_states": ["delivered", "cancelled"],
+        },
+        "business_rules": [
+            "total computed server-side only",
+            "IVA is always 0",
+        ],
+        "validation_rules": [],
+        "ui_hints": {
+            "layout": "list-with-modal",
+            "status_badge": True,
+            "amount_format": "currency",
+            "primary_display_field": "received_at",
+            "secondary_display_field": "status",
+            "action_buttons": ["Mark Washing", "Mark Drying", "Mark Ready", "Mark Delivered"],
+            "status_colors": {
+                "received": "warning", "washing": "primary", "drying": "tertiary",
+                "ready": "success", "delivered": "medium", "cancelled": "danger",
+            },
+        },
+    },
+}
+
+# Common aliases → canonical module name
+_ALIASES = {
+    "loans":    "loan",
+    "incomes":  "income",
+    "expenses": "expense",
+    "sales":    "sale",
+    "orders":   "order",
+    "suppliers":"supplier",
+    "products": "product",
+    "clients":  "client",
+    "categories":"category",
+    "users":    "user",
+    "sensors":  "sensor",
+    "devices":  "device",
+    "laundries":"laundry",
+    "egreso":   "expense",
+    "egresos":  "expense",
+    "ingreso":  "income",
+    "ingresos": "income",
+    "prestamo": "loan",
+    "prestamos":"loan",
+    "venta":    "sale",
+    "ventas":   "sale",
+    "proveedor":"supplier",
+    "proveedores":"supplier",
+    "producto": "product",
+    "productos":"product",
+    "cliente":  "client",
+    "clientes": "client",
+    "categoria":"category",
+    "categorias":"category",
+    "usuario":  "user",
+    "usuarios": "user",
+}
+
+# Default for unknown modules
+_CATALOG_DEFAULT = {
+    "tier": "TIER_1_CATALOG",
+    "suggested_fields": [],
+    "relationships": ["companies"],
+    "workflow": None,
+    "business_rules": [
+        "companyId is required for multi-tenant isolation",
+        "Use active field ('1'/'0') for soft-delete pattern",
+    ],
+    "validation_rules": [],
+    "ui_hints": {
+        "layout": "list-with-modal",
+        "status_badge": False,
+        "amount_format": "plain",
+        "primary_display_field": "",
+        "secondary_display_field": "",
+        "action_buttons": [],
+    },
+}
+
+
+@mcp.tool()
+def get_domain_rules(module_name: str) -> dict:
+    """
+    Returns domain-specific context for a given module name:
+    tier classification, suggested fields, workflow states and transitions,
+    business rules, validation rules, and UI layout hints.
+
+    Called by the PRD Enricher Agent to inject context into thin PRDs
+    before the Architect generates the SpecificationJSON.
+
+    Args:
+        module_name: Singular or plural module name in any language
+                     (e.g. "loan", "loans", "prestamo", "supplier", "sale").
+
+    Returns:
+        dict with keys: tier, suggested_fields, workflow, business_rules,
+        validation_rules, ui_hints. Falls back to TIER_1_CATALOG defaults
+        if the module is not in the catalog.
+    """
+    key = module_name.lower().strip()
+    canonical = _ALIASES.get(key, key)
+    result = _DOMAIN_CATALOG.get(canonical, _CATALOG_DEFAULT).copy()
+    result["matched_module"] = canonical
+    result["input_module"]   = module_name
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 

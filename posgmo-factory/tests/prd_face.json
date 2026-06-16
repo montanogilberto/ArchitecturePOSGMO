@@ -1,1 +1,116 @@
-{ "module": "clientFaceRecognition", "description": "Biometric verification wizard that captures client face images, processes a selected national identification document (INE, Passport, or Driver License), validates the face match against the ID using Azure Face API, and records legal contract agreement.", "fields": [ { "name": "documentType", "type": "string", "required": true, "description": "Type of identification document provided by the client. Allowed values: 'INE', 'Passport', 'Driver License'." }, { "name": "idFrontImageBlobUrl", "type": "string", "required": true, "description": "Azure Blob Storage URL of the captured front side of the identification document." }, { "name": "clientSelfieBlobUrl", "type": "string", "required": true, "description": "Azure Blob Storage URL of the live client camera selfie used for facial validation." }, { "name": "confidenceScore", "type": "float", "required": true, "description": "The matching confidence rating returned by the face verification AI model." }, { "name": "isVerified", "type": "boolean", "required": true, "description": "Flags whether the biometric verification passed the system's threshold requirements." }, { "name": "contractAccepted", "type": "boolean", "required": true, "description": "Explicit validation indicating if the client agreed to the contract terms during the wizard process." }, { "name": "acceptedAt", "type": "datetime", "required": true, "description": "Timestamp recording exactly when the contract terms were accepted." } ], "relationships": [ { "parentModule": "company", "cardinality": "1:N", "notes": "Implicit multi-tenant isolation. Note that companyId is dynamically handled by Stored Procedures during execution and omitted from explicit PRD entry fields." } ], "frontend": { "pageRoute": "/client-face-recognition", "allowedRoles": ["Admin", "Manager", "Cashier"], "uiPattern": "Wizard Flow Layout", "components": [ { "step": 1, "name": "DocumentSelectionStep", "description": "IonRadioGroup selecting documentType from: INE, Passport, or Driver License." }, { "step": 2, "name": "CameraCaptureStep", "description": "Capacitor Camera interface capturing 2 separate images: idFrontImageBlobUrl and clientSelfieBlobUrl." }, { "step": 3, "name": "BiometricVerificationStep", "description": "Displays matching progress status along with the resulting AI confirmation metric (isVerified)." }, { "step": 4, "name": "ContractAgreementStep", "description": "Presents terms and conditions text bound to an IonCheckbox indicating contractAccepted." } ] }, "backend": { "endpoints": [ { "path": "/api/client-face-recognition/verify", "method": "POST", "description": "Accepts temporary image payloads, orchestrates data transmission to the Azure AI validation service, stores verified assets to Azure Blob Storage, and evaluates matching thresholds.", "requestSchema": "FaceVerificationRequest", "responseSchema": "FaceVerificationResponse" }, { "path": "/api/client-face-recognition/contract", "method": "POST", "description": "Persists final confirmation state, document references, and legal contract signatures down to the persistence layer.", "requestSchema": "ContractSubmissionRequest", "responseSchema": "ContractSubmissionResponse" } ] }, "database": { "tables": [ "dbo.clientFaceRecognitionSessions", "dbo.clientFaceRecognitionLogs" ], "storedProcedures": [ "dbo.sp_SaveFaceRecognitionSession", "dbo.sp_GetFaceRecognitionStatusByCompany" ] } }
+{
+  "module": "clientFaceRecognition",
+  "description": "Biometric verification wizard that captures client face images, processes a selected national identification document (INE, Passport, or Driver License), validates the face match against the ID using Azure Face API, and records legal contract agreement.",
+  "fields": [
+    {
+      "name": "documentType",
+      "type": "string",
+      "required": true,
+      "max_length": 50,
+      "description": "Type of identification document provided by the client. Allowed values: INE, Passport, Driver License."
+    },
+    {
+      "name": "idFrontImageBlobUrl",
+      "type": "string",
+      "required": true,
+      "max_length": 500,
+      "description": "Azure Blob Storage URL of the captured front side of the identification document."
+    },
+    {
+      "name": "clientSelfieBlobUrl",
+      "type": "string",
+      "required": true,
+      "max_length": 500,
+      "description": "Azure Blob Storage URL of the live client camera selfie used for facial validation."
+    },
+    {
+      "name": "confidenceScore",
+      "type": "float",
+      "required": true,
+      "description": "The matching confidence rating returned by the face verification AI model. Stored as decimal(5,4), e.g. 0.9834."
+    },
+    {
+      "name": "isVerified",
+      "type": "boolean",
+      "required": true,
+      "description": "Flags whether the biometric verification passed the system threshold requirements."
+    },
+    {
+      "name": "contractAccepted",
+      "type": "boolean",
+      "required": true,
+      "description": "Explicit flag indicating the client agreed to the contract terms during the wizard process."
+    },
+    {
+      "name": "acceptedAt",
+      "type": "datetime",
+      "required": true,
+      "description": "Timestamp recording exactly when the contract terms were accepted."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager", "Cashier"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/client-face-recognition",
+    "allowedRoles": ["Admin", "Manager", "Cashier"],
+    "uiPattern": "Wizard Flow Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "DocumentSelectionStep",
+        "description": "IonRadioGroup letting the user select documentType from: INE, Passport, or Driver License."
+      },
+      {
+        "step": 2,
+        "name": "CameraCaptureStep",
+        "description": "Capacitor Camera interface capturing two separate images: idFrontImageBlobUrl (document front) and clientSelfieBlobUrl (live selfie)."
+      },
+      {
+        "step": 3,
+        "name": "BiometricVerificationStep",
+        "description": "Calls the verify endpoint, displays matching progress, then shows confidenceScore and isVerified result. IonLoading while the API call is in flight."
+      },
+      {
+        "step": 4,
+        "name": "ContractAgreementStep",
+        "description": "Displays contract terms in a scrollable IonContent block. IonCheckbox bound to contractAccepted. Submit button calls the contract endpoint and records acceptedAt."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/client-face-recognition/verify",
+        "method": "POST",
+        "description": "Accepts idFrontImageBlobUrl and clientSelfieBlobUrl, calls Azure Face API verify, computes confidenceScore, sets isVerified based on threshold >= 0.80, and returns both values.",
+        "requestSchema": "FaceVerificationRequest",
+        "responseSchema": "FaceVerificationResponse"
+      },
+      {
+        "path": "/client-face-recognition/contract",
+        "method": "POST",
+        "description": "Persists the completed session (documentType, blob URLs, confidenceScore, isVerified, contractAccepted, acceptedAt) to the database via sp_clientFaceRecognitions.",
+        "requestSchema": "ContractSubmissionRequest",
+        "responseSchema": "ContractSubmissionResponse"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.clientFaceRecognitions"
+    ],
+    "storedProcedures": [
+      "dbo.sp_clientFaceRecognitions",
+      "dbo.sp_clientFaceRecognitions_all",
+      "dbo.sp_clientFaceRecognitions_one"
+    ]
+  }
+}

@@ -22,7 +22,7 @@ def save_enriched_prd(enriched_prd: dict, tool_context: ToolContext) -> dict:
     tool_context.state["enriched_prd"] = json.dumps(enriched_prd)
     module = enriched_prd.get("module", "?")
     tier   = enriched_prd.get("domain_context", {}).get("tier", "?")
-    wf     = enriched_prd.get("domain_context", {}).get("workflow", {})
+    wf     = enriched_prd.get("domain_context", {}).get("workflow") or {}
     states = wf.get("states", [])
     print(
         f"[prd_enricher] saved enriched_prd — module={module} tier={tier} "

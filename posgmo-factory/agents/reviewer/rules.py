@@ -319,6 +319,20 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
     page_file = f"src/pages/{Module}Page.tsx"
     api_file  = f"src/api/{module}Api.ts"
 
+    # ── Auth hook — MUST use useUser, never AuthContext ──────────────────
+    if "AuthContext" in page_content:
+        E(page_file,
+          "AuthContext import found — FORBIDDEN. Use `import { useUser } from '../components/UserContext'` instead",
+          auto=True)
+    if re.search(r"useContext\s*\(\s*AuthContext\s*\)", page_content):
+        E(page_file,
+          "useContext(AuthContext) forbidden — use `const { companyId } = useUser()` instead",
+          auto=True)
+    if "companyId = user?.companyId" in page_content:
+        E(page_file,
+          "user?.companyId access pattern forbidden — useUser() exposes companyId directly",
+          auto=True)
+
     # ── Header component (most common failure) ────────────────────────────
     if "import Header from '../components/Header'" not in page_content:
         E(page_file, "Missing: import Header from '../components/Header'", auto=True)

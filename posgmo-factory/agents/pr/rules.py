@@ -167,19 +167,30 @@ def patch_app_tsx(
         # Check if icon already imported
         already_icon = any(icon_outline in ln for ln in lines)
         if not already_icon:
-            # Find the ionicons/icons import line(s) and insert the icon
+            # Find the closing line of the ionicons/icons import block.
+            # The closing line always looks like:  `} from 'ionicons/icons';`
+            # We insert the new icon on the line immediately BEFORE it.
             for i, line in enumerate(lines):
-                if "from 'ionicons/icons'" in line or 'from "ionicons/icons"' in line:
-                    # Single-line: `import { a, b } from 'ionicons/icons';`
-                    if "{" in line and "}" in line:
-                        lines[i] = line.replace("} from", f"  {icon_outline},\n}} from", 1)
-                    else:
-                        # Multi-line import — find closing brace line
-                        for j in range(i, min(i + 30, len(lines))):
-                            if "}" in lines[j]:
-                                stripped = lines[j].rstrip()
-                                lines[j] = stripped.rstrip("}").rstrip().rstrip(",") + f",\n  {icon_outline},\n}}\n"
-                                break
+                stripped_line = line.strip()
+                is_closing = (
+                    stripped_line.startswith("}") and
+                    ("from 'ionicons/icons'" in stripped_line or 'from "ionicons/icons"' in stripped_line)
+                )
+                if is_closing:
+                    # Detect indentation from the line above
+                    indent = "  "
+                    if i > 0:
+                        prev = lines[i - 1]
+                        if prev.strip().startswith("|") or prev.strip() == "":
+                            indent = "  "
+                        else:
+                            indent = " " * (len(prev) - len(prev.lstrip()))
+                    # Ensure the previous entry has a trailing comma
+                    if i > 0:
+                        prev_stripped = lines[i - 1].rstrip()
+                        if not prev_stripped.endswith(","):
+                            lines[i - 1] = prev_stripped + ",\n"
+                    lines.insert(i, f"{indent}{icon_outline},\n")
                     break
 
         content = "".join(lines)

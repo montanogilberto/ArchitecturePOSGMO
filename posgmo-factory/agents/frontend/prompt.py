@@ -111,6 +111,25 @@ export async function delete{Module}(id: number, companyId: number): Promise<voi
 
 ## React / Ionic rules (src/pages/{Module}Page.tsx)
 
+### Auth / user context — CRITICAL RULE (automatic review failure if violated)
+NEVER import AuthContext or use useContext(AuthContext).
+This codebase exposes user state through a single hook. ALWAYS use:
+```tsx
+import { useUser } from '../components/UserContext';
+
+const { companyId, userId, roleCode, username } = useUser();
+```
+`useUser()` returns: companyId, userId, roleCode, roleName, username, companyName,
+branchName, avatarUrl, isAuthenticated, logout, setAvatarUrl.
+Never destructure from `user.companyId` — the hook exposes companyId directly.
+Never import useContext, createContext, or AuthContext for user data.
+
+### JSX closing tags — CRITICAL RULE (syntax error)
+Every opened JSX element MUST have a matching closing tag on its own line.
+NEVER truncate or abbreviate closing tags. Wrong: `</IonCar` — correct: `</IonCard>`.
+After writing the JSX for each wizard step, verify: every `<IonCard>` has `</IonCard>`,
+every `<IonCardContent>` has `</IonCardContent>`, before moving to the next step.
+
 ### Header — CRITICAL RULE (most common review failure)
 NEVER use IonHeader / IonToolbar / IonTitle directly.
 This codebase uses a shared custom Header component. ALWAYS use:

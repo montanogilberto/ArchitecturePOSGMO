@@ -21,7 +21,7 @@ pr_agent = Agent(
         "Pull Requests on the frontend and backend repos."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[
         FunctionTool(func=save_sql_locally),
         FunctionTool(func=github_create_branch),

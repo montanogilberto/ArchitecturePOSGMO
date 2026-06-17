@@ -11,7 +11,7 @@ reviewer_agent = Agent(
         "0-100 using a fixed checklist. Pipeline proceeds only when all scores >= 90."
     ),
     model="gemini-2.5-flash",
-    instruction=_INSTRUCTION,
+    instruction=lambda _ctx: _INSTRUCTION,
     tools=[FunctionTool(func=run_review)],
     # output_key omitted — run_review() writes review_result directly to
     # tool_context.state. Adding output_key would overwrite it with LLM text.

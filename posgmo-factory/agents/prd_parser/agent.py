@@ -13,7 +13,7 @@ prd_parser_agent = Agent(
         "use {module}, {plural}, {Module}, etc. in their instructions."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[FunctionTool(func=store_prd_context)],
     output_key="prd_context",
 )

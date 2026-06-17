@@ -10,7 +10,7 @@ frontend_agent = Agent(
         "for a POS GMO module, applying all existing UI patterns (UTC-7, IVA=0, infinite scroll)."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[get_mcp_toolset()],
     output_key="frontend_artifacts",
 )

@@ -12,7 +12,7 @@ design_consistency_agent = Agent(
         "API call patterns), and stores a design_context for the Frontend Agent."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[FunctionTool(func=fetch_design_reference)],
     output_key="design_brief",
 )

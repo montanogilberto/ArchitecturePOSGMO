@@ -10,7 +10,7 @@ backend_agent = Agent(
         "(FastAPI router) for a POS GMO module, following the existing pyodbc + JSONResponse pattern."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[get_mcp_toolset()],
     output_key="backend_artifacts",
 )

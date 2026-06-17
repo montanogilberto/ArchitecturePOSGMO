@@ -12,7 +12,7 @@ schema_analyst_agent = Agent(
         "detects conflicts, validates FK targets, and stores a db_context for the Architect."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[FunctionTool(func=analyze_database_schema)],
     output_key="schema_analysis",
 )

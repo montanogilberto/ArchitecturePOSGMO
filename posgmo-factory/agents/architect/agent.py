@@ -10,7 +10,7 @@ architect_agent = Agent(
         "and produces a SpecificationJSON consumed by all downstream agents."
     ),
     model="gemini-2.5-flash",
-    instruction=INSTRUCTION,
+    instruction=lambda _ctx: INSTRUCTION,
     tools=[get_mcp_toolset()],
     output_key="specification",
     generate_content_config={"temperature": 0},

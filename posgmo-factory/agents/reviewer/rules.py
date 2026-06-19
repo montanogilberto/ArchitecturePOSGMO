@@ -336,7 +336,10 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
     # ── Header component (most common failure) ────────────────────────────
     if "import Header from '../components/Header'" not in page_content:
         E(page_file, "Missing: import Header from '../components/Header'", auto=True)
-    if re.search(r'<IonHeader\b(?!.*components/Header)', page_content):
+    # IonHeader is forbidden at page level but IS allowed inside IonModal blocks.
+    # Strip all IonModal content before checking so modals don't trigger false positives.
+    _page_no_modals = re.sub(r'<IonModal[\s\S]*?</IonModal>', '', page_content)
+    if re.search(r'<IonHeader\b', _page_no_modals):
         E(page_file, "Direct IonHeader usage forbidden — use custom <Header> component", auto=True)
     if "<AlertPopover" not in page_content:
         E(page_file, "Missing AlertPopover component alongside Header")

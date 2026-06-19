@@ -13,8 +13,18 @@ from google.adk.tools.tool_context import ToolContext
 
 def _load(key: str, tool_context: ToolContext) -> dict:
     raw = tool_context.state.get(key, "{}")
+    if not isinstance(raw, str):
+        return raw if isinstance(raw, dict) else {}
+    raw = raw.strip()
+    if not raw:
+        return {}
+    # Strip markdown code fences if the LLM wrapped the JSON despite instructions.
+    if raw.startswith("```"):
+        raw = "\n".join(
+            line for line in raw.splitlines() if not line.strip().startswith("```")
+        ).strip()
     try:
-        return json.loads(raw) if isinstance(raw, str) else (raw or {})
+        return json.loads(raw)
     except (json.JSONDecodeError, TypeError):
         return {}
 
@@ -85,6 +95,39 @@ def _fix_catch_any(content: str) -> str:
     return content
 
 
+def _fix_bare_custom_event(content: str) -> str:
+    """
+    Replace bare CustomEvent (no generic) with the correct typed variant.
+    IonDatetime → DatetimeChangeEventDetail
+    All others default to keeping the bare form and adding the import,
+    so the LLM can handle the specific type on the next iteration.
+    """
+    # Fix IonDatetime bare CustomEvent: onIonChange={(e: CustomEvent) =>
+    # Ensure DatetimeChangeEventDetail is imported
+    if "DatetimeChangeEventDetail" not in content and re.search(
+        r"IonDatetime[^>]*onIonChange", content
+    ):
+        # Add import after existing @ionic/core imports
+        content = re.sub(
+            r"(import\s*\{[^}]*)\}\s*from\s*'@ionic/core'",
+            lambda m: m.group(0).rstrip(";").rstrip("'").rstrip('"') + ", DatetimeChangeEventDetail' ",
+            content,
+            count=1,
+        )
+        # If no @ionic/core import exists, add one
+        if "DatetimeChangeEventDetail" not in content:
+            content = (
+                "import { DatetimeChangeEventDetail } from '@ionic/core';\n" + content
+            )
+    # Replace bare CustomEvent on IonDatetime lines
+    content = re.sub(
+        r"(onIonChange=\{\([a-z]\w*)\s*:\s*CustomEvent\s*\)",
+        r"\1: CustomEvent<DatetimeChangeEventDetail>)",
+        content,
+    )
+    return content
+
+
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
@@ -102,6 +145,13 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
         return {"fixed": [], "skipped": [], "note": "no errors to fix"}
 
     frontend = _load("frontend_artifacts", tool_context)
+    page_content_len = len((frontend.get("page_file") or {}).get("content", ""))
+    print(
+        f"[review_fixer] frontend_artifacts loaded — "
+        f"has page_file={bool(frontend.get('page_file'))} "
+        f"content_len={page_content_len}",
+        flush=True,
+    )
     fixed: list[str] = []
     skipped: list[str] = []
 
@@ -129,6 +179,9 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
 
             if "catch" in msg_lo and "any" in msg_lo:
                 content = _fix_catch_any(content)
+
+            if "bare customevent" in msg_lo or ("customevent" in msg_lo and "generic" in msg_lo):
+                content = _fix_bare_custom_event(content)
 
             if content != original:
                 frontend["page_file"]["content"] = content

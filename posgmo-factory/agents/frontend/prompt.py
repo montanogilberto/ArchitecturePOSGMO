@@ -217,6 +217,7 @@ const dismissMailPopover = () =>
     - IonSelect onIonChange: `e: CustomEvent<SelectChangeEventDetail>`
     - IonRadioGroup onIonChange: `e: CustomEvent<RadioGroupChangeEventDetail>`  ← import RadioGroupChangeEventDetail
     - IonCheckbox onIonChange: `e: CustomEvent<CheckboxChangeEventDetail>`       ← import CheckboxChangeEventDetail
+    - IonDatetime onIonChange: `e: CustomEvent<DatetimeChangeEventDetail>`       ← import DatetimeChangeEventDetail from '@ionic/core'
     - IonButton onClick: `() => void`
     - NEVER use bare `CustomEvent` without a generic — always `CustomEvent<SomeDetail>`.
     - NEVER use `CustomEvent<any>` — `any` is forbidden, use the specific detail type above.

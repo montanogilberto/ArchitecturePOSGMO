@@ -340,6 +340,27 @@ Respond with ONLY a JSON object — no prose, no markdown fences:
   "rolePermissions_patch": {
     "ui_feature_literal": "'{plural}'",
     "roles_to_add":       ["admin"]
+  },
+  "usercontext_patch": {
+    "extra_fields": []
   }
 }
+
+## usercontext_patch — when to populate
+
+`UserContext` already exposes: companyId, userId, roleCode, roleName, username,
+companyName, branchId, branchName, avatarUrl, isAuthenticated, logout, setAvatarUrl.
+
+If this module's page needs a field NOT in that list (most commonly `clientId`),
+add it to `usercontext_patch.extra_fields` AND destructure it from useUser() in the page.
+
+Each entry: { "name": "clientId", "type": "number", "default": "0" }
+
+When `clientId` is required:
+- The module queries by both companyId AND clientId (e.g. getAllClientDashboards(companyId, clientId))
+- The PRD relationships reference "clients" as a parent entity
+- Destructure it: const { companyId, clientId, ... } = useUser();
+
+If no extra fields are needed, keep extra_fields as an empty list [].
+Never add companyId, userId, roleCode, or username — those already exist.
 """

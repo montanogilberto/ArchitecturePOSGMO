@@ -45,13 +45,23 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - menu_item: frontend_artifacts.app_patches.menu_item
    - menu_section: frontend_artifacts.app_patches.menu_section
    - icon_name: frontend_artifacts.app_patches.icon_name  (e.g. "storefront" — WITHOUT "Outline")
+   - canAccess_key: frontend_artifacts.app_patches.canAccess_key  (e.g. "clientDashboards")
    This patches src/App.tsx: adds import, icon to ionicons import, PrivateRoute,
-   and side-menu IonMenuToggle.
+   and side-menu IonMenuToggle. The canAccess_key is also used to auto-correct the
+   guard in menu_item if the LLM used the wrong key.
 7b. Call patch_ui_feature_type with:
    - repo: frontend repo slug
    - branch: the feature branch
    - feature_code: frontend_artifacts.app_patches.canAccess_key  (plural lowercase, e.g. "suppliers")
    This adds | 'suppliers' to the UiFeature union type so canAccess() recognises the new module.
+7d. Call patch_user_context ONLY if frontend_artifacts.usercontext_patch is present and non-empty:
+   - repo: frontend repo slug
+   - branch: the feature branch
+   - extra_fields: frontend_artifacts.usercontext_patch.extra_fields
+     (list of {{ "name": "clientId", "type": "number", "default": "0" }})
+   This patches UserContext.tsx (AuthData interface + DEFAULT_AUTH) and Login.tsx
+   (parses from API response, stores in pendingUserRef, passes to setUser).
+   Skip this step if usercontext_patch is null or extra_fields is empty.
 7c. Call patch_role_ui with:
    - repo: frontend repo slug
    - branch: the feature branch

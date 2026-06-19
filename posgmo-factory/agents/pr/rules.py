@@ -128,6 +128,7 @@ def patch_app_tsx(
     menu_item: str,
     menu_section: str,
     icon_name: str = "",
+    canAccess_key: str = "",
 ) -> dict:
     """
     Fetches App.tsx from the frontend repo on the given branch, inserts the
@@ -135,18 +136,29 @@ def patch_app_tsx(
     and IonMenuToggle menu item, then pushes the updated file back.
 
     Args:
-        repo:          Frontend repo slug, e.g. "montanogilberto/POSVending".
-        branch:        Feature branch to push to.
-        import_line:   Full import statement, e.g. "import SupplierPage from './pages/SupplierPage';"
-        private_route: Full PrivateRoute JSX line.
-        menu_item:     Full IonMenuToggle JSX block (may be multi-line).
-        menu_section:  IonItemDivider label to insert AFTER, e.g. "Catálogo".
-        icon_name:     Outline icon variable name WITHOUT 'Outline' suffix (e.g. "storefront").
-                       Will be imported as "{icon_name}Outline" from ionicons/icons.
+        repo:           Frontend repo slug, e.g. "montanogilberto/POSVending".
+        branch:         Feature branch to push to.
+        import_line:    Full import statement, e.g. "import SupplierPage from './pages/SupplierPage';"
+        private_route:  Full PrivateRoute JSX line.
+        menu_item:      Full IonMenuToggle JSX block (may be multi-line).
+        menu_section:   IonItemDivider label to insert AFTER, e.g. "Catálogo".
+        icon_name:      Outline icon variable name WITHOUT 'Outline' suffix (e.g. "storefront").
+                        Will be imported as "{icon_name}Outline" from ionicons/icons.
+        canAccess_key:  Plural lowercase key used in canAccess() guard (e.g. "clientDashboards").
+                        If provided, any wrong canAccess key inside menu_item is auto-corrected.
 
     Returns:
         dict with "status" and GitHub push response.
     """
+    # Auto-correct the canAccess key inside menu_item if the LLM used the wrong one.
+    # Pattern: canAccess(roleCode, 'someKey') — replace someKey with canAccess_key.
+    if canAccess_key:
+        import re as _re
+        menu_item = _re.sub(
+            r"canAccess\(\s*roleCode\s*,\s*['\"]([^'\"]+)['\"]\s*\)",
+            f"canAccess(roleCode, '{canAccess_key}')",
+            menu_item,
+        )
     with httpx.Client(timeout=30) as client:
         # 1. Fetch current App.tsx
         r = client.get(
@@ -584,6 +596,171 @@ def patch_role_ui(
         )
         r.raise_for_status()
         return {"status": "patched", "file": type_file_path, "added": feature_code, "roles": roles}
+
+
+def patch_user_context(
+    repo: str,
+    branch: str,
+    extra_fields: list,
+) -> dict:
+    """
+    Patches UserContext.tsx and Login.tsx to expose additional user fields
+    (e.g. clientId) that a new module needs from the session.
+
+    Each entry in extra_fields must be a dict:
+        { "name": "clientId", "type": "number", "default": "0" }
+
+    Steps performed:
+      1. UserContext.tsx — adds the field to AuthData interface + DEFAULT_AUTH object.
+      2. Login.tsx       — parses the field from the API result and passes it to setUser().
+
+    All edits are idempotent (skipped if the field is already present).
+
+    Args:
+        repo:         Frontend repo slug.
+        branch:       Feature branch.
+        extra_fields: List of field descriptors.
+
+    Returns:
+        dict with "status" and list of patched files.
+    """
+    if not extra_fields:
+        return {"status": "skipped", "reason": "no extra_fields provided"}
+
+    patched_files: list[str] = []
+
+    with httpx.Client(timeout=30) as client:
+
+        # ── UserContext.tsx ──────────────────────────────────────────────────
+        r = client.get(
+            f"{_GH_API}/repos/{repo}/contents/src/components/UserContext.tsx",
+            headers=_gh_headers(),
+            params={"ref": branch},
+        )
+        r.raise_for_status()
+        uc_data   = r.json()
+        uc_sha    = uc_data["sha"]
+        uc_src    = base64.b64decode(uc_data["content"]).decode("utf-8")
+        uc_lines  = uc_src.splitlines(keepends=True)
+        uc_dirty  = False
+
+        for field in extra_fields:
+            fname   = field["name"]        # e.g. "clientId"
+            ftype   = field["type"]        # e.g. "number"
+            fdefault = field["default"]    # e.g. "0"
+
+            if f"{fname}:" in uc_src:
+                continue  # already present — skip
+
+            # Insert into AuthData interface — after the line containing "branchName:"
+            for i, line in enumerate(uc_lines):
+                if "branchName:" in line and ftype in ("string", "number", "boolean"):
+                    indent = " " * (len(line) - len(line.lstrip()))
+                    uc_lines.insert(i + 1, f"{indent}{fname}: {ftype};\n")
+                    break
+
+            uc_src   = "".join(uc_lines)
+            uc_lines = uc_src.splitlines(keepends=True)
+
+            # Insert into DEFAULT_AUTH — after the line containing "branchName: ''"
+            for i, line in enumerate(uc_lines):
+                if "branchName:" in line and ("''" in line or '""' in line or "0," in line):
+                    indent = " " * (len(line) - len(line.lstrip()))
+                    uc_lines.insert(i + 1, f"{indent}{fname}: {fdefault},\n")
+                    break
+
+            uc_src   = "".join(uc_lines)
+            uc_lines = uc_src.splitlines(keepends=True)
+            uc_dirty = True
+
+        if uc_dirty:
+            encoded = base64.b64encode(uc_src.encode()).decode()
+            client.put(
+                f"{_GH_API}/repos/{repo}/contents/src/components/UserContext.tsx",
+                headers=_gh_headers(),
+                json={
+                    "message": "feat: add extra user fields to UserContext",
+                    "content": encoded,
+                    "branch": branch,
+                    "sha": uc_sha,
+                },
+            ).raise_for_status()
+            patched_files.append("src/components/UserContext.tsx")
+
+        # ── Login.tsx ────────────────────────────────────────────────────────
+        r = client.get(
+            f"{_GH_API}/repos/{repo}/contents/src/pages/Authentication/Login.tsx",
+            headers=_gh_headers(),
+            params={"ref": branch},
+        )
+        r.raise_for_status()
+        lg_data  = r.json()
+        lg_sha   = lg_data["sha"]
+        lg_src   = base64.b64decode(lg_data["content"]).decode("utf-8")
+        lg_lines = lg_src.splitlines(keepends=True)
+        lg_dirty = False
+
+        for field in extra_fields:
+            fname    = field["name"]
+            fdefault = field["default"]
+
+            # Skip if already parsed in Login.tsx
+            if f"const {fname}" in lg_src or f"{fname}:" in lg_src:
+                continue
+
+            # 1. Parse from API result — insert after `const defaultBranchId = parseUserId(...)`
+            for i, line in enumerate(lg_lines):
+                if "defaultBranchId = parseUserId" in line:
+                    indent = " " * (len(line) - len(line.lstrip()))
+                    lg_lines.insert(
+                        i + 1,
+                        f"{indent}const {fname} = parseUserId(result.{fname});\n",
+                    )
+                    break
+
+            lg_src   = "".join(lg_lines)
+            lg_lines = lg_src.splitlines(keepends=True)
+
+            # 2. Store in pendingUserRef — insert after `defaultBranchId,` inside the ref assignment
+            for i, line in enumerate(lg_lines):
+                if "defaultBranchId," in line and "pendingUserRef" not in line:
+                    indent = " " * (len(line) - len(line.lstrip()))
+                    lg_lines.insert(i + 1, f"{indent}{fname},\n")
+                    break
+
+            lg_src   = "".join(lg_lines)
+            lg_lines = lg_src.splitlines(keepends=True)
+
+            # 3. Pass to setUser() — insert after `avatarUrl: pending.avatarUrl` or `branchId:` line
+            for i, line in enumerate(lg_lines):
+                if "branchId:" in line and "pending." in line:
+                    indent = " " * (len(line) - len(line.lstrip()))
+                    lg_lines.insert(i + 1, f"{indent}{fname}: pending.{fname},\n")
+                    break
+
+            lg_src   = "".join(lg_lines)
+            lg_lines = lg_src.splitlines(keepends=True)
+            lg_dirty = True
+
+        if lg_dirty:
+            encoded = base64.b64encode(lg_src.encode()).decode()
+            client.put(
+                f"{_GH_API}/repos/{repo}/contents/src/pages/Authentication/Login.tsx",
+                headers=_gh_headers(),
+                json={
+                    "message": "feat: thread extra user fields through login flow",
+                    "content": encoded,
+                    "branch": branch,
+                    "sha": lg_sha,
+                },
+            ).raise_for_status()
+            patched_files.append("src/pages/Authentication/Login.tsx")
+
+    return {
+        "status": "patched" if patched_files else "no_changes",
+        "files": patched_files,
+        "fields": [f["name"] for f in extra_fields],
+    }
 
 
 def patch_main_py(

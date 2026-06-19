@@ -11,6 +11,7 @@ from agents.pr.rules import (
     patch_ui_feature_type,
     patch_role_ui,
     patch_setting_tsx,
+    patch_user_context,
     github_create_pr,
 )
 
@@ -31,6 +32,7 @@ pr_agent = Agent(
         FunctionTool(func=patch_ui_feature_type),
         FunctionTool(func=patch_role_ui),
         FunctionTool(func=patch_setting_tsx),
+        FunctionTool(func=patch_user_context),
         FunctionTool(func=github_create_pr),
     ],
     output_key="pr_result",

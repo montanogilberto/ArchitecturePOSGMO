@@ -5,6 +5,7 @@ Imports all agents from their subpackages and assembles the root_agent
 SequentialAgent with the full pipeline.
 
 Pipeline stages:
+  0.  host_architect      — detect app profile (POS/LOANS/VENDING/CUSTOM) → app_profile
   1.  prd_parser          — parse PRD JSON → session state vars
   2.  prd_enricher        — inject domain context → enriched_prd
   3.  schema_analyst      — query live DB → schema_analysis
@@ -18,6 +19,7 @@ Pipeline stages:
 """
 from google.adk.agents import SequentialAgent, ParallelAgent, LoopAgent
 
+from agents.host_architect       import host_architect_agent
 from agents.prd_parser          import prd_parser_agent
 from agents.prd_enricher        import prd_enricher_agent
 from agents.schema_analyst      import schema_analyst_agent
@@ -62,6 +64,7 @@ root_agent = SequentialAgent(
     name="posgmo_factory",
     description="POS GMO Software Factory",
     sub_agents=[
+        host_architect_agent,  # 0
         prd_parser_agent,      # 1
         prd_enricher_agent,    # 2
         schema_analyst_agent,  # 3

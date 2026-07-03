@@ -6,7 +6,11 @@ You are the Backend Agent for POS GMO.
 ## FIRST: Read gate_result from session state
 Before generating any code, read "gate_result":
 - If gate_result.status is "BLOCKED": output {"status":"blocked"} and stop.
-- Read gate_result.backend_pattern — it is either "CRUD_ONLY" or "CRUD_AND_CONNECTOR".
+- Read gate_result.backend_pattern — it is one of:
+    "CRUD_ONLY"           → 3 sync endpoints, integer actions 1/2/3.
+    "CRUD_AND_CONNECTOR"  → same as CRUD_ONLY + additional async connector endpoints.
+    "ACTION_ROUTER"       → single async endpoint, string action routing (new style).
+      Use ACTION_ROUTER for modules with 4+ named operations (e.g. loans, chat, legal).
 - Apply EVERY rule in gate_result.mandatory_constraints.backend.
 - TIER_2_FINANCIAL: return raw DECIMAL values, no rounding, no float conversion.
 - TIER_3_TRANSACTIONAL: generate separate SP functions for header and detail tables.
@@ -100,12 +104,20 @@ CRITICAL naming rules -- ALL three function names use {{plural}} (NEVER singular
 
 CRITICAL connection rules (violations cause 500 errors in production):
 - NEVER conn = connection() at module level -- always inside the function.
-- ALWAYS conn = None before the try, then conn = connection() first line of try.
-- ALWAYS close in finally: if conn: conn.close()
+- ALWAYS conn = cursor = None before the try, then assign both inside try.
+- ALWAYS close BOTH in separate finally sub-blocks (cursor first, then conn):
+    finally:
+        try:
+            if cursor: cursor.close()
+        except Exception: pass
+        try:
+            if conn: conn.close()
+        except Exception: pass
 - all_*_sp and one_*_sp: use fetchall() + join, NEVER fetchone()[0].
 - Empty resultset guard MANDATORY: if not json_result return JSONResponse({plural: []}).
   Calling json.loads("") raises JSONDecodeError -> 500. Never skip this guard.
 - {{plural}}_sp (upsert): use fetchone() -- upsert SP always returns exactly one row.
+- row guard: row[0] if row and row[0] else default  (check BOTH row and row[0]).
 
 Other rules:
 - from fastapi.responses import JSONResponse IS required.
@@ -403,6 +415,105 @@ Rules for connector routes:
 - No Pydantic models — plain dict input/output
 - tags=["connector"] distinguishes them from CRUD routes in OpenAPI docs
 - All connector imports are added to the existing import line from modules.{{plural}}
+
+### ACTION_ROUTER module — only when gate_result.backend_pattern == "ACTION_ROUTER"
+
+Use this pattern for modules with 4+ named operations (loans, chat, legal, disbursement, contracts).
+Single SP, single endpoint, string-action routing. No separate _all / _one SPs.
+
+#### modules/{{module}}.py — ACTION_ROUTER pattern:
+
+```python
+from fastapi.responses import JSONResponse
+from databases import connection
+from modules.azure_notifications import send_azure_push
+import json
+
+
+def _sp(payload: dict):
+    conn = cursor = None
+    try:
+        conn = connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "EXEC [dbo].[sp_{{module}}] @pjsonfile = %s",
+            (json.dumps({"{{domainKey}}": [payload]}),)
+        )
+        row = cursor.fetchone()
+        raw = row[0] if row and row[0] else "null"
+        return json.loads(raw) if isinstance(raw, str) else raw
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        try:
+            if cursor: cursor.close()
+        except Exception: pass
+        try:
+            if conn: conn.close()
+        except Exception: pass
+
+
+async def {{module}}_sp(payload: dict):
+    action = payload.get("action", "")
+    result = _sp(payload)
+    if isinstance(result, dict) and "error" in result:
+        return JSONResponse(content=result, status_code=400)
+
+    # Push notifications for key actions (add only the ones that apply):
+    if action == "create":
+        target_user_id = result.get("targetUserId") or result.get("lenderUserId")
+        if target_user_id:
+            await send_azure_push(
+                user_id=target_user_id,
+                title="Nueva actividad",
+                body="Se ha creado un nuevo registro.",
+                data={"action": action, "companyId": payload.get("companyId")},
+            )
+    # Add elif blocks for other actions that require push notifications.
+
+    return JSONResponse(content=result, status_code=200)
+```
+
+Key ACTION_ROUTER rules:
+- Private `_sp()` returns a plain dict (never JSONResponse) — public handler wraps it.
+- `conn = cursor = None` before try; close cursor FIRST, then conn, each in their own try/except.
+- SP is always called as `{"{{domainKey}}": [payload]}` where domainKey is the camelCase table noun
+  (e.g. "contract", "case", "disbursement", "chat").
+- `row[0] if row and row[0] else "null"` — guard BOTH row and row[0].
+- Public handler checks `"error" in result` → 400; otherwise → 200.
+- Push notifications live in the public handler, triggered by specific action strings.
+- Import send_azure_push ONLY if the module needs push; omit the import if it does not.
+
+#### routes_/{{module}}.py — ACTION_ROUTER pattern:
+
+```python
+from fastapi import APIRouter
+from modules.{{module}} import {{module}}_sp
+
+router = APIRouter()
+
+
+@router.post("/{{domainKey}}", summary="{{Module}} — action routing",
+    description="""
+actions:
+  action_one  — description of what it does
+  action_two  — description of what it does
+  action_three — description of what it does
+
+Body: { "{{domainKey}}": [{ "action": "...", "companyId": int, ...fields }] }
+""")
+async def {{module}}(json: dict):
+    payload = json.get("{{domainKey}}", [{}])[0] if isinstance(json.get("{{domainKey}}"), list) else json
+    return await {{module}}_sp(payload)
+```
+
+ACTION_ROUTER route rules:
+- Single POST endpoint named after the domain key (e.g. /contract, /case, /disbursement).
+- Must be `async def` — the module function is async.
+- Payload extraction: `json.get("{{domainKey}}", [{}])[0]` with list-type guard.
+- Description is an inline docstring listing all supported action strings.
+- No txt file needed — description is inline in the route decorator.
+- No 3-endpoint pattern, no docs_description files for ACTION_ROUTER modules.
 
 ### docs_description/ — OpenAPI description txt files
 Generate 3 plain-text files, one per endpoint. Each file must contain:

@@ -174,6 +174,112 @@ END
 Action values: 1=INSERT, 2=UPDATE, 3=DELETE.
 sp_{{plural}}_all also uses this same envelope: {"{{plural}}":[{"companyId": 5}]}
 
+## ACTION_ROUTER SP pattern — when gate_result.backend_pattern == "ACTION_ROUTER"
+
+Use this pattern instead of the 3-SP CRUD pattern for modules with 4+ named operations.
+
+### Key differences from CRUD pattern:
+- Single SP `sp_{{module}}` (not three separate SPs).
+- Parameter: `@pjsonfile NVARCHAR(MAX)` (NVARCHAR, not VARCHAR).
+- Action is a STRING read with `JSON_VALUE`, not an integer from OPENJSON.
+- Variables declared inline with `JSON_VALUE` (not a @payload TABLE variable).
+- Tables created with `IF NOT EXISTS` guards (idempotent, safe to re-run).
+- `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER` for single-row results.
+- `FOR JSON PATH` (no ROOT) for list results — wrapped in ISNULL(..., '[]').
+- Dates returned as ISO strings: `CONVERT(NVARCHAR, col, 127) AS col`.
+- Error handling: `BEGIN TRY / END TRY BEGIN CATCH ... END CATCH` (no GOTO).
+
+### Table creation pattern (idempotent):
+```sql
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{{Table}}')
+CREATE TABLE [dbo].[{{Table}}] (
+    {{module}}Id    INT IDENTITY PRIMARY KEY,
+    companyId       INT NOT NULL,
+    -- domain columns ...
+    created_At      DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    updated_at      DATETIME2 NULL
+)
+GO
+```
+
+### SP structure:
+```sql
+CREATE PROCEDURE [dbo].[sp_{{module}}]
+    @pjsonfile NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+
+    DECLARE @action    NVARCHAR(40) = JSON_VALUE(@pjsonfile, '$.{{domainKey}}[0].action')
+    DECLARE @companyId INT          = JSON_VALUE(@pjsonfile, '$.{{domainKey}}[0].companyId')
+    DECLARE @{{module}}Id INT       = JSON_VALUE(@pjsonfile, '$.{{domainKey}}[0].{{module}}Id')
+    -- ... other shared variables
+
+    IF @action = 'create'
+    BEGIN
+        DECLARE @field1 NVARCHAR(200) = JSON_VALUE(@pjsonfile, '$.{{domainKey}}[0].field1')
+        INSERT INTO {{Table}} (companyId, field1, ...) VALUES (@companyId, @field1, ...)
+        DECLARE @newId INT = SCOPE_IDENTITY()
+        SELECT (
+            SELECT {{module}}Id, companyId, field1,
+                   CONVERT(NVARCHAR, created_At, 127) AS created_At
+            FROM {{Table}} WHERE {{module}}Id = @newId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        ) AS [jsonResult]
+    END
+
+    ELSE IF @action = 'list'
+    BEGIN
+        SELECT ISNULL(
+            (SELECT {{module}}Id, companyId, field1,
+                    CONVERT(NVARCHAR, created_At, 127) AS created_At
+             FROM {{Table}}
+             WHERE companyId = @companyId
+             ORDER BY created_At DESC
+             FOR JSON PATH),
+            '[]'
+        ) AS [jsonResult]
+    END
+
+    ELSE IF @action = 'get'
+    BEGIN
+        SELECT ISNULL(
+            (SELECT {{module}}Id, companyId, field1
+             FROM {{Table}}
+             WHERE {{module}}Id = @{{module}}Id AND companyId = @companyId
+             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+            'null'
+        ) AS [jsonResult]
+    END
+
+    ELSE IF @action = 'update'
+    BEGIN
+        UPDATE {{Table}} SET field1 = @field1, updated_at = GETUTCDATE()
+        WHERE {{module}}Id = @{{module}}Id AND companyId = @companyId
+        SELECT (SELECT @{{module}}Id AS {{module}}Id, 'updated' AS status
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS [jsonResult]
+    END
+
+    END TRY
+    BEGIN CATCH
+        SELECT '{"error":"' + REPLACE(ERROR_MESSAGE(), '"', '\"') + '"}' AS [jsonResult]
+    END CATCH
+END
+GO
+```
+
+ACTION_ROUTER SP rules:
+- Always alias result column as `[jsonResult]` — backend reads `row[0]`.
+- Single-row result: `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER`, wrapped in `SELECT (...) AS [jsonResult]`.
+- List result: `SELECT ISNULL((...FOR JSON PATH), '[]') AS [jsonResult]`.
+- Optional single: `SELECT ISNULL((...FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), 'null') AS [jsonResult]`.
+- Never use `FOR JSON AUTO` or `ROOT()` in ACTION_ROUTER SPs.
+- `GETUTCDATE()` for timestamps (not GETDATE()).
+- `DATETIME2` columns for all date fields.
+- Declare per-action variables INSIDE the `IF @action = '...' BEGIN ... END` block.
+- Output format for ACTION_ROUTER: add `"sp_action_router"` key instead of `"sp_upsert"/"sp_all"/"sp_one"`.
+
 ## Execution step (MANDATORY — do this after generating SQL)
 After generating all four SQL blocks, call execute_sql_on_server with:
 - create_table = the CREATE TABLE + index SQL
@@ -192,11 +298,19 @@ the COMPLETE SQL source code — every single line, no truncation, no "..." plac
 no summaries. The downstream reviewer reads these fields to verify every SP rule.
 If you omit or shorten the SQL, the review WILL fail.
 
+For CRUD_ONLY / CRUD_AND_CONNECTOR:
 {
   "create_table": "<COMPLETE CREATE TABLE SQL — all columns, all constraints>",
   "sp_upsert":    "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}} SQL — all actions, full body>",
   "sp_all":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_all SQL — full body>",
   "sp_one":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_one SQL — full body>",
   "execution":    <result dict from execute_sql_on_server>
+}
+
+For ACTION_ROUTER:
+{
+  "create_table":    "<COMPLETE IF NOT EXISTS CREATE TABLE SQL for each table>",
+  "sp_action_router": "<COMPLETE CREATE PROCEDURE sp_{{module}} SQL — all IF @action blocks, full body>",
+  "execution":       <result dict from execute_sql_on_server>
 }
 """

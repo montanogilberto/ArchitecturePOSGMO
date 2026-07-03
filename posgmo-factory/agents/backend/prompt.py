@@ -11,6 +11,13 @@ Before generating any code, read "gate_result":
     "CRUD_AND_CONNECTOR"  → same as CRUD_ONLY + additional async connector endpoints.
     "ACTION_ROUTER"       → single async endpoint, string action routing (new style).
       Use ACTION_ROUTER for modules with 4+ named operations (e.g. loans, chat, legal).
+    "BUSINESS_LOGIC"      → multiple named async endpoints, each calls a private _sp_X() helper.
+      Use for complex modules with computation, Stripe, or multi-SP orchestration
+      (e.g. creditScore, walletBalance, automatedPayments).
+    "WEBHOOK_HANDLER"     → external webhook endpoint (Twilio, Stripe). Always returns 200.
+      Use when the endpoint is called by a third-party service that expects form-encoded data.
+    "BLOB_UPLOAD"         → file upload endpoint. No SP call; uploads base64 to Azure Blob.
+      Use for signature/image/PDF upload routes (e.g. signatureUpload).
 - Apply EVERY rule in gate_result.mandatory_constraints.backend.
 - TIER_2_FINANCIAL: return raw DECIMAL values, no rounding, no float conversion.
 - TIER_3_TRANSACTIONAL: generate separate SP functions for header and detail tables.
@@ -101,6 +108,28 @@ CRITICAL naming rules -- ALL three function names use {{plural}} (NEVER singular
 - Upsert function: `{{plural}}_sp`        e.g. suppliers_sp, NOT supplier_sp
 - List function:   `all_{{plural}}_sp`    e.g. all_suppliers_sp
 - One function:    `one_{{plural}}_sp`    e.g. one_suppliers_sp, NOT one_supplier_sp
+
+ANTI-PATTERNS found in old SmartLoans modules — NEVER generate these:
+
+```python
+# ❌ WRONG — module-level connection (loans.py, clientDashboards.py, whatsapp.py)
+conn = connection()     # dies after DB drops idle connection → every call returns 500
+
+def some_sp(json_file):
+    cursor = conn.cursor()   # reuses dead conn, raises pyodbc.ProgrammingError
+```
+
+```python
+# ❌ WRONG — no empty result guard (early modules)
+json_result = "".join(row[0] for row in rows)
+result = json.loads(json_result)   # JSONDecodeError if json_result == ""
+```
+
+```python
+# ❌ WRONG — fetchall on a fetchone SP (loans.py)
+json_result = cursor.fetchall()
+return JSONResponse(content=json_result[0][0], status_code=200)  # json_result[0][0] is a raw string, not dict
+```
 
 CRITICAL connection rules (violations cause 500 errors in production):
 - NEVER conn = connection() at module level -- always inside the function.
@@ -514,6 +543,331 @@ ACTION_ROUTER route rules:
 - Description is an inline docstring listing all supported action strings.
 - No txt file needed — description is inline in the route decorator.
 - No 3-endpoint pattern, no docs_description files for ACTION_ROUTER modules.
+
+### BUSINESS_LOGIC module — only when gate_result.backend_pattern == "BUSINESS_LOGIC"
+
+Use for modules with their own computation or multi-SP orchestration: creditScore, walletBalance,
+automatedPayments. Pattern: private `_conn()` + `_sp_X()` helpers returning plain dicts,
+multiple named async public functions, route with `prefix` + `tags`.
+
+#### modules/{{module}}.py — BUSINESS_LOGIC pattern:
+
+```python
+from fastapi.responses import JSONResponse
+from databases import connection
+import json
+
+
+def _conn():
+    return connection()
+
+
+def _sp_{{domainKey}}(payload: dict) -> dict:
+    """Private SP helper — returns plain dict, never JSONResponse."""
+    conn = None
+    try:
+        conn = _conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "EXEC [dbo].[sp_{{module}}] @pjsonfile = %s",
+            (json.dumps({"{{domainKey}}": [payload]}),)
+        )
+        row = cursor.fetchone()
+        return json.loads(row[0]) if row and row[0] else {}
+    except Exception as e:
+        print(f"[{{module}}] SP error: {e}")
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+async def get_{{module}}(payload: dict):
+    client_id  = payload.get("clientId")
+    company_id = payload.get("companyId")
+    if not client_id or not company_id:
+        return JSONResponse({"error": "clientId and companyId required"}, status_code=400)
+
+    result = _sp_{{domainKey}}({"action": "get", "clientId": int(client_id), "companyId": int(company_id)})
+    if result.get("error"):
+        return JSONResponse({"error": result["error"]}, status_code=400)
+
+    return JSONResponse({"{{module}}": result}, status_code=200)
+
+
+async def list_{{module}}(payload: dict):
+    company_id = payload.get("companyId")
+    # For list: use fetchall + join (SP may split large FOR JSON across rows)
+    conn = None
+    try:
+        conn = _conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "EXEC [dbo].[sp_{{module}}] @pjsonfile = %s",
+            (json.dumps({"{{domainKey}}": [{"action": "list", "companyId": int(company_id)}]}),)
+        )
+        rows = cursor.fetchall()
+        json_result = "".join(r[0] for r in rows if r and r[0])
+        return JSONResponse(json.loads(json_result) if json_result else {"{{domainKey}}s": []}, status_code=200)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+    finally:
+        if conn:
+            conn.close()
+```
+
+BUSINESS_LOGIC module rules:
+- `_conn()` helper function returning `connection()` — do not call `connection()` directly in each func.
+- `_sp_X()` private helper: `conn = None` / finally `if conn: conn.close()` (single finally — no cursor close needed).
+- `_sp_X()` returns plain `dict` (never `JSONResponse`) — lets the caller do business logic before responding.
+- Public async functions validate required fields, call `_sp_X()`, check `result.get("error")` → 400.
+- For multi-row SP results: open a fresh connection in the public function itself, use fetchall+join.
+- External SDK calls (stripe.*, httpx): wrap in try/except, return `JSONResponse({"error": str(e)}, 400)` for SDK errors.
+- If Stripe is not configured: return a mock response so dev/test works without real keys.
+
+#### routes_/{{module}}.py — BUSINESS_LOGIC route pattern:
+
+```python
+from fastapi import APIRouter
+from modules.{{module}} import get_{{module}}, list_{{module}}
+
+router = APIRouter(prefix="/{{domainKey}}", tags=["{{Module}}"])
+
+
+@router.post(
+    "",
+    summary="Get {{module}} for a client",
+    description="""
+Body: { "clientId": int, "companyId": int }
+Returns: { "{{domainKey}}": { ...fields } }
+""",
+)
+async def get(json: dict):
+    return await get_{{module}}(json)
+
+
+@router.post(
+    "/list",
+    summary="List all {{module}} records for a company",
+    description="Body: { \"companyId\": int }",
+)
+async def list_all(json: dict):
+    return await list_{{module}}(json)
+```
+
+BUSINESS_LOGIC route rules:
+- `APIRouter(prefix="/{{domainKey}}", tags=["{{Module}}"])` — NOT bare `APIRouter()`.
+- All endpoints are `async def`.
+- Endpoint paths are semantic (e.g. `/compute`, `/history`, `/charge-due`), not `/all_X`/`/one_X`.
+- No `docs_description/` txt files — use inline `description=` strings.
+- Import named functions from `modules.{{module}}`, not a single `_sp`.
+
+---
+
+### WEBHOOK_HANDLER route — only when gate_result.backend_pattern == "WEBHOOK_HANDLER"
+
+For Twilio (WhatsApp/SMS) or Stripe webhook endpoints. Always returns HTTP 200.
+Logic lives directly in `routes_/{{module}}.py` — no separate module file needed unless
+the database logging is complex.
+
+#### routes_/{{module}}.py — WEBHOOK_HANDLER pattern:
+
+```python
+import json
+import logging
+from fastapi import APIRouter, Request
+from starlette.responses import Response, JSONResponse
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+def _empty_twiml() -> Response:
+    return Response(content="<Response></Response>", media_type="application/xml", status_code=200)
+
+
+@router.post("/{{webhook}}", summary="{{Service}} Webhook")
+async def webhook_handler(request: Request):
+    try:
+        content_type = (request.headers.get("content-type") or "").lower()
+
+        if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            form = await request.form()
+            # extract fields from form ...
+            # log to DB if needed (call _log_to_db())
+            return _empty_twiml()   # Twilio requires TwiML 200
+
+        # JSON fallback for internal/manual integrations
+        data = await request.json()
+        # process data ...
+        return JSONResponse(content={"ok": True}, status_code=200)
+
+    except json.JSONDecodeError:
+        return _empty_twiml()   # always acknowledge Twilio
+    except Exception as e:
+        logger.exception("Webhook error: %s", e)
+        return JSONResponse(content={"ok": True, "warning": str(e)}, status_code=200)  # never 5xx
+```
+
+WEBHOOK_HANDLER rules:
+- NEVER return 4xx or 5xx — Twilio/Stripe will retry indefinitely. Catch ALL exceptions and return 200.
+- Handle both `application/x-www-form-urlencoded` (Twilio default) and JSON fallback.
+- Return `<Response></Response>` TwiML for Twilio endpoints; `{"ok": True}` for Stripe.
+- Use `from fastapi import Request` — NOT `json: dict` parameter (body may be form-encoded, not JSON).
+- DB logging (if needed) goes in a separate sync function in `modules/{{module}}.py` called from the route.
+- Do NOT use a module-level `conn = connection()` — the whatsapp module does this and it is a known bug.
+  Use per-call connection inside the logging function.
+
+---
+
+### BLOB_UPLOAD route — only when gate_result.backend_pattern == "BLOB_UPLOAD"
+
+For uploading base64-encoded files (signatures, images, PDFs) to Azure Blob Storage.
+All logic lives in `routes_/{{module}}.py` — no separate module file needed.
+
+#### routes_/{{module}}.py — BLOB_UPLOAD pattern:
+
+```python
+import base64
+import os
+import uuid
+from datetime import datetime
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from azure.storage.blob import BlobServiceClient, ContentSettings
+
+router = APIRouter(prefix="/{{resource}}", tags=["{{Resource}}"])
+
+_CONTAINER            = os.getenv("CLIENTS_CONTAINER_NAME", "clients")
+_ACCOUNT_URL_FALLBACK = os.getenv("AZURE_STORAGE_ACCOUNT_URL_FALLBACK", "")
+
+
+def _upload(b64_data: str, blob_path: str, content_type: str, metadata: dict) -> str:
+    conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
+    if not conn_str:
+        raise RuntimeError("Missing AZURE_STORAGE_CONNECTION_STRING env var")
+    if "," in b64_data:
+        b64_data = b64_data.split(",", 1)[1]
+    raw = base64.b64decode(b64_data)
+    svc = BlobServiceClient.from_connection_string(conn_str)
+    blob = svc.get_container_client(_CONTAINER).get_blob_client(blob_path)
+    blob.upload_blob(raw, overwrite=True,
+                     content_settings=ContentSettings(content_type=content_type),
+                     metadata=metadata)
+    account_url = getattr(svc, "url", None) or _ACCOUNT_URL_FALLBACK
+    return account_url.rstrip("/") + "/" + _CONTAINER + "/" + blob_path
+
+
+@router.post("/upload", summary="Upload {{resource}} to Azure Blob Storage")
+async def upload(json: dict):
+    client_id  = json.get("clientId")
+    company_id = json.get("companyId")
+    b64_data   = json.get("fileBase64", "")
+    doc_type   = json.get("docType", "file")
+
+    if not client_id or not b64_data:
+        return JSONResponse({"error": "clientId and fileBase64 required"}, status_code=400)
+
+    now = datetime.utcnow()
+    ts  = now.strftime("%Y%m%d%H%M%S")
+    uid = str(uuid.uuid4())[:8]
+    blob_path = f"{doc_type}/{now.year}/{str(now.month).zfill(2)}/client{client_id}_{doc_type}_{ts}_{uid}.png"
+
+    try:
+        url = _upload(b64_data, blob_path, "image/png",
+                      {"clientId": str(client_id), "companyId": str(company_id or 0), "docType": doc_type})
+        return JSONResponse({"blobUrl": url, "docType": doc_type,
+                             "uploadedAt": now.isoformat()}, status_code=200)
+    except RuntimeError as e:
+        if "AZURE_STORAGE_CONNECTION_STRING" in str(e):
+            return JSONResponse({"blobUrl": f"https://placeholder.blob.core.windows.net/{_CONTAINER}/{blob_path}",
+                                 "docType": doc_type, "uploadedAt": now.isoformat(),
+                                 "warning": "Azure Blob not configured"}, status_code=200)
+        return JSONResponse({"error": str(e)}, status_code=500)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+```
+
+BLOB_UPLOAD rules:
+- blob_path convention: `{docType}/{year}/{month:02}/client{clientId}_{docType}_{ts}_{uid}.{ext}`
+- Strip `data:image/...;base64,` prefix before `base64.b64decode`.
+- `account_url = getattr(svc, "url", None) or _ACCOUNT_URL_FALLBACK` — do not hardcode URL.
+- If `AZURE_STORAGE_CONNECTION_STRING` missing: return placeholder URL (not 500) so dev works.
+- Use `APIRouter(prefix="/{{resource}}", tags=["{{Resource}}"])`.
+- content_type: `"image/png"`, `"image/jpeg"`, or `"application/pdf"` based on docType.
+
+---
+
+### Azure Face Liveness connector — UPDATED (replaces old detect×2+verify)
+
+The REAL flow used in production (from `clientFaceRecognitions.py`) uses Azure Liveness API,
+NOT the old detect×2+verify flow. Always use this pattern:
+
+Step 1 — create session endpoint (no body needed):
+```python
+async def create_azure_liveness_session() -> JSONResponse:
+    _LIVENESS_API_VERSION = os.getenv("AZURE_FACE_LIVENESS_API_VERSION", "v1.1-preview.1")
+    face_endpoint = os.getenv("AZURE_FACE_API_ENDPOINT", "").rstrip("/")
+    face_key      = os.getenv("AZURE_FACE_API_KEY", "")
+    face_headers  = {"Ocp-Apim-Subscription-Key": face_key, "Content-Type": "application/json"}
+
+    try:
+        url  = face_endpoint + f"/face/{_LIVENESS_API_VERSION}/detectLivenessWithVerify/singleModal/sessions"
+        body = {"livenessOperationMode": "PassiveAndActive", "deviceCorrelationId": str(uuid.uuid4())}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.post(url, headers=face_headers, json=body)
+            r.raise_for_status()
+            data = r.json()
+        return JSONResponse({"sessionId": data.get("sessionId"), "authToken": data.get("authToken")}, status_code=200)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+```
+
+Step 2 — frontend performs liveness check using Azure Face SDK with authToken.
+
+Step 3 — verify connector reads session result:
+```python
+async def verify_{{module}}_connector(payload: dict) -> JSONResponse:
+    azure_session_id = payload.get("azureSessionId", "")
+    id_b64           = payload.get("idFrontImageBase64", "")
+    if not azure_session_id or not id_b64:
+        return JSONResponse({"error": "azureSessionId and idFrontImageBase64 required"}, status_code=400)
+
+    # Upload ID image to blob
+    id_image_url = _upload_base64_to_blob(id_b64, id_blob_path, "image/jpeg", metadata)
+
+    # Read liveness session result
+    result_url = face_endpoint + f"/face/{_LIVENESS_API_VERSION}/detectLivenessWithVerify/singleModal/sessions/{azure_session_id}"
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.get(result_url, headers=face_headers)
+        r.raise_for_status()
+        azure_result = r.json()
+
+    liveness_result = azure_result.get("livenessResult", {}) or {}
+    verify_result   = azure_result.get("verifyResult", {}) or {}
+
+    is_live         = str(liveness_result.get("livenessDecision", "")).lower() == "realface"
+    is_identical    = bool(verify_result.get("isIdentical", False))
+    confidence      = float(verify_result.get("confidence", 0.0) or 0.0)
+    is_verified     = is_live and is_identical and confidence >= _CONFIDENCE_THRESHOLD
+
+    # Extract selfie frame from session result (if present)
+    extracted_face = verify_result.get("extractedFace")
+    selfie_url = _upload_base64_to_blob(extracted_face, selfie_blob_path, ...) if extracted_face else id_image_url
+
+    return JSONResponse({"isVerified": is_verified, "confidenceScore": confidence,
+                         "idFrontImageBlobUrl": id_image_url, "clientSelfieBlobUrl": selfie_url}, status_code=200)
+```
+
+Liveness connector rules:
+- `create-session` route has NO body (or optional empty body): `async def create_liveness_session(json: dict = None)`.
+- `verify` route receives `azureSessionId` + `idFrontImageBase64` + optional `documentType`.
+- `is_verified = is_live AND is_identical AND confidence >= 0.6` — ALL three must be true.
+- `extractedFace` from `verifyResult` is a base64 string — upload it as selfie if present.
+- Env var: `AZURE_FACE_LIVENESS_API_VERSION` (default `"v1.1-preview.1"`) — configurable for API updates.
+- Route paths: `/api/{{module}}/create-session` and `/api/{{module}}/verify`.
+
+---
 
 ### docs_description/ — OpenAPI description txt files
 Generate 3 plain-text files, one per endpoint. Each file must contain:

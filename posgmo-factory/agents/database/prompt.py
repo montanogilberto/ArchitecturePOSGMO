@@ -280,6 +280,95 @@ ACTION_ROUTER SP rules:
 - Declare per-action variables INSIDE the `IF @action = '...' BEGIN ... END` block.
 - Output format for ACTION_ROUTER: add `"sp_action_router"` key instead of `"sp_upsert"/"sp_all"/"sp_one"`.
 
+## BUSINESS_LOGIC SP pattern — when gate_result.backend_pattern == "BUSINESS_LOGIC"
+
+Use for modules with their own computation (creditScore, walletBalance, automatedPayments).
+May require multiple SPs serving different roles.
+
+### SP role types in BUSINESS_LOGIC modules:
+
+**Data aggregation SP** (`sp_{{module}}_data`) — read-only, called once, returns all inputs needed
+for the in-Python computation. Returns a single JSON row. Uses `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER`:
+```sql
+CREATE PROCEDURE [dbo].[sp_{{module}}_data]
+    @pjsonfile NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @clientId  INT = JSON_VALUE(@pjsonfile, '$.{{module}}[0].clientId')
+    DECLARE @companyId INT = JSON_VALUE(@pjsonfile, '$.{{module}}[0].companyId')
+
+    SELECT ISNULL(
+        (SELECT
+            -- aggregated inputs for the Python algorithm
+            (SELECT COUNT(*) FROM dbo.loans WHERE clientId = @clientId AND loanStatus = 'paid')    AS paidLoans,
+            (SELECT COUNT(*) FROM dbo.loans WHERE clientId = @clientId AND loanStatus = 'active')  AS activeLoans,
+            -- ... more aggregates ...
+         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+        '{}'
+    ) AS [jsonResult]
+END
+```
+
+**Upsert/persist SP** (`sp_{{module}}s` or `sp_{{module}}`) — stores computed results.
+Uses string action (`get` / `upsert` / `history`). Same structure as ACTION_ROUTER SP:
+```sql
+IF @action = 'upsert'
+BEGIN
+    MERGE dbo.{{module}}Scores AS target
+    USING (SELECT @clientId AS clientId, @companyId AS companyId) AS source
+    ON target.clientId = source.clientId AND target.companyId = source.companyId
+    WHEN MATCHED THEN UPDATE SET score = @score, breakdown = @breakdown, computedAt = GETUTCDATE(), updated_at = GETUTCDATE()
+    WHEN NOT MATCHED THEN INSERT (clientId, companyId, score, breakdown, computedAt, created_At)
+                          VALUES (@clientId, @companyId, @score, @breakdown, GETUTCDATE(), GETUTCDATE());
+    SELECT ('{"status":"ok"}') AS [jsonResult]
+END
+ELSE IF @action = 'get'
+BEGIN
+    SELECT ISNULL(
+        (SELECT TOP 1 clientId, companyId, score, breakdown, CONVERT(NVARCHAR, computedAt, 127) AS computedAt
+         FROM dbo.{{module}}Scores
+         WHERE clientId = @clientId AND companyId = @companyId
+         ORDER BY computedAt DESC
+         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+        'null'
+    ) AS [jsonResult]
+END
+ELSE IF @action = 'history'
+BEGIN
+    SELECT ISNULL(
+        (SELECT score, CONVERT(NVARCHAR, computedAt, 127) AS computedAt
+         FROM dbo.{{module}}Scores
+         WHERE clientId = @clientId AND companyId = @companyId
+         ORDER BY computedAt
+         FOR JSON PATH),
+        '[]'
+    ) AS [jsonResult]
+END
+```
+
+**Installments SP** (sub-domain tables like `sp_loanInstallments`) — ACTION_ROUTER style
+with actions: `insert`, `list`, `due`, `update_status`. Used by automatedPayments module.
+- `due` action: returns all installments with `dueDate <= @asOfDate AND status = 'pending'`
+- `update_status` action: updates `status`, `paidAt`, `stripePaymentIntentId`, `attemptCount`
+
+**Wallet SP** (`sp_clientWallets`) — ACTION_ROUTER style with actions: `get`, `credit`, `debit`,
+`reserve`, `list`. `credit` increments `totalTopUps` or `totalRepaid`; `debit` decrements
+`availableBalance` (with guard: fail if insufficient); `reserve` moves amount to `reservedBalance`.
+
+BUSINESS_LOGIC SP rules:
+- Data-aggregation SPs use `NVARCHAR(MAX)` parameter and `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER`.
+- Persist/upsert SPs may use `MERGE` for upsert logic.
+- All history SPs return array result with `FOR JSON PATH` (no root), fallback `'[]'`.
+- Wallet `debit` must check `availableBalance >= amountMXN` before UPDATE:
+  ```sql
+  IF (SELECT availableBalance FROM clientWallets WHERE clientId = @clientId) < @amountMXN
+      SELECT ('{"error":"Insufficient balance"}') AS [jsonResult]
+  ELSE
+      UPDATE ...
+  ```
+- For BUSINESS_LOGIC output format, output `"sp_data"` and `"sp_persist"` keys (not `sp_upsert`).
+
 ## Execution step (MANDATORY — do this after generating SQL)
 After generating all four SQL blocks, call execute_sql_on_server with:
 - create_table = the CREATE TABLE + index SQL
@@ -313,4 +402,21 @@ For ACTION_ROUTER:
   "sp_action_router": "<COMPLETE CREATE PROCEDURE sp_{{module}} SQL — all IF @action blocks, full body>",
   "execution":       <result dict from execute_sql_on_server>
 }
+
+For BUSINESS_LOGIC:
+{
+  "create_table": "<COMPLETE CREATE TABLE SQL for all domain tables>",
+  "sp_data":      "<COMPLETE sp_{{module}}_data — aggregation SP>",
+  "sp_persist":   "<COMPLETE sp_{{module}}s — upsert/get/history SP>",
+  "execution":    <result dict from execute_sql_on_server>
+}
+
+For WEBHOOK_HANDLER (simple log table):
+{
+  "create_table": "<CREATE TABLE IF NOT EXISTS for message log table>",
+  "sp_upsert":    "<CREATE PROCEDURE sp_{{module}}_messages — insert log row + return JSON>",
+  "execution":    <result dict from execute_sql_on_server>
+}
+
+For BLOB_UPLOAD: no SQL needed — output { "sql": null, "reason": "blob upload only" }
 """

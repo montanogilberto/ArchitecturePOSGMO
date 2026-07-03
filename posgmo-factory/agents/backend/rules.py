@@ -79,7 +79,30 @@ def _sp(payload: dict):
 
 # Backend pattern types
 BACKEND_PATTERNS = {
-    "CRUD_ONLY":          "3 sync endpoints, integer actions 1/2/3",
-    "CRUD_AND_CONNECTOR": "same as CRUD_ONLY + async connector endpoints",
-    "ACTION_ROUTER":      "single async endpoint, string action routing (4+ named ops)",
+    "CRUD_ONLY":          "3 sync endpoints (/plural, /all_plural, /one_plural), integer actions 1/2/3",
+    "CRUD_AND_CONNECTOR": "same as CRUD_ONLY + async connector endpoints (Azure Face, blob upload)",
+    "ACTION_ROUTER":      "single async POST endpoint, string action routing, 4+ named ops (loanChat, disbursement, legalCases)",
+    "BUSINESS_LOGIC":     "multiple named async endpoints, private _sp_X() helpers returning dicts, may call Stripe/httpx (creditScore, walletBalance, automatedPayments)",
+    "WEBHOOK_HANDLER":    "external webhook endpoint (Twilio, Stripe), always returns HTTP 200, handles form-encoded + JSON (whatsapp)",
+    "BLOB_UPLOAD":        "file upload only, base64 → Azure Blob Storage → returns blobUrl, no SP call (signatureUpload)",
+}
+
+# SmartLoans modules and their patterns (reference)
+SMARTLOANS_MODULE_PATTERNS = {
+    "clientFaceRecognitions": "CRUD_AND_CONNECTOR",  # CRUD + Azure Liveness + blob upload
+    "creditScore":            "BUSINESS_LOGIC",       # in-memory scoring algo + 2 SPs
+    "loans":                  "CRUD_ONLY",            # NOTE: current code has module-level conn bug
+    "pushNotifications":      "CRUD_ONLY",            # CRUD + register_device (async, Azure NH)
+    "loanOffers":             "CRUD_ONLY",
+    "loanProposals":          "CRUD_ONLY",
+    "loanChat":               "ACTION_ROUTER",        # string actions + push notifications
+    "signatureUpload":        "BLOB_UPLOAD",          # routes_ only, no module file
+    "automatedPayments":      "BUSINESS_LOGIC",       # Stripe SetupIntent + amortization + cron
+    "whatsapp":               "WEBHOOK_HANDLER",      # Twilio TwiML, always 200
+    "walletBalance":          "BUSINESS_LOGIC",       # _sp_wallet() helper + named async funcs
+    "rewards":                "ACTION_ROUTER",        # _sp() + sync rewards_sp, no push
+    "clientDashboards":       "CRUD_ONLY",            # NOTE: current code has module-level conn bug
+    "digitalContracts":       "ACTION_ROUTER",        # _sp() + async + push
+    "legalCases":             "ACTION_ROUTER",        # _sp() + async + push
+    "disbursement":           "ACTION_ROUTER",        # _sp() + async + push
 }

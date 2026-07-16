@@ -44,70 +44,114 @@ The real codebase always wins over generic documentation.
     export interface {Module} { {module}Id: number; companyId: number; ... }
     export interface {Module}ListResponse { {plural}: {Module}[] }
 
-## API call body shape -- CRITICAL (wrong shape causes 422 on every endpoint)
-ALL endpoints are POST. The backend expects the payload wrapped under the plural key:
-  { "{plural}": [{ ...fields }] }
-NEVER send a flat object. NEVER use query parameters. Always POST with a JSON body.
+## API call body shape — two patterns (read gate_result.backend_pattern to choose)
 
-Exact function signatures and body shapes to generate:
+### CRUD_ONLY / CRUD_AND_CONNECTOR body shape
+Backend expects integer action under the PLURAL key:
+  { "{plural}": [{ "action": 1|2|3, ...fields }] }
 
 ```typescript
 const BASE_URL = import.meta.env.VITE_API_URL ?? "https://smartloansbackend.azurewebsites.net";
 
-// GET ALL -- POST /all_{plural}
-// Body: { "{plural}": [{ "companyId": companyId }] }
-// Response: { "{plural}": {Module}[] }  <-- unwrap .{plural} before returning
+// GET ALL — POST /all_{plural}
 export async function getAll{Module}s(companyId: number): Promise<{Module}[]> {
   const res = await fetch(BASE_URL + "/all_{plural}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ "{plural}": [{ "companyId": companyId }] }),
   });
   if (!res.ok) throw new Error(await res.text());
   const data: {Module}ListResponse = await res.json();
-  return data.{plural} ?? [];   // guard: SP returns {} on empty table
+  return data.{plural} ?? [];   // unwrap: SP wraps array under plural key
 }
 
-// CREATE -- POST /{plural}
-// Body: { "{plural}": [{ "action": 1, "companyId": ..., ...fields }] }
+// CREATE — action: 1
 export async function create{Module}(payload: Omit<{Module}, "{module}Id">): Promise<{Module}> {
   const res = await fetch(BASE_URL + "/{plural}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ "{plural}": [{ "action": 1, ...payload }] }),
   });
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
 }
 
-// UPDATE -- POST /{plural}
-// Body: { "{plural}": [{ "action": 2, "{module}Id": id, ...fields }] }
+// UPDATE — action: 2
 export async function update{Module}(id: number, payload: Partial<{Module}>): Promise<{Module}> {
   const res = await fetch(BASE_URL + "/{plural}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ "{plural}": [{ "action": 2, "{module}Id": id, ...payload }] }),
   });
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
 }
 
-// DELETE -- POST /{plural}
-// Body: { "{plural}": [{ "action": 3, "{module}Id": id, "companyId": companyId }] }
+// DELETE — action: 3
 export async function delete{Module}(id: number, companyId: number): Promise<void> {
   const res = await fetch(BASE_URL + "/{plural}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ "{plural}": [{ "action": 3, "{module}Id": id, "companyId": companyId }] }),
   });
   if (!res.ok) throw new Error(await res.text());
 }
 ```
 
-- Parse response with `await res.json()` ONLY -- NEVER call `JSON.parse()` on the result.
-  res.json() already returns a parsed object. JSON.parse() on it causes a runtime error.
-- getAll always returns data.{plural} ?? [] -- the SP wraps the array under the plural key.
-  Missing this unwrap causes the page to crash trying to .map() an object instead of an array.
+### ACTION_ROUTER body shape — when gate_result.backend_pattern == "ACTION_ROUTER"
+Single endpoint. Action is a STRING. Payload wrapped under the DOMAIN KEY (camelCase noun, e.g. "chat", "case", "disbursement"):
+  POST /{domainKey}   →   { "{domainKey}": [{ "action": "string_action", "companyId": int, ...fields }] }
+
+```typescript
+const BASE_URL = import.meta.env.VITE_API_URL ?? "https://smartloansbackend.azurewebsites.net";
+
+// ACTION_ROUTER helper — every operation uses this shape
+async function call{Module}Api(action: string, fields: Record<string, unknown>) {
+  const res = await fetch(BASE_URL + "/{domainKey}", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ "{domainKey}": [{ "action": action, ...fields }] }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// Named exports per operation
+export const {module}Api = {
+  list:   (companyId: number, clientId?: number) =>
+            call{Module}Api("list",   { companyId, clientId }),
+  get:    (id: number, companyId: number) =>
+            call{Module}Api("get",    { "{module}Id": id, companyId }),
+  create: (payload: Create{Module}Request) =>
+            call{Module}Api("create", payload),
+  update: (id: number, payload: Partial<{Module}>) =>
+            call{Module}Api("update", { "{module}Id": id, ...payload }),
+};
+```
+
+### BUSINESS_LOGIC body shape — when gate_result.backend_pattern == "BUSINESS_LOGIC"
+Multiple named endpoints with semantic paths. Each has its own body shape:
+```typescript
+// Example: walletBalance
+export async function getWallet(clientId: number, companyId: number) {
+  const res = await fetch(BASE_URL + "/wallet", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId, companyId }),   // flat body — no envelope
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();  // returns { wallet: { availableBalance, ... } }
+}
+
+export async function creditWallet(clientId: number, companyId: number, amountMXN: number, type: string) {
+  const res = await fetch(BASE_URL + "/wallet/credit", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId, companyId, amountMXN, type }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+```
+
+API rules (ALL patterns):
+- `await res.json()` ONLY — NEVER `JSON.parse()` (already parsed).
+- CRUD getAll: always return `data.{plural} ?? []` — SP wraps array under plural key.
+- ACTION_ROUTER: action is a string (`"create"`, `"send_message"`), NOT a number.
+- BUSINESS_LOGIC: body is a flat object, no `{plural}: [...]` envelope.
 
 ## React / Ionic rules (src/pages/{Module}Page.tsx)
 
@@ -187,7 +231,266 @@ const dismissMailPopover = () =>
   </IonInfiniteScroll>
   ```
 - Modal forms: IonModal with IonInput fields for create/edit. Use IonButton to open.
+  When ui_pattern is "Wizard Flow Layout": use the WIZARD MODAL pattern below instead.
 - Delete: IonAlert for confirmation before calling delete API.
+
+### WIZARD MODAL pattern — use when specification.prd_hints.frontend_ui_pattern == "Wizard Flow Layout"
+
+Multi-step form inside IonModal. Real production pattern from ClientsPage + CreateAccount:
+
+```tsx
+// 1. Step definitions constant (OUTSIDE component)
+const WIZARD_STEPS = ['Step1', 'Step2', 'Step3'];   // from spec.prd_hints.frontend_components
+
+// 2. State
+const [showWizard, setShowWizard] = useState(false);
+const [wizardStep, setWizardStep] = useState(0);
+const [wizardLoading, setWizardLoading] = useState(false);
+const [wizardError, setWizardError] = useState('');
+
+// 3. Step bar sub-component (inside the parent component)
+const WizardStepBar = () => (
+  <div className="wizard-step-indicator">
+    {WIZARD_STEPS.map((s, i) => (
+      <React.Fragment key={s}>
+        <div className="wizard-step-item">
+          <button
+            className={`wizard-step-circle${i === wizardStep ? ' active' : ''}${i < wizardStep ? ' completed' : ''}`}
+            onClick={() => { if (i < wizardStep) setWizardStep(i); }}
+            style={{ cursor: i < wizardStep ? 'pointer' : 'default', border: 'none' }}
+          >
+            {i < wizardStep ? <IonIcon icon={checkmark} /> : i + 1}
+          </button>
+          <span className={`wizard-step-label${i === wizardStep ? ' active' : ''}${i < wizardStep ? ' completed' : ''}`}>{s}</span>
+        </div>
+        {i < WIZARD_STEPS.length - 1 && (
+          <div className={`wizard-step-connector${i < wizardStep ? ' completed' : ''}`} />
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
+// 4. Per-step render functions (one per step)
+const renderStep0 = () => (
+  <div className="wizard-step-body">
+    <div className="wizard-step-header">
+      <div className="wizard-step-icon-wrap" style={{ background: '#EFF6FF' }}>
+        <IonIcon icon={personOutline} style={{ fontSize: 32, color: '#2563EB' }} />
+      </div>
+      <h2 className="wizard-step-title">Step Title</h2>
+      <p className="wizard-step-desc">Step description.</p>
+    </div>
+    <div className="wizard-form-fields">
+      <div className="wizard-field-group">
+        <IonInput
+          fill="outline"
+          label="Field Label *"
+          labelPlacement="floating"
+          value={formState.fieldName}
+          onIonInput={(e) => setFormState(p => ({ ...p, fieldName: e.detail.value! }))}
+          className={fieldError ? 'ion-invalid ion-touched' : ''}
+          errorText={fieldError}
+        />
+      </div>
+    </div>
+  </div>
+);
+
+// 5. Modal JSX
+<IonModal isOpen={showWizard} onDidDismiss={() => { setShowWizard(false); setWizardStep(0); }}
+          className="client-wizard-modal">
+  <WizardStepBar />
+  <IonContent>
+    {wizardStep === 0 && renderStep0()}
+    {wizardStep === 1 && renderStep1()}
+    {/* ...one block per step */}
+    {wizardError && (
+      <IonToast isOpen={!!wizardError} message={wizardError} duration={3000}
+                onDidDismiss={() => setWizardError('')} color="danger" />
+    )}
+  </IonContent>
+  <IonFooter className="client-wizard-footer">
+    <div className="client-wizard-footer-inner">
+      <IonButton fill="outline" expand="block" disabled={wizardStep === 0 || wizardLoading}
+                 onClick={() => setWizardStep(s => s - 1)} style={{ flex: 1 }}>
+        <IonIcon icon={chevronBack} slot="start" /> Atrás
+      </IonButton>
+      <IonButton fill="solid" expand="block" disabled={!stepIsValid || wizardLoading}
+                 onClick={handleWizardNext} style={{ flex: 2 }}>
+        {wizardLoading
+          ? <IonSpinner name="crescent" />
+          : wizardStep === WIZARD_STEPS.length - 1
+            ? <><IonIcon icon={checkmark} slot="start" /> Finalizar</>
+            : <>Siguiente <IonIcon icon={chevronForward} slot="end" /></>
+        }
+      </IonButton>
+    </div>
+  </IonFooter>
+</IonModal>
+```
+
+Wizard rules:
+- `WIZARD_STEPS` array defined OUTSIDE the component (not inside useEffect or render).
+- `WizardStepBar` defined as an inner function component (arrow function) inside the page component.
+- Completed circles show `<IonIcon icon={checkmark} />`, not a number.
+- Clicking a completed circle jumps back: `if (i < wizardStep) setWizardStep(i)`.
+- Last step's Next button shows "Finalizar" + checkmark icon instead of "Siguiente".
+- `IonFooter` has class `client-wizard-footer`; inner div has class `client-wizard-footer-inner`.
+- Back button: `flex: 1`, disabled on step 0. Next button: `flex: 2`.
+- `wizardLoading` shows `IonSpinner` inside Next button — never disable during load without spinner.
+- Each step has its own `renderStepN()` function; switch between them with `{wizardStep === N && renderStepN()}`.
+- Wizard opens by setting `showWizard(true)` and resets with `setWizardStep(0)` on dismiss.
+- Import required: `checkmark, chevronBack, chevronForward` from ionicons/icons.
+
+### IonInput new style — ALWAYS use this style for form fields (wizard and modals)
+
+```tsx
+// ✅ NEW style — fill="outline" + labelPlacement="floating" + errorText
+<IonInput
+  fill="outline"
+  label="Campo *"
+  labelPlacement="floating"
+  value={formState.field}
+  onIonInput={(e) => setFormState(p => ({ ...p, field: e.detail.value! }))}
+  className={fieldError ? 'ion-invalid ion-touched' : ''}
+  errorText={fieldError}
+/>
+
+// With inline success icon (e.g. email validation)
+<IonInput fill="outline" label="Email" labelPlacement="floating" type="email"
+          value={email} onIonInput={(e) => handleEmailChange(e.detail.value!)}>
+  {email && isEmailValid && (
+    <IonIcon icon={checkmarkCircle} slot="end" color="success" aria-hidden="true" />
+  )}
+</IonInput>
+
+// ❌ OLD style — never generate this in new wizard/modal forms
+<IonItem>
+  <IonLabel position="floating">Campo</IonLabel>
+  <IonInput value={...} onIonChange={...} />
+</IonItem>
+```
+
+IonInput rules:
+- `fill="outline"` + `labelPlacement="floating"` — always both together.
+- `className={error ? 'ion-invalid ion-touched' : ''}` triggers Ionic's red border + errorText.
+- `errorText` prop replaces helper text — only shown when `ion-invalid ion-touched` are set.
+- `onIonInput` (not `onIonChange`) for live validation as user types.
+- Wrap each field in `<div className="wizard-field-group">` for spacing.
+
+### Wizard CSS — required classes (add to the module's CSS file)
+
+```css
+.wizard-step-indicator {
+  display: flex; align-items: center; padding: 16px 20px 12px;
+  background: #fff; border-bottom: 1px solid #F1F5F9;
+  overflow-x: auto; scrollbar-width: none; gap: 0;
+}
+.wizard-step-indicator::-webkit-scrollbar { display: none; }
+.wizard-step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+.wizard-step-circle {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  border: 2px solid #E5E7EB; background: #fff; color: #9CA3AF;
+  transition: all 0.2s ease;
+}
+.wizard-step-circle.active  { background: #2563EB; border-color: #2563EB; color: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,0.15); }
+.wizard-step-circle.completed { background: #059669; border-color: #059669; color: #fff; }
+.wizard-step-label { font-size: 10px; font-weight: 600; color: #9CA3AF; white-space: nowrap; }
+.wizard-step-label.active    { color: #2563EB; }
+.wizard-step-label.completed { color: #059669; }
+.wizard-step-connector { width: 28px; height: 2px; background: #E5E7EB; margin-bottom: 14px; flex-shrink: 0; transition: background 0.2s ease; }
+.wizard-step-connector.completed { background: #059669; }
+.wizard-step-body   { padding: 20px 20px 8px; }
+.wizard-step-header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 24px; }
+.wizard-step-icon-wrap { width: 68px; height: 68px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.wizard-step-title  { font-size: 22px; font-weight: 700; color: #111827; margin: 0 0 6px; }
+.wizard-step-desc   { font-size: 14px; color: #6B7280; margin: 0; line-height: 1.5; }
+.wizard-form-fields { display: flex; flex-direction: column; gap: 14px; }
+.wizard-field-group ion-input { --border-radius: 12px; }
+.client-wizard-footer { --background: #fff; box-shadow: 0 -4px 24px rgba(15,23,42,0.08); }
+.client-wizard-footer::before { display: none; }
+.client-wizard-footer-inner {
+  display: flex; align-items: stretch; gap: 12px;
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+}
+```
+
+### Custom type selector buttons (wizard steps that choose a category/role/profile)
+
+Do NOT use IonRadioGroup or IonSelect for type/category selection in wizards.
+Use custom CSS button grid instead (matches ClientsPage + CreateAccount patterns):
+
+```tsx
+// Type/profile selector — grid of custom buttons
+<div className="wizard-type-grid">
+  {OPTIONS.map(opt => (
+    <button
+      key={opt.id}
+      type="button"
+      className={`wizard-type-btn${selected === opt.id ? ' selected' : ''}`}
+      style={selected === opt.id ? { borderColor: opt.color, background: `${opt.color}14` } : undefined}
+      onClick={() => setSelected(opt.id)}
+    >
+      <span className="wizard-type-btn-icon">{opt.emoji}</span>
+      <span className="wizard-type-btn-name" style={selected === opt.id ? { color: opt.color } : undefined}>
+        {opt.label}
+      </span>
+      <span className="wizard-type-btn-desc">{opt.description}</span>
+    </button>
+  ))}
+</div>
+```
+
+```css
+.wizard-type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 8px; }
+.wizard-type-btn { border: 2px solid #E5E7EB; border-radius: 14px; padding: 14px 10px; background: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.18s ease; }
+.wizard-type-btn.selected { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.wizard-type-btn-icon { font-size: 28px; }
+.wizard-type-btn-name { font-size: 13px; font-weight: 700; color: #374151; }
+.wizard-type-btn-desc { font-size: 11px; color: #6B7280; text-align: center; line-height: 1.3; }
+```
+
+### CHAT page pattern — when gate_result.backend_pattern == "ACTION_ROUTER" and module has real-time messaging
+
+```tsx
+const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+const contentRef = useRef<HTMLIonContentElement>(null);
+
+// Auto-poll for new messages every N seconds
+useEffect(() => {
+  loadMessages();
+  pollRef.current = setInterval(loadMessages, 4000);
+  return () => { if (pollRef.current) clearInterval(pollRef.current); };
+}, [conversationId]);
+
+// Auto-scroll to bottom when messages update
+useEffect(() => {
+  contentRef.current?.scrollToBottom(300);
+}, [messages]);
+
+// Page uses IonHeader directly (chat pages are full-screen, not tabbed)
+// IonFooter has text input + send button
+<IonFooter>
+  <div className="lc-input-row">
+    <IonInput fill="outline" placeholder="Escribe un mensaje..." value={text}
+              onIonInput={(e) => setText(e.detail.value!)} />
+    <IonButton shape="round" onClick={handleSend} disabled={!text.trim()}>
+      <IonIcon icon={sendOutline} />
+    </IonButton>
+  </div>
+</IonFooter>
+```
+
+Chat rules:
+- `pollRef` + `contentRef` both required (scroll + cleanup).
+- `useParams<{ id: string }>()` for route params; `useLocation()` + `URLSearchParams` for query params.
+- Clear interval in useEffect cleanup: `return () => clearInterval(pollRef.current!)`.
+- Message bubbles: own messages `.lc-bubble-own`, other's `.lc-bubble-other` — CSS handles alignment.
+- Proposal/offer messages rendered as a card sub-component (not plain text bubble).
+- Chat pages use `IonHeader`/`IonToolbar` directly (not the shared Header component) — they are full-screen routes, not tabs.
 - State: useState for data, loading, error, search text, modal open flag.
 - UTC-7 date conversion is MANDATORY for every date field displayed in the UI.
   Always include this helper at the top of the TSX file:

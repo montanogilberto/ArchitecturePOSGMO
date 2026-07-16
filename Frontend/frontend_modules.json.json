@@ -75,5 +75,56 @@
       "src/components/ExpensesList.tsx"
     ],
     "dependencies": ["chart.js", "react-chartjs-2", "@ionic/react"]
+  },
+  {
+    "moduleId": "p2p_lending",
+    "moduleName": "P2P Lending Core (Loans, Offers, Proposals, Chat)",
+    "description": "Peer-to-peer lending marketplace: lenders publish loan offers, borrowers submit proposals, a chat thread negotiates terms, and acceptance triggers real money movement via Stripe (see stripe_payments module). Also shows each client's wallet balance (available / reserved / disbursed / repaid) and on-demand withdrawal to bank.",
+    "files": [
+      "src/pages/P2PLendingPage.tsx",
+      "src/pages/LoanPage.tsx",
+      "src/pages/LoanChatPage.tsx",
+      "src/pages/LoanPaymentPage.tsx",
+      "src/pages/LenderDashboardPage.tsx",
+      "src/pages/ClientDashboardPage.tsx",
+      "src/pages/ClientFollowUpPage.tsx",
+      "src/api/walletBalanceApi.ts"
+    ],
+    "dependencies": ["@ionic/react", "src/api/loansApi.ts", "src/api/loanProposalsApi.ts"]
+  },
+  {
+    "moduleId": "stripe_payments",
+    "moduleName": "Stripe Connect Onboarding & Automated Card Payments",
+    "description": "Two distinct Stripe flows collected in the client onboarding wizard: (1) StripeAccountOnboarding embeds a Stripe Express Connect account-onboarding session in-app (no hosted-URL redirect) to capture payout bank details; (2) SavedCardSetup uses a Stripe SetupIntent + Elements to save a card for automated repayment collection. Both are distinct from each other — one receives money, the other is charged.",
+    "files": [
+      "src/components/StripeAccountOnboarding.tsx",
+      "src/components/SavedCardSetup.tsx",
+      "src/components/SavedCardSetup.css"
+    ],
+    "dependencies": ["@stripe/connect-js", "@stripe/react-connect-js", "@stripe/stripe-js", "@stripe/react-stripe-js"]
+  },
+  {
+    "moduleId": "kyc_biometric_capture",
+    "moduleName": "KYC Wizard: Face Liveness, Document Capture, Presence & Signature",
+    "description": "Client-side biometric verification pipeline used by both the staff-run ClientsPage wizard and the client-facing ClientFaceRecognitionPage: guided document capture with real-time distance hints, a 4-direction face-liveness challenge (blink + left/right/up/down) run entirely via @vladmandic/face-api (no Azure Face API), geolocated presence capture, and signature-crop matching against the ID's signature.",
+    "files": [
+      "src/components/FaceLivenessCapture.tsx",
+      "src/components/GuidedDocumentCapture.tsx",
+      "src/components/PresenceCapture.tsx",
+      "src/utils/faceLiveness.ts",
+      "src/utils/idOcr.ts",
+      "src/utils/signatureCrop.ts"
+    ],
+    "dependencies": ["@vladmandic/face-api", "tesseract.js", "@capacitor/geolocation", "@capacitor/camera"]
+  },
+  {
+    "moduleId": "biometric_device_lock",
+    "moduleName": "Native Biometric App Lock",
+    "description": "Gates app resume/launch and sensitive in-app actions (payment submission, verification start) behind the device's native biometric prompt (Face ID / fingerprint) via a Capacitor plugin. Mounted above the router so it intercepts navigation before any route renders. Toggleable per-user from Setting.tsx ('Seguridad').",
+    "files": [
+      "src/components/BiometricLockScreen.tsx",
+      "src/utils/biometricAuth.ts"
+    ],
+    "dependencies": ["@ionic/react", "@aparajita/capacitor-biometric-auth"]
   }
 ]

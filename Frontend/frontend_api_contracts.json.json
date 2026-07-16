@@ -1,5 +1,45 @@
 [
   {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/stripe/account-session",
+    "method": "POST",
+    "fileOrigin": "src/components/StripeAccountOnboarding.tsx",
+    "requestContract": {
+      "clientId": "number",
+      "companyId": "number"
+    },
+    "responseContract": {
+      "clientSecret": "string"
+    }
+  },
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/automated-payments/setup-intent",
+    "method": "POST",
+    "fileOrigin": "src/components/SavedCardSetup.tsx",
+    "requestContract": {
+      "clientId": "number",
+      "companyId": "number"
+    },
+    "responseContract": {
+      "clientSecret": "string"
+    }
+  },
+  {
+    "endpoint": "https://smartloansbackend.azurewebsites.net/wallet",
+    "method": "POST",
+    "fileOrigin": "src/api/walletBalanceApi.ts",
+    "requestContract": {
+      "clientId": "number",
+      "companyId": "number"
+    },
+    "responseContract": {
+      "availableBalance": "number",
+      "reservedBalance": "number",
+      "totalTopUps": "number",
+      "totalDisbursed": "number",
+      "totalRepaid": "number"
+    }
+  },
+  {
     "endpoint": "https://smartloansbackend.azurewebsites.net/pos_laundry",
     "method": "POST",
     "fileOrigin": "src/api/laundryApi.ts",

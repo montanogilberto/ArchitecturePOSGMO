@@ -65,6 +65,30 @@
     {
       "name": "ticket",
       "type": "receipt"
+    },
+    {
+      "name": "loans",
+      "type": "financial"
+    },
+    {
+      "name": "loanProposals",
+      "type": "transaction"
+    },
+    {
+      "name": "stripeConnectedAccounts",
+      "type": "financial"
+    },
+    {
+      "name": "walletBalance",
+      "type": "financial"
+    },
+    {
+      "name": "clientFaceRecognitions",
+      "type": "kyc"
+    },
+    {
+      "name": "onboardingReminders",
+      "type": "notification"
     }
   ],
   "api_patterns": {

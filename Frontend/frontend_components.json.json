@@ -64,5 +64,72 @@
       { "name": "onDidDismiss", "type": "() => void", "required": true },
       { "name": "onDateTypeChange", "type": "(type: 'single' | 'range') => void", "required": true }
     ]
+  },
+  {
+    "componentName": "StripeAccountOnboarding",
+    "filePath": "src/components/StripeAccountOnboarding.tsx",
+    "type": "Molecules / Step-by-Step Forms",
+    "reusable": true,
+    "description": "Embeds Stripe's Connect account-onboarding component in-app via @stripe/connect-js's ConnectComponentsProvider, backed by an AccountSession created server-side (collection_options.fields = 'eventually_due' so the bank/CLABE external-account field is always surfaced). Replaces the earlier hosted-URL window.open() redirect flow.",
+    "props": [
+      { "name": "clientId", "type": "number", "required": true },
+      { "name": "companyId", "type": "number", "required": true },
+      { "name": "onExit", "type": "() => void", "required": true }
+    ]
+  },
+  {
+    "componentName": "SavedCardSetup",
+    "filePath": "src/components/SavedCardSetup.tsx",
+    "type": "Molecules / Step-by-Step Forms",
+    "reusable": true,
+    "description": "Collects a card via Stripe Elements (@stripe/react-stripe-js) backed by a server-created SetupIntent, confirms it client-side, then persists it as the client's saved payment method for automated daily repayment collection. Shows last4/brand once saved.",
+    "props": [
+      { "name": "clientId", "type": "number", "required": true },
+      { "name": "companyId", "type": "number", "required": true },
+      { "name": "onSaved", "type": "() => void", "required": false }
+    ]
+  },
+  {
+    "componentName": "BiometricLockScreen",
+    "filePath": "src/components/BiometricLockScreen.tsx",
+    "type": "Organisms / Views",
+    "reusable": true,
+    "description": "Full-screen native biometric (Face ID / fingerprint) gate mounted above the router, blocking app resume/launch and sensitive actions until the device biometric prompt succeeds. Wraps @aparajita/capacitor-biometric-auth.",
+    "props": [
+      { "name": "children", "type": "React.ReactNode", "required": true }
+    ]
+  },
+  {
+    "componentName": "FaceLivenessCapture",
+    "filePath": "src/components/FaceLivenessCapture.tsx",
+    "type": "Organisms / Views",
+    "reusable": true,
+    "description": "Client-side face-liveness challenge (left/right/up/down + blink detection) using @vladmandic/face-api entirely on-device — no Azure calls. Renders a circular progress-ring overlay and compares descriptors against the captured ID selfie (CONSISTENCY_DISTANCE_THRESHOLD=0.95, MATCH_DISTANCE_THRESHOLD=0.6).",
+    "props": [
+      { "name": "referenceImage", "type": "string (base64 or blob URL)", "required": true },
+      { "name": "onSuccess", "type": "(confidenceScore: number) => void", "required": true },
+      { "name": "onFail", "type": "() => void", "required": true }
+    ]
+  },
+  {
+    "componentName": "GuidedDocumentCapture",
+    "filePath": "src/components/GuidedDocumentCapture.tsx",
+    "type": "Organisms / Views",
+    "reusable": true,
+    "description": "Live-camera guided ID capture with real-time distance/framing hint labels, feeding Tesseract.js (idOcr.ts) client-side OCR and/or the backend Azure Document Intelligence endpoint for INE field extraction.",
+    "props": [
+      { "name": "side", "type": "'front' | 'back'", "required": true },
+      { "name": "onCapture", "type": "(imageBlob: Blob) => void", "required": true }
+    ]
+  },
+  {
+    "componentName": "PresenceCapture",
+    "filePath": "src/components/PresenceCapture.tsx",
+    "type": "Organisms / Views",
+    "reusable": true,
+    "description": "Records a short video plus @capacitor/geolocation coordinates as proof-of-presence during onboarding, reverse-geocoded via the backend's /api/geocode endpoint for a human-readable address.",
+    "props": [
+      { "name": "onCaptured", "type": "(data: { videoBlob: Blob; latitude: number; longitude: number; accuracy: number }) => void", "required": true }
+    ]
   }
 ]

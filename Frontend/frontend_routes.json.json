@@ -49,6 +49,76 @@
     "description": "Outflow balancing workspace tracking payments made to service operators or vendors."
   },
   {
+    "path": "/clients",
+    "component": "src/pages/ClientsPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Staff-run client onboarding wizard: Cliente, Código QR, Documento, Captura (liveness), Verificación, Contrato, Cuenta de Pagos (Stripe Connect + saved card)."
+  },
+  {
+    "path": "/clientFaceRecognitions",
+    "component": "src/pages/ClientFaceRecognitionPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager", "Cashier"],
+    "description": "Client-facing self-serve mirror of the ClientsPage onboarding wizard (same KYC/biometric/Stripe steps)."
+  },
+  {
+    "path": "/loans",
+    "component": "src/pages/LoanPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Loan list/management for the P2P lending core."
+  },
+  {
+    "path": "/p2p-lending",
+    "component": "src/pages/P2PLendingPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Marketplace of loan offers/proposals; lender proposal acceptance triggers real Stripe Transfer disbursement via wallet reserve/debit. Shows wallet balance + withdraw-to-bank action."
+  },
+  {
+    "path": "/loan-chat/:conversationId",
+    "component": "src/pages/LoanChatPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Negotiation chat thread between lender and borrower for a specific loan proposal."
+  },
+  {
+    "path": "/payment",
+    "component": "src/pages/LoanPaymentPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Manual loan repayment entry; submit is gated behind the biometric device lock confirm."
+  },
+  {
+    "path": "/client-dashboard/:clientId",
+    "component": "src/pages/ClientDashboardPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Borrower-facing dashboard: onboarding status, embedded Stripe Connect onboarding, saved card, wallet."
+  },
+  {
+    "path": "/lender-dashboard/:clientId",
+    "component": "src/pages/LenderDashboardPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Lender-facing dashboard: wallet balance, active loans, withdraw-to-bank action."
+  },
+  {
+    "path": "/client-expediente/:clientId",
+    "component": "src/pages/ExpedienteDigitalPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Digital case file: contract/pagaré, presence capture, signature match, legal case history for a client."
+  },
+  {
+    "path": "/client-followup/:clientId",
+    "component": "src/pages/ClientFollowUpPage.tsx",
+    "authenticated": true,
+    "rolesAllowed": ["Admin", "Manager"],
+    "description": "Staff follow-up view for onboarding completeness and reminder history."
+  },
+  {
     "path": "*",
     "fallbackRewrite": "/index.html",
     "excludeAssetExtensions": [".css", ".js", ".png", ".jpg", ".svg", ".ico", ".json"],

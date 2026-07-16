@@ -1,8 +1,13 @@
 {
   "database_configuration": {
-    "engine": "SQL Server",
-    "connection_pooling": "Explicit context instantiation per transactional module execution via `databases.py`",
-    "driver_interface": "pyodbc / Turbodbc standard layer mappings",
-    "data_format_strategy": "Heavy usage of T-SQL `FOR JSON PATH` options to return natively compressed serialization streams directly to FastAPI responses"
+    "engine": "SQL Server (Azure)",
+    "connection_pooling": "Explicit context instantiation per transactional module execution via `databases.py` — one `connection()` call, `conn.close()` in a `finally` block, per module function; no persistent pool",
+    "driver_interface": "pymssql (FreeTDS-based) — `connection()` reads LOCAL_DB_SERVER / LOCAL_DB_NAME / LOCAL_DB_USER / LOCAL_DB_PASSWORD from env",
+    "data_format_strategy": "Heavy usage of T-SQL `FOR JSON PATH` options to return natively compressed serialization streams directly to FastAPI responses",
+    "connection_resilience": {
+      "issue": "FreeTDS has a known `tds_dataout_stream_write` assertion crash when a single `EXEC sp @pjsonfile = %s` call sends a large NVARCHAR(MAX) parameter (large JSON payloads — e.g. multi-image blob-URL clientFaceRecognitions writes) through pymssql's normal parameterized-query path.",
+      "fix": "`databases.py` wraps the driver cursor in a `SafeCursor` class that intercepts single-param `EXEC ... @pjsonfile = %s` calls and rewrites them server-side as `DECLARE @_json NVARCHAR(MAX); SET @_json = N'...'; EXEC ... @_json` before sending, avoiding the crash path entirely. `DatabaseConnection` wraps `pymssql.Connection.cursor()` to always hand back a `SafeCursor`.",
+      "scope": "Applied once, centrally, in `databases.py` — every module's existing `EXEC [dbo].[sp_x] @pjsonfile = %s` call pattern is automatically safe; no per-module changes were needed."
+    }
   }
 }

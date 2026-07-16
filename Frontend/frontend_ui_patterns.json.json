@@ -28,5 +28,23 @@
     "patternName": "Explicit Localized Zero Tax Override (IVA = 0)",
     "description": "Guarantees layout normalization parameters on regional printing processes by locking local variables to zero regardless of server response state variations.",
     "implementationExample": "const iva = 0; const subtotal = Number(data.totals.subtotal ?? 0);"
+  },
+  {
+    "patternId": "ionToast_over_ionAlert",
+    "patternName": "Non-Blocking Toast Instead of Blocking Confirm Alert",
+    "description": "Staff-facing wizard flows use a single dynamically-colored IonToast (success/warning/danger by message prefix) instead of an IonAlert confirm dialog. Avoids gating a workflow on a modal decision when the real follow-up (e.g. an incomplete step) can instead be handled asynchronously via a push-notification reminder rather than blocking the current screen.",
+    "implementationExample": "<IonToast isOpen={showToast} onDidDismiss={() => setShowToast(false)} message={toastMessage} duration={toastMessage.startsWith('warningEmoji') ? 4000 : 2500} color={toastMessage.toLowerCase().includes('error') ? 'danger' : toastMessage.startsWith('warningEmoji') ? 'warning' : 'success'} />"
+  },
+  {
+    "patternId": "wizard_step_autoscroll",
+    "patternName": "Auto-Scroll Active Step Into View",
+    "description": "A horizontally-scrollable multi-step wizard indicator (7+ steps) never auto-scrolled on its own, so the active step could sit off-screen with no visual indication of progress. Fix: hold a ref on the active step's element and call scrollIntoView on every step change.",
+    "implementationExample": "const activeStepRef = useRef<HTMLDivElement | null>(null); useEffect(() => { activeStepRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, [wizardStep]);"
+  },
+  {
+    "patternId": "embedded_stripe_connect_no_redirect",
+    "patternName": "Embedded Stripe Components Instead of Hosted-URL Redirect",
+    "description": "Stripe Connect onboarding (and card SetupIntent collection) render in-app via @stripe/connect-js / @stripe/react-stripe-js Elements rather than window.open()-ing Stripe's hosted AccountLink URL. Keeps the client inside the native wizard flow end-to-end; required once the account moved from sandbox to Stripe live mode.",
+    "implementationExample": "<ConnectComponentsProvider connectInstance={stripeConnectInstance}><ConnectAccountOnboarding onExit={onExit} /></ConnectComponentsProvider>"
   }
 ]

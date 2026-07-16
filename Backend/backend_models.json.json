@@ -3,37 +3,698 @@
     {
       "table": "dbo.Products",
       "columns": [
-        { "name": "productid", "type": "int", "identity": true, "nullable": false },
-        { "name": "productName", "type": "nvarchar(255)", "nullable": false },
-        { "name": "code", "type": "varchar(100)", "nullable": true },
-        { "name": "image", "type": "image", "nullable": true },
-        { "name": "subCategoryId", "type": "int", "nullable": false },
-        { "name": "productDetailId", "type": "int", "nullable": true },
-        { "name": "productDescriptionId", "type": "int", "nullable": true },
-        { "name": "createdAt", "type": "datetime", "nullable": true },
-        { "name": "updatedAt", "type": "datetime", "nullable": true }
+        {
+          "name": "productid",
+          "type": "int",
+          "identity": true,
+          "nullable": false
+        },
+        {
+          "name": "productName",
+          "type": "nvarchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "code",
+          "type": "varchar(100)",
+          "nullable": true
+        },
+        {
+          "name": "image",
+          "type": "image",
+          "nullable": true
+        },
+        {
+          "name": "subCategoryId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "productDetailId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "productDescriptionId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "createdAt",
+          "type": "datetime",
+          "nullable": true
+        },
+        {
+          "name": "updatedAt",
+          "type": "datetime",
+          "nullable": true
+        }
       ],
       "primary_key": "PK_products_productId"
     },
     {
       "table": "dbo.users",
       "columns": [
-        { "name": "userId", "type": "int", "identity": true, "nullable": false },
-        { "name": "email", "type": "nvarchar(255)", "nullable": false },
-        { "name": "name", "type": "nvarchar(255)", "nullable": false },
-        { "name": "password", "type": "nvarchar(max)", "nullable": false },
-        { "name": "createdAt", "type": "datetime", "nullable": true }
+        {
+          "name": "userId",
+          "type": "int",
+          "identity": true,
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": "nvarchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "nvarchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "password",
+          "type": "nvarchar(max)",
+          "nullable": false
+        },
+        {
+          "name": "createdAt",
+          "type": "datetime",
+          "nullable": true
+        }
       ],
       "primary_key": "PK_users_userId"
     },
     {
       "table": "dbo.logins",
       "columns": [
-        { "name": "loginId", "type": "int", "identity": true, "nullable": false },
-        { "name": "userId", "type": "int", "nullable": false },
-        { "name": "token", "type": "nvarchar(max)", "nullable": true },
-        { "name": "loginTime", "type": "datetime", "nullable": false }
+        {
+          "name": "loginId",
+          "type": "int",
+          "identity": true,
+          "nullable": false
+        },
+        {
+          "name": "userId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "token",
+          "type": "nvarchar(max)",
+          "nullable": true
+        },
+        {
+          "name": "loginTime",
+          "type": "datetime",
+          "nullable": false
+        }
       ]
+    },
+    {
+      "table": "dbo.stripeConnectedAccounts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "clientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "connectedAccountId",
+          "type": "nvarchar(100)",
+          "nullable": false
+        },
+        {
+          "name": "chargesEnabled",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "payoutsEnabled",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "detailsSubmitted",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "created_At",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "hasExternalAccount",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "externalAccountLast4",
+          "type": "nvarchar(4)",
+          "nullable": true
+        },
+        {
+          "name": "externalAccountType",
+          "type": "nvarchar(20)",
+          "nullable": true
+        },
+        {
+          "name": "externalAccountBankName",
+          "type": "nvarchar(100)",
+          "nullable": true
+        }
+      ],
+      "primary_key": "PK_stripeConnectedAccounts_id"
+    },
+    {
+      "table": "dbo.stripeTransactions",
+      "columns": [
+        {
+          "name": "transactionId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "loanId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "proposalId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "fromClientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "toClientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "currency",
+          "type": "nvarchar(3)",
+          "nullable": false
+        },
+        {
+          "name": "paymentType",
+          "type": "nvarchar(30)",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "nvarchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "stripePaymentIntentId",
+          "type": "nvarchar(100)",
+          "nullable": true
+        },
+        {
+          "name": "stripeTransferId",
+          "type": "nvarchar(100)",
+          "nullable": true
+        },
+        {
+          "name": "failureReason",
+          "type": "nvarchar(500)",
+          "nullable": true
+        },
+        {
+          "name": "created_At",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "stripePayoutId",
+          "type": "nvarchar(100)",
+          "nullable": true
+        }
+      ],
+      "primary_key": "PK_stripeTransactions_transactionId"
+    },
+    {
+      "table": "dbo.clientWallets",
+      "columns": [
+        {
+          "name": "walletId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "clientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "availableBalance",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "reservedBalance",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "totalTopUps",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "totalDisbursed",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "totalRepaid",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "datetime2",
+          "nullable": true
+        }
+      ],
+      "primary_key": "PK_clientWallets_walletId"
+    },
+    {
+      "table": "dbo.loanInstallments",
+      "columns": [
+        {
+          "name": "installmentId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "loanId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "clientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "lenderId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "installmentNumber",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "dueDate",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "principal",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "interest",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "remainingBalance",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "nvarchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "stripePaymentIntentId",
+          "type": "nvarchar(100)",
+          "nullable": true
+        },
+        {
+          "name": "failureReason",
+          "type": "nvarchar(500)",
+          "nullable": true
+        },
+        {
+          "name": "attemptCount",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "lastAttemptAt",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "paidAt",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "createdAt",
+          "type": "datetime2",
+          "nullable": false
+        }
+      ],
+      "primary_key": "PK_loanInstallments_installmentId"
+    },
+    {
+      "table": "dbo.savedPaymentMethods",
+      "columns": [
+        {
+          "name": "methodId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "clientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "stripePaymentMethodId",
+          "type": "nvarchar(100)",
+          "nullable": false
+        },
+        {
+          "name": "last4",
+          "type": "nvarchar(4)",
+          "nullable": true
+        },
+        {
+          "name": "brand",
+          "type": "nvarchar(20)",
+          "nullable": true
+        },
+        {
+          "name": "expiryMonth",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "expiryYear",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "isDefault",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "createdAt",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "datetime2",
+          "nullable": true
+        }
+      ],
+      "primary_key": "PK_savedPaymentMethods_methodId"
+    },
+    {
+      "table": "dbo.onboardingReminders",
+      "columns": [
+        {
+          "name": "reminderId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "clientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "missingSteps",
+          "type": "nvarchar(500)",
+          "nullable": false
+        },
+        {
+          "name": "sentAt",
+          "type": "datetime2",
+          "nullable": false
+        }
+      ],
+      "primary_key": "PK_onboardingReminders_reminderId"
+    },
+    {
+      "table": "dbo.loans",
+      "columns": [
+        {
+          "name": "loanId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "loanNumber",
+          "type": "nvarchar(50)",
+          "nullable": false
+        },
+        {
+          "name": "clientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "principalAmount",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "interestRate",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "termMonths",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "paymentFrequency",
+          "type": "nvarchar(20)",
+          "nullable": false
+        },
+        {
+          "name": "approvedAmount",
+          "type": "decimal",
+          "nullable": true
+        },
+        {
+          "name": "totalRepaymentAmount",
+          "type": "decimal",
+          "nullable": true
+        },
+        {
+          "name": "disbursementDate",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "maturityDate",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "loanStatus",
+          "type": "nvarchar(30)",
+          "nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "nvarchar(max)",
+          "nullable": true
+        },
+        {
+          "name": "created_At",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime2",
+          "nullable": true
+        }
+      ],
+      "primary_key": "PK_loans_loanId"
+    },
+    {
+      "table": "dbo.legalCases",
+      "columns": [
+        {
+          "name": "caseId",
+          "type": "int",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "companyId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "loanId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "borrowerClientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "lenderClientId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "lenderUserId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "lawyerClientId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "lawyerUserId",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "lawyerName",
+          "type": "nvarchar(200)",
+          "nullable": true
+        },
+        {
+          "name": "caseStatus",
+          "type": "nvarchar(30)",
+          "nullable": false
+        },
+        {
+          "name": "caseStage",
+          "type": "nvarchar(50)",
+          "nullable": true
+        },
+        {
+          "name": "overdueAmount",
+          "type": "decimal",
+          "nullable": true
+        },
+        {
+          "name": "recoveredAmount",
+          "type": "decimal",
+          "nullable": true
+        },
+        {
+          "name": "embargoExecutedAt",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "closedAt",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "statusNote",
+          "type": "nvarchar(max)",
+          "nullable": true
+        },
+        {
+          "name": "created_At",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime2",
+          "nullable": true
+        }
+      ],
+      "primary_key": "PK_legalCases_caseId"
     }
   ]
 }

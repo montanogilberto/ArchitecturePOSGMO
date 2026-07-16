@@ -11,6 +11,31 @@
       "orchestrator": "modules/api_gpt.py",
       "endpoints": ["/symptoms"],
       "purpose": "Consumes natural text input and structures symptom matrices into clear markdown diagnostic and dosage recommendation tables"
+    },
+    {
+      "feature_id": "Azure Document Intelligence ID Extraction",
+      "orchestrator": "modules/document_intelligence.py",
+      "cognitive_client": "Azure AI Document Intelligence (prebuilt ID model, async analyze + poll via httpx, env: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT / AZURE_DOCUMENT_INTELLIGENCE_KEY)",
+      "endpoints": ["/ocr"],
+      "downstream_handler": "Extracted INE/ID fields are surfaced as editable pre-filled inputs on the frontend id-summary confirmation step; Tesseract.js (src/utils/idOcr.ts) is a client-side fallback OCR path, not backend-orchestrated"
+    },
+    {
+      "feature_id": "Client-Side Face Liveness Verification",
+      "orchestrator": "N/A — runs entirely on-device via @vladmandic/face-api (src/utils/faceLiveness.ts, src/components/FaceLivenessCapture.tsx)",
+      "purpose": "4-direction challenge (left/right/up/down) + blink detection with CONSISTENCY_DISTANCE_THRESHOLD=0.95 / MATCH_DISTANCE_THRESHOLD=0.6 descriptor comparison against the captured ID selfie. Backend only receives the final pass/fail + confidence_score via modules/clientFaceRecognitions.py — it does not run any recognition itself.",
+      "note": "Azure Face API / Face-Liveness-With-Verify was used earlier and has been fully removed from the backend (routes, module, env gating) in favor of this client-side approach — do not reintroduce Azure Face API calls."
+    },
+    {
+      "feature_id": "Signature Match Verification",
+      "orchestrator": "modules/signatureMatching.py",
+      "cognitive_client": "OpenCV (cv2) contour-based comparison, numpy",
+      "purpose": "Compares the signature crop taken from the client's ID (src/utils/signatureCrop.ts on the frontend) against the signature captured at contract-acceptance time, producing signature_match_score / signature_match_passed persisted on clientFaceRecognitions"
+    },
+    {
+      "feature_id": "Presence Reverse Geocoding",
+      "orchestrator": "modules/geocoding.py",
+      "endpoints": ["/api/geocode"],
+      "purpose": "httpx-based reverse-geocoding proxy that resolves the presence-capture step's captured latitude/longitude into a human-readable address; paired with @capacitor/geolocation on the frontend (PresenceCapture.tsx)"
     }
   ]
 }

@@ -49,6 +49,26 @@
     { "path": "/users", "file": "routes_/users.py", "tags": ["Identity Management Engine"] },
     { "path": "/utils", "file": "routes_/utils.py", "tags": ["System Inspection Helpers"] },
     { "path": "/vending_v2", "file": "routes_/vending_v2.py", "tags": ["Refactored Vending Automation Telemetry"] },
-    { "path": "/whatsapp", "file": "routes_/whatsapp.py", "tags": ["Twilio Engine Interfaces"] }
+    { "path": "/whatsapp", "file": "routes_/whatsapp.py", "tags": ["Twilio Engine Interfaces"] },
+    { "path": "/stripe", "file": "routes_/stripe_payments.py", "tags": ["Stripe Connect"] },
+    { "path": "/automated-payments", "file": "routes_/automatedPayments.py", "tags": ["Automated Payments"] },
+    { "path": "/wallet", "file": "routes_/walletBalance.py", "tags": ["Wallet Balance"] },
+    { "path": "/onboarding-reminders", "file": "routes_/onboardingReminders.py", "tags": ["Onboarding Reminders"] },
+    { "path": "/loans", "file": "routes_/loan.py", "tags": ["P2P Lending Core"] },
+    { "path": "/loanOffers", "file": "routes_/loanOffers.py", "tags": ["P2P Lending Core"] },
+    { "path": "/loanProposals", "file": "routes_/loanProposals.py", "tags": ["P2P Lending Core"] },
+    { "path": "/loanChat", "file": "routes_/loanChat.py", "tags": ["P2P Lending Core"] },
+    { "path": "/credit-score", "file": "routes_/creditScore.py", "tags": ["Credit Score"] },
+    { "path": "/clientFaceRecognitions", "file": "routes_/clientFaceRecognition.py", "tags": ["connector"] },
+    { "path": "/clientDashboards", "file": "routes_/clientDashboards.py", "tags": ["Client Dashboards"] },
+    { "path": "/digitalContracts", "file": "routes_/digitalContracts.py", "tags": ["Digital Contracts"] },
+    { "path": "/legalCases", "file": "routes_/legalCases.py", "tags": ["Legal Recovery / Juicio Mercantil"] },
+    { "path": "/disbursement", "file": "routes_/disbursement.py", "tags": ["Manual Disbursement (legacy, dormant)"] },
+    { "path": "/ocr", "file": "routes_/document_intelligence.py", "tags": ["Document Intelligence"] },
+    { "path": "/api/geocode", "file": "routes_/geocoding.py", "tags": ["Geocoding"] },
+    { "path": "/signatures", "file": "routes_/signatureUpload.py", "tags": ["Signatures"] },
+    { "path": "/pushNotifications", "file": "routes_/pushNotification.py", "tags": ["Push Notifications"] },
+    { "path": "/suppliers", "file": "routes_/supplier.py", "tags": ["Supply Chain Vendors"] },
+    { "path": "/manufacturing", "file": "routes_/manufacturing.py", "tags": ["Manufacturing"] }
   ]
 }

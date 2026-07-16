@@ -97,11 +97,17 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 | Marketplace Aggregator | `unifiedProducts`, `productMatches`, `marketplaceOrders`, `opportunities`, `sellListings` |
 | IoT & Automation | `IOT`, `vending`, `laundry`, `waterTanks` |
 | ERP / HR | `employees`, `contractors`, `departaments`, `projects`, `employeeProjectAssignments` |
+| P2P Lending Core | `loans`, `loanOffers`, `loanProposals`, `loanChat`, `creditScore` |
+| Stripe Payments, Wallets & Automated Collection | `stripe_payments`, `automatedPayments`, `walletBalance`, `onboardingReminders`, `disbursement` (legacy/dormant) |
+| KYC, Biometric Verification & Legal Recovery | `clientFaceRecognitions`, `document_intelligence`, `signatureMatching`, `geocoding`, `digitalContracts`, `legalCases` |
 
 ## AI Features
 
 - **OCR pipeline:** `modules/scannertext.py` → Azure ComputerVisionClient → GPT normalization.
 - **Symptom diagnosis:** `modules/api_gpt.py`, endpoint `/symptoms` — structures natural-language symptom input into markdown diagnostic tables.
+- **ID document extraction:** `modules/document_intelligence.py`, endpoint `/ocr` → Azure AI Document Intelligence (prebuilt ID model). Tesseract.js on the frontend (`src/utils/idOcr.ts`) is a client-side fallback, not backend-orchestrated.
+- **Face liveness verification:** runs entirely client-side via `@vladmandic/face-api` (`src/utils/faceLiveness.ts`, `src/components/FaceLivenessCapture.tsx`) — 4-direction challenge + blink detection. Azure Face API / Face-Liveness-With-Verify was previously used and has been fully removed from the backend; do not reintroduce it.
+- **Signature matching:** `modules/signatureMatching.py` — OpenCV (cv2) contour comparison between the ID's signature crop and the contract-acceptance signature capture.
 
 ## Database Conventions
 
@@ -152,14 +158,20 @@ src/
 
 ## Backend Folder Structure
 
+The actual smartloans_backend layout (this supersedes the aspirational `models/schemas/routes/services/database` layout described in the original factory README — that structure was never adopted; the real repo has used the layout below since inception):
+
 ```text
-backend/
-├── models/       # {module}.py — Pydantic models
-├── schemas/      # {module}.py — request/response schemas
-├── routes/       # {module}.py — FastAPI routers
-├── services/
-└── database/
+smartloans_backend/
+├── main.py           # FastAPI app assembly, router registration, APScheduler startup jobs
+├── databases.py      # connection() + SafeCursor (pymssql/FreeTDS wrapper, see Database Conventions)
+├── modules/          # {module}.py — business logic: third-party API calls, JSON (de)serialization,
+│                      # calls into sql_logic/*.sql stored procedures via @pjsonfile
+├── routes_/          # {module}.py — FastAPI APIRouter definitions (ingress only, no business logic)
+├── sql/              # {module}.sql or sp_{module}.sql — DDL + stored procedures (see Core Rules #4)
+└── security/          # worker_key.py and other auth/shared-secret helpers
 ```
+
+New modules follow: `sql/sp_{module}.sql` → `modules/{module}.py` (imports `databases.connection`, calls `EXEC [dbo].[sp_{module}] @pjsonfile = %s`) → `routes_/{module}.py` (thin `APIRouter`, no raw SQL, delegates to the module function) → registered in `main.py`.
 
 ## Architecture Files Reference
 
@@ -167,7 +179,6 @@ backend/
 |---|---|
 | `Backend/backend_architecture.json.json` | Three-layer pipeline definitions |
 | `Backend/backend_routes.json.json` | All FastAPI route paths and file mappings |
-| `Backend/backend_modules.json.json` | Module responsibilities |
 | `Backend/backend_models.json.json` | Pydantic request/response models |
 | `Backend/backend_schemas.json.json` | Schema validation rules |
 | `Backend/backend_stored_procedures.json.json` | SP catalog |
@@ -175,13 +186,14 @@ backend/
 | `Backend/backend_ai_features.json.json` | Azure AI / GPT integrations |
 | `Backend/backend_business_domains.json.json` | Domain groupings |
 | `Backend/backend_prompts.json.json` | GPT prompt templates |
+| `Backend/backend_database.json.json` | SQL Server connection config + connection-resilience notes (not yet exposed via an MCP tool — read directly if needed) |
 | `Frontend/frontend_knowledge.json` | Architecture, modules, API/page patterns |
 | `Frontend/frontend_routes.json.json` | Page routes and role guards |
 | `Frontend/frontend_components.json.json` | Shared component catalog |
 | `Frontend/frontend_modules.json.json` | Module-level feature breakdown |
 | `Frontend/frontend_ui_patterns.json.json` | UI conventions |
 | `Frontend/frontend_api_contracts.json.json` | Request/response contracts |
-| `Database/structure_database.csv` | Full column-level DB schema (format: schema,table,column,type,…) |
+| `Database/structure_database.csv` + `Database/sql_relationships.json` | **Live source of truth for DB schema** — read together by the `get_database_schema` MCP tool (format: schema,table,column,type,length,nullable,pk,fk) |
 | `Database/ER_Diagram.csv` | Entity relationships |
-| `Database/sql_tables.json` | Table-level documentation |
-| `Database/sql_relationships.json` | FK relationship map |
+
+Note: `Database/sql_tables.json` exists on disk but is **not read by any MCP tool** (`structure_database.csv` is canonical instead) — do not rely on it being current; `Backend/backend_modules.json.json` referenced in earlier versions of this table does not exist as a file.

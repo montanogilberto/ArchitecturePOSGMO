@@ -1,0 +1,160 @@
+{
+  "module": "stripeConnectOnboarding",
+  "description": "Native, redirect-free Stripe Connect onboarding for a client's PAYOUT account — the destination that RECEIVES the loan deposit. Replaces the embedded StripeAccountOnboarding flow, which opens connect.stripe.com in a browser window (rejected UX — the goal is Uber-style, the user never leaves the app). The client submits identity/tax/address and a payout destination — a bank account (CLABE) OR a debit card — entirely through native in-app forms; values are tokenized client-side with Stripe.js and forwarded to Stripe via the Account API. REUSE (critical): the debit-card path MUST reuse the existing native card-capture component src/components/SavedCardSetup.tsx (@stripe/react-stripe-js CardElement + client-side tokenization) instead of building a new card form. SavedCardSetup already proves the no-browser pattern for the 'cobros automáticos' charge card; this module applies the SAME pattern to the payout external account. Note the two are DISTINCT Stripe objects: a charge card (Customer PaymentMethod, for being charged installments) is NOT a payout destination (Connect external account, for receiving money) — reuse the UI/tokenization pattern, not the saved object. ARCHITECT REVIEW: REUSES the existing dbo.stripeConnectedAccounts table and dbo.sp_stripe_connectedAccounts stored procedure — NO new tables or columns; only account status (existing columns) is persisted. Also changes stripe_payments.create_connected_account to create Stripe accounts as type='custom' (capability 'transfers') instead of type='express', because only Custom accounts can be onboarded fully via API without a browser redirect.",
+  "fields": [
+    {
+      "name": "firstName",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "Individual first name. Transmitted to Stripe (Account.individual.first_name); NOT persisted as a new DB column."
+    },
+    {
+      "name": "lastName",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "Individual last name. Transmitted to Stripe (Account.individual.last_name); NOT persisted as a new DB column."
+    },
+    {
+      "name": "dateOfBirth",
+      "type": "date",
+      "required": true,
+      "description": "Individual DOB, split into day/month/year for Stripe (Account.individual.dob). NOT persisted as a new DB column."
+    },
+    {
+      "name": "taxId",
+      "type": "string",
+      "required": false,
+      "max_length": 30,
+      "description": "RFC / CURP. Transmitted to Stripe (Account.individual.id_number); NOT persisted as a new DB column."
+    },
+    {
+      "name": "addressLine1",
+      "type": "string",
+      "required": true,
+      "max_length": 200,
+      "description": "Street address. Transmitted to Stripe (Account.individual.address.line1); NOT persisted as a new DB column."
+    },
+    {
+      "name": "addressCity",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "City. Transmitted to Stripe (Account.individual.address.city); NOT persisted as a new DB column."
+    },
+    {
+      "name": "addressState",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "State/province. Transmitted to Stripe (Account.individual.address.state); NOT persisted as a new DB column."
+    },
+    {
+      "name": "addressPostalCode",
+      "type": "string",
+      "required": true,
+      "max_length": 10,
+      "description": "Postal code. Transmitted to Stripe (Account.individual.address.postal_code); NOT persisted as a new DB column."
+    },
+    {
+      "name": "phone",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Contact phone. Transmitted to Stripe (Account.individual.phone); NOT persisted as a new DB column."
+    },
+    {
+      "name": "acceptedTos",
+      "type": "boolean",
+      "required": true,
+      "description": "The client accepted the Stripe Services Agreement in-app. Sent to Stripe as tos_acceptance (with server-captured date + IP). NOT persisted as a new DB column."
+    },
+    {
+      "name": "payoutMethod",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Which payout destination the client is linking: 'bank' (CLABE) or 'debit_card'. Both are attached as the Connect external account; a debit card also enables instant payouts. NOT persisted as a new DB column."
+    },
+    {
+      "name": "bankAccountToken",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "When payoutMethod='bank': Stripe.js bank_account token (btok_...) created client-side from the 18-digit CLABE, so the raw account number never reaches the server. Attached via Account.create_external_account. Only the resulting last4/type/bankName are persisted (existing columns)."
+    },
+    {
+      "name": "debitCardToken",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "When payoutMethod='debit_card': Stripe.js card token (tok_...) created client-side by REUSING SavedCardSetup's CardElement capture. Attached as the Connect external account via Account.create_external_account for instant payouts. Only last4/brand are persisted (existing columns)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:1",
+      "notes": "One connected account per client (clientId). Reuses dbo.stripeConnectedAccounts."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager", "Cashier"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/connect-onboarding",
+    "allowedRoles": ["Admin", "Manager", "Cashier"],
+    "uiPattern": "Wizard Flow Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "IdentityStep",
+        "description": "Native Ionic form collecting firstName, lastName, dateOfBirth, taxId, address fields and an acceptedTos IonCheckbox. On submit ensures the Custom connected account exists, then POST /stripe/connected-accounts/kyc."
+      },
+      {
+        "step": 2,
+        "name": "PayoutDestinationStep",
+        "description": "Links the payout destination that RECEIVES the loan deposit, via a segmented choice: (a) Cuenta bancaria — an 18-digit CLABE tokenized with Stripe.js createToken('bank_account'); or (b) Tarjeta de débito — REUSE the existing src/components/SavedCardSetup.tsx CardElement to tokenize a debit card client-side. Then POST /stripe/connected-accounts/bank with the resulting token. MUST NEVER open connect.stripe.com or any browser/iframe — mirror SavedCardSetup's in-app, no-redirect UX. DO NOT reuse the embedded StripeAccountOnboarding component, which redirects to the browser (the behavior being removed)."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/stripe/connected-accounts",
+        "method": "POST",
+        "description": "MODIFY EXISTING: create the connected account as Stripe type='custom' with capability 'transfers' (was type='express'). Persists initial status via sp_stripe_connectedAccounts (action=upsert). No new columns.",
+        "requestSchema": "ConnectedAccountCreateRequest",
+        "responseSchema": "ConnectedAccountResponse"
+      },
+      {
+        "path": "/stripe/connected-accounts/kyc",
+        "method": "POST",
+        "description": "NEW: attach identity/tax/address + ToS to the client's Custom account via stripe.Account.modify(individual=..., tos_acceptance={date, server-captured ip}). Then retrieve the account and persist charges/payouts/details/hasExternalAccount status via sp_stripe_connectedAccounts (action=upsert). Returns { account }.",
+        "requestSchema": "ConnectedAccountKycRequest",
+        "responseSchema": "ConnectedAccountResponse"
+      },
+      {
+        "path": "/stripe/connected-accounts/bank",
+        "method": "POST",
+        "description": "NEW: attach the tokenized external account via stripe.Account.create_external_account(external_account=<token>, default_for_currency=True). The token is EITHER a bank_account token (btok_, from a CLABE) OR a debit-card token (tok_, from reusing SavedCardSetup's CardElement) — Stripe accepts both as external accounts (debit card = instant payouts). Then retrieve the account and persist externalAccountLast4/Type/BankName + status via sp_stripe_connectedAccounts (action=upsert). Returns { account }.",
+        "requestSchema": "ConnectedAccountBankRequest",
+        "responseSchema": "ConnectedAccountResponse"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.stripeConnectedAccounts"
+    ],
+    "storedProcedures": [
+      "dbo.sp_stripe_connectedAccounts"
+    ]
+  }
+}

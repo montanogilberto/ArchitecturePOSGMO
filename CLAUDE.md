@@ -118,6 +118,22 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 - `unifiedProducts` is the master catalog; `productMatches` links marketplace listings to it.
 - `tickets` stores receipt blobs (Azure Blob) and tracks WhatsApp/SMS delivery status.
 
+## Observability
+
+Observability is a first-class layer, not ad-hoc logging. Goal: **every user action is reconstructable** for debugging, audit, regulatory compliance, fraud investigation, support and analytics. Hand-written infra (an intentional exception to the factory pipeline — the PRD model doesn't cover middleware).
+
+**Correlation:** `workflowId` (one per business process — registration, loan application, payment; created at the start, reused by every step) + `correlationId` (one per HTTP request, links request → response → downstream integration calls). Identity comes from client-asserted `X-User-Id`/`X-Company-Id`/`X-Client-Id` headers — fine for observability, **never** for authorization.
+
+**Four log tables** (`dbo`, already exist — do NOT regenerate; see `smartloans_backend/sql/sp_observability.sql`):
+- `workflowLogs` — business process steps under one workflowId.
+- `auditLogs` — who changed what (old → new); durable path.
+- `applicationLogs` — technical + SECURITY events; one row auto-emitted per request.
+- `integrationLogs` — external service calls (Stripe, Azure Face, Blob, Notification Hub, email/SMS, Document Intelligence).
+
+**Backend framework** (`smartloans_backend/observability/`): `ObservabilityMiddleware` traces every request automatically; business code uses `log_workflow_step` / `workflow_step()` ctx mgr / `log_audit` / `log_application` / `log_integration` / `timed_integration()`. A background writer batches best-effort logs; audit + SECURITY are written synchronously. All log bodies are **redacted + size-capped** (passwords, tokens, OTP, CURP, base64 images → `***`).
+
+**Frontend** propagates the trace: a global `window.fetch` interceptor (`src/utils/observability.ts`) stamps the `X-Correlation-Id`/`X-Workflow-Id`/identity/version headers on backend calls; `ObservabilityContext` manages `startWorkflow`/`endWorkflow`.
+
 ## Agent Architecture
 
 The generation pipeline is: **PRD → Architect Agent → Specification JSON → Database Agent + Backend Agent → Frontend Agent → Reviewer Agent → Pull Request**
@@ -142,6 +158,7 @@ The generation pipeline is: **PRD → Architect Agent → Specification JSON →
 3. Prefer consistency over creativity; follow SOLID and Clean Architecture.
 4. Never issue raw SQL from routes — all DB mutations go through stored procedures.
 5. Never invent a new database architecture.
+6. Every generated module must be observable (see **Observability**): instrument business logic via the `observability` package — `timed_integration()` around external-service calls, `log_audit(...)` on data mutations, and `workflow_step(...)` for multi-step flows. Never write secrets, PII, or base64 into the log tables (the redactor enforces this — don't bypass it). Do NOT regenerate the four log tables or their SPs.
 
 ## Frontend Folder Structure
 
@@ -195,5 +212,6 @@ New modules follow: `sql/sp_{module}.sql` → `modules/{module}.py` (imports `da
 | `Frontend/frontend_api_contracts.json.json` | Request/response contracts |
 | `Database/structure_database.csv` + `Database/sql_relationships.json` | **Live source of truth for DB schema** — read together by the `get_database_schema` MCP tool (format: schema,table,column,type,length,nullable,pk,fk) |
 | `Database/ER_Diagram.csv` | Entity relationships |
+| `smartloans_backend/sql/sp_observability.sql` + `smartloans_backend/observability/` | Observability layer — the four log tables, insert/batch SPs, and the backend middleware/logger package (see **Observability**) |
 
 Note: `Database/sql_tables.json` exists on disk but is **not read by any MCP tool** (`structure_database.csv` is canonical instead) — do not rely on it being current; `Backend/backend_modules.json.json` referenced in earlier versions of this table does not exist as a file.

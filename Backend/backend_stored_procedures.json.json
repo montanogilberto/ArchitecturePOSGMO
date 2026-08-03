@@ -1,5 +1,8 @@
 {
   "stored_procedures": [
+    { "name": "sp_checkContact", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_checkUsername", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"] },
+    { "name": "sp_users", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"], "actions": ["1=insert (rejects duplicate name or email; accepts clientId to link a login to an existing dbo.clients row)", "2=update (also upserts userCompanies when companyId present; accepts clientId to link/re-link after creation)", "3=delete"] },
     { "name": "sp_checks", "module_binding": "modules/checks.py", "parameters": ["@pjsonfile"] },
     { "name": "sp_checks_all", "module_binding": "modules/checks.py", "parameters": [] },
     { "name": "sp_checks_one", "module_binding": "modules/checks.py", "parameters": ["@pjsonfile"] },
@@ -17,7 +20,6 @@
     { "name": "sp_orders_products_one", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
     { "name": "sp_sellListings", "module_binding": "modules/sellListings.py", "parameters": ["@pjsonfile"] },
     { "name": "sp_tankWaters", "module_binding": "modules/IOT.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_users", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"] },
     { "name": "sp_stripe_connectedAccounts", "module_binding": "modules/stripe_payments.py", "parameters": ["@pjsonfile"] },
     { "name": "sp_stripe_transactions", "module_binding": "modules/stripe_payments.py", "parameters": ["@pjsonfile"] },
     { "name": "sp_clientWallets", "module_binding": "modules/walletBalance.py", "parameters": ["@pjsonfile"], "actions": ["reserve", "release", "debit", "credit", "get"] },

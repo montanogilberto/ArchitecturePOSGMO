@@ -1,0 +1,94 @@
+{
+  "module": "clientFollowUp",
+  "description": "Client monitoring and collections follow-up log. One row per follow-up event on a client; the credit engine counts at_risk and default rows to adjust the internal credit score.",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "description": "The client (borrower) this follow-up tracks. Same id space as loans.clientId and creditScores.clientId."
+    },
+    {
+      "name": "riskStatus",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Monitoring state. Allowed values: on_track, at_risk, default. Read by sp_creditScore_data (-8 per at_risk row, -20 per default row). FK to clientFollowUps_status.riskStatus."
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Why the follow-up / risk flag was raised."
+    },
+    {
+      "name": "note",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "Free-text follow-up note from the agent handling the case."
+    },
+    {
+      "name": "assignedTo",
+      "type": "integer",
+      "required": false,
+      "description": "userId of the agent responsible for this follow-up."
+    },
+    {
+      "name": "dueDate",
+      "type": "datetime",
+      "required": false,
+      "description": "When the next follow-up action is due."
+    },
+    {
+      "name": "resolvedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "Timestamp set when the follow-up is closed / resolved."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "A client may have many follow-up records over time; counts feed the credit score."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/client-follow-ups",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Modal Form Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "FollowUpListStep",
+        "description": "IonList of follow-ups filtered by companyId, optional clientId and riskStatus. IonSearchbar + IonSelect (riskStatus) + infinite scroll. Each row shows client, riskStatus badge, dueDate."
+      },
+      {
+        "step": 2,
+        "name": "FollowUpFormModal",
+        "description": "IonModal create/edit form: IonSelect riskStatus (on_track / at_risk / default), reason, note, assignedTo, dueDate. Resolve action sets resolvedAt."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.clientFollowUps",
+      "dbo.clientFollowUps_status"
+    ],
+    "storedProcedures": [
+      "dbo.sp_clientFollowUps",
+      "dbo.sp_clientFollowUps_all",
+      "dbo.sp_clientFollowUps_one"
+    ]
+  }
+}

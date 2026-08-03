@@ -1,0 +1,57 @@
+{
+  "module": "transferEvidence",
+  "description": "Structured proof of a bank transfer attached to a funding or payment declaration (non-custodial model, RFC-002/003, architecture v1.2 D15). The evidence IS the data (clave de rastreo, banks, date, amount, hash) — a PDF/screenshot is only an optional attachment because CEPs can be regenerated at Banxico from the data and screenshots are forgeable. Evidence hierarchy: clave de rastreo → official CEP validation → screenshot. Named Transfer (not Payment) evidence because tomorrow it covers SPEI, CoDi, Open Finance, ACH or wire.",
+  "fields": [
+    { "name": "subjectType", "type": "string", "required": true, "max_length": 10,
+      "description": "What the evidence belongs to. Allowed values: FUNDING, PAYMENT." },
+    { "name": "subjectId", "type": "integer", "required": true,
+      "description": "fundingTransactions.fundingId or loanPayments.paymentId depending on subjectType." },
+    { "name": "claveRastreo", "type": "string", "required": true, "max_length": 30,
+      "description": "SPEI tracking key, format ^[A-Za-z0-9]{10,30}$. UNIQUE per company — one real transfer can only back one declaration (natural idempotency)." },
+    { "name": "bancoOrigen", "type": "string", "required": false, "max_length": 60,
+      "description": "Sending bank as reported by the payer." },
+    { "name": "bancoDestino", "type": "string", "required": false, "max_length": 60,
+      "description": "Receiving bank (from the beneficiary snapshot)." },
+    { "name": "fechaOperacion", "type": "date", "required": true,
+      "description": "SPEI operation date." },
+    { "name": "horaOperacion", "type": "string", "required": false, "max_length": 8,
+      "description": "Operation time HH:MM:SS when known." },
+    { "name": "montoMXN", "type": "decimal", "required": true,
+      "description": "Transferred amount, decimal(18,2)." },
+    { "name": "cepValidado", "type": "boolean", "required": false,
+      "description": "True when a PaymentProvider (manual support review, Banxico CEP, STP) validated the transfer. Defaults to false." },
+    { "name": "validationProvider", "type": "string", "required": false, "max_length": 20,
+      "description": "Which provider validated. Allowed values: manual, banxico_cep, stp. Defaults to manual." },
+    { "name": "evidenceHash", "type": "string", "required": true, "max_length": 64,
+      "description": "SHA-256 of claveRastreo|bancoOrigen|bancoDestino|fechaOperacion|montoMXN — tamper-evidence over the structured data." },
+    { "name": "attachmentBlobUrl", "type": "string", "required": false, "max_length": 500,
+      "description": "OPTIONAL receipt file in a PRIVATE Azure Blob container (short-lived SAS). Never the source of truth." },
+    { "name": "uploadedByClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Party that attached the evidence." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/transfer-evidence",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "TransferEvidenceListStep",
+        "description": "IonList newest-first by companyId: claveRastreo, subjectType chip, montoMXN, fechaOperacion, cepValidado badge (✓ green when validated, with validationProvider)." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.transferEvidence"],
+    "storedProcedures": ["dbo.sp_transferEvidence", "dbo.sp_transferEvidence_all", "dbo.sp_transferEvidence_one"],
+    "hints": [
+      "UNIQUE constraint on (companyId, claveRastreo) — duplicate declaration of the same transfer must return error 409-style with the existing evidenceId.",
+      "CHECK subjectType IN ('FUNDING','PAYMENT').",
+      "Extra action 'validate_result': sets cepValidado + validationProvider after a PaymentProvider verdict — the ONLY allowed update; all other fields are immutable after insert.",
+      "Index (subjectType, subjectId)."
+    ]
+  }
+}

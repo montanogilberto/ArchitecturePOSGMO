@@ -1,0 +1,183 @@
+{
+  "module": "transactionNotification",
+  "description": "Client-facing notification and confirmation record for every money movement (wallet top-up, loan disbursement, repayment, withdrawal to bank). Each movement generates one row per channel (email, push, in-app) with the Stripe reference, destination bank snapshot, and a status that advances from pending to sent to confirmed once Stripe's webhook (payment_intent.succeeded / payout.paid) proves the money actually moved. Feeds the dashboard movement feed and the 'money available' tile.",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "The client being notified about the movement (lender or borrower)."
+    },
+    {
+      "name": "transactionId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "stripeTransactions",
+      "fk_column": "transactionId",
+      "description": "The money movement this notification describes. Links to stripeTransactions for amount/type/status ground truth."
+    },
+    {
+      "name": "movementType",
+      "type": "string",
+      "required": true,
+      "max_length": 30,
+      "description": "Kind of movement. Allowed values: wallet_top_up, disbursement, loan_repayment, withdrawal. Mirrors stripeTransactions.paymentType at time of creation."
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Delivery channel. Allowed values: email, push, inapp. One row per channel per movement."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Notification/movement state. Allowed values: pending, sent, confirmed, failed. Defaults to pending on create; sent when the email/push is dispatched; confirmed when the Stripe webhook proves the movement completed (payment_intent.succeeded for charges, payout.paid for withdrawals); failed on dispatch error or payout.failed. FK to transactionNotifications_status.statusCode."
+    },
+    {
+      "name": "recipientEmail",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Email address the notification was sent to (snapshot; channel=email only)."
+    },
+    {
+      "name": "subject",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Email/push title, e.g. 'Retiro de $500.00 MXN en camino a tu cuenta Santander ****9965'."
+    },
+    {
+      "name": "messageBody",
+      "type": "text",
+      "required": false,
+      "description": "Full rendered message body sent to the client."
+    },
+    {
+      "name": "amount",
+      "type": "decimal",
+      "required": true,
+      "description": "Movement amount snapshot in company currency, decimal(18,2)."
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "required": true,
+      "max_length": 3,
+      "description": "ISO currency code, defaults to 'mxn'."
+    },
+    {
+      "name": "stripeReference",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "Stripe object backing the movement: pi_* (charge), po_* (payout), or tr_* (transfer). This is what support quotes to confirm money movement."
+    },
+    {
+      "name": "bankName",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "Destination bank snapshot for withdrawals/disbursements, from stripeConnectedAccounts.externalAccountBankName."
+    },
+    {
+      "name": "bankLast4",
+      "type": "string",
+      "required": false,
+      "max_length": 4,
+      "description": "Destination account last 4 digits snapshot."
+    },
+    {
+      "name": "sentAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When the email/push was dispatched."
+    },
+    {
+      "name": "confirmedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When the Stripe webhook confirmed the underlying movement (money verifiably moved)."
+    },
+    {
+      "name": "failureReason",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "Dispatch error or Stripe failure detail (e.g. payout.failed reason)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "clientId references clients; a client accumulates many movement notifications."
+    },
+    {
+      "parentModule": "stripeTransactions",
+      "cardinality": "1:N",
+      "notes": "Each stripeTransactions row can raise one notification per channel (email/push/inapp)."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/movements",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Modal Form Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "MovementFeedStep",
+        "description": "IonList feed of the client's movements (inapp rows), newest first: icon per movementType, amount, status badge (pending=gray, sent=blue, confirmed=green, failed=red), relative date. IonSelect filter by movementType/status. Reused inside the lender and borrower dashboards' Actividad section."
+      },
+      {
+        "step": 2,
+        "name": "MovementDetailModal",
+        "description": "IonModal opened from a feed row: full audit trail — amount, currency, movementType, stripeReference (pi_/po_/tr_), destination bankName + bankLast4, transactionId, sentAt, confirmedAt, failureReason. This answers 'which account, which bank, which transaction, did the money really leave'."
+      },
+      {
+        "step": 3,
+        "name": "WalletAvailableCard",
+        "description": "Compact card for the dashboards showing money available now: wallet availableBalance (from /wallet) plus the last confirmed movement line. Replaces the static $0 'Capital total' impression when funds exist."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/transactionNotifications/dispatch",
+        "method": "POST",
+        "description": "Create + send the notifications for one transaction: inserts one row per channel (email via contact_email Gmail sender, push via sp_pushNotifications/Azure NH, inapp row only), then updates each row to sent/failed with sentAt or failureReason. Body: { companyId, transactionId }. Idempotent per (transactionId, channel)."
+      },
+      {
+        "path": "/transactionNotifications/confirm",
+        "method": "POST",
+        "description": "Called from the Stripe webhook glue on payment_intent.succeeded, payout.paid and payout.failed: marks the movement's rows confirmed (or failed with the Stripe failure reason), stamps confirmedAt, and dispatches the confirmation email ('tu retiro llegó a tu cuenta Santander ****9965'). Requires the Stripe webhook endpoint to subscribe to payout.paid and payout.failed in addition to the current events."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.transactionNotifications",
+      "dbo.transactionNotifications_status"
+    ],
+    "storedProcedures": [
+      "dbo.sp_transactionNotifications",
+      "dbo.sp_transactionNotifications_all",
+      "dbo.sp_transactionNotifications_one"
+    ]
+  }
+}

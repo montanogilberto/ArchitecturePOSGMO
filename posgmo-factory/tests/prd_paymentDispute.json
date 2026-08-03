@@ -1,0 +1,48 @@
+{
+  "module": "paymentDispute",
+  "description": "Dispute over a rejected funding or payment declaration (non-custodial model, RFC-003, architecture v1.2). Opens ONLY from a REJECTED declaration within 30 days; support resolves it reviewing the structured transfer evidence (CEP validation via PaymentProvider). Resolution flips the underlying declaration to CONFIRMED or leaves it CANCELLED — always through the declaration's own SP so paymentHistory (D16) records the transition.",
+  "fields": [
+    { "name": "subjectType", "type": "string", "required": true, "max_length": 10,
+      "description": "Allowed values: FUNDING, PAYMENT." },
+    { "name": "subjectId", "type": "integer", "required": true,
+      "description": "fundingId or paymentId under dispute." },
+    { "name": "loanId", "type": "integer", "required": true, "fk_table": "loans", "fk_column": "loanId",
+      "description": "Loan the disputed declaration belongs to." },
+    { "name": "openedByClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Party that opened the dispute (normally the payer whose declaration was rejected)." },
+    { "name": "reason", "type": "string", "required": true, "max_length": 500,
+      "description": "Why the party disputes the rejection." },
+    { "name": "status", "type": "string", "required": true, "max_length": 25,
+      "description": "Allowed values: OPEN, RESOLVED_CONFIRMED, RESOLVED_REJECTED, CANCELLED. Defaults to OPEN." },
+    { "name": "resolutionNote", "type": "string", "required": false, "max_length": 500,
+      "description": "Mandatory when support resolves — what was verified and why." },
+    { "name": "resolvedAt", "type": "datetime", "required": false,
+      "description": "When support resolved." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "loans", "cardinality": "1:N", "notes": "Disputes trace back to the loan for the support queue." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/payment-disputes",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PaymentDisputeListStep",
+        "description": "IonList newest-first by companyId: loanId, subjectType, openedBy, reason excerpt, status chip (OPEN amber / RESOLVED_CONFIRMED green / RESOLVED_REJECTED red / CANCELLED gray)." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.paymentDisputes"],
+    "storedProcedures": ["dbo.sp_paymentDisputes", "dbo.sp_paymentDisputes_all", "dbo.sp_paymentDisputes_one"],
+    "hints": [
+      "Status machine: OPEN -> RESOLVED_CONFIRMED | RESOLVED_REJECTED | CANCELLED. Illegal transitions return an error.",
+      "CHECK subjectType IN ('FUNDING','PAYMENT').",
+      "Only one OPEN dispute per (subjectType, subjectId) — unique filtered index.",
+      "resolve action requires resolutionNote and returns the subject ids so the caller flips the underlying declaration via its own SP (history recorded there)."
+    ]
+  }
+}

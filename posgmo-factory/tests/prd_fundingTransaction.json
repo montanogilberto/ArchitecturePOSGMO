@@ -1,0 +1,58 @@
+{
+  "module": "fundingTransaction",
+  "description": "Declaration of the direct lender→borrower SPEI that FUNDS a loan (non-custodial model, RFC-002, architecture v1.2 D13). Funding is NOT a payment: it creates the active loan, it does not amortize it — hence its own table and aggregate. SmartLoans never touches the money: the lender declares the transfer (clave de rastreo), the borrower confirms reception, and only then the loan becomes active. No response escalates to support (D5: money is NEVER auto-confirmed). Every status change must also INSERT into paymentHistory (D16).",
+  "fields": [
+    { "name": "loanId", "type": "integer", "required": true, "fk_table": "loans", "fk_column": "loanId",
+      "description": "Loan being funded. UNIQUE — exactly one funding per loan." },
+    { "name": "intentId", "type": "integer", "required": true, "fk_table": "paymentIntents", "fk_column": "intentId",
+      "description": "FUNDING intent this declaration fulfills." },
+    { "name": "lenderClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Payer — sent the SPEI from their own bank." },
+    { "name": "borrowerClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Payee — must confirm reception in their own bank account." },
+    { "name": "amountMXN", "type": "decimal", "required": true,
+      "description": "Declared amount, must match the intent expectedAmountMXN within $1 tolerance. Positive, decimal(18,2)." },
+    { "name": "transferDate", "type": "date", "required": true,
+      "description": "Date the SPEI was sent, between today-30d and today." },
+    { "name": "status", "type": "string", "required": true, "max_length": 25,
+      "description": "Allowed values: PENDING_CONFIRMATION, CONFIRMED, REJECTED, ESCALATED, CANCELLED. Defaults to PENDING_CONFIRMATION. Never auto-confirmed by the system." },
+    { "name": "declaredAt", "type": "datetime", "required": false,
+      "description": "When the lender declared. Defaults to GETUTCDATE()." },
+    { "name": "confirmedAt", "type": "datetime", "required": false,
+      "description": "When the borrower (or support on escalation) confirmed reception." },
+    { "name": "confirmedByClientId", "type": "integer", "required": false,
+      "description": "WHO confirmed: the borrower, or the support actor that resolved an escalation. Audit-critical." },
+    { "name": "rejectReason", "type": "string", "required": false, "max_length": 300,
+      "description": "Mandatory when status becomes REJECTED." },
+    { "name": "escalatedAt", "type": "datetime", "required": false,
+      "description": "Set by the escalate cron when the borrower has not responded after the configured days." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "loans", "cardinality": "1:1", "notes": "One funding transaction activates one loan." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/funding-transactions",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "FundingTransactionListStep",
+        "description": "IonList newest-first by companyId: loanId, lender→borrower, amountMXN, transferDate, status chip (PENDING amber / CONFIRMED green / REJECTED red / ESCALATED purple)." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.fundingTransactions"],
+    "storedProcedures": ["dbo.sp_fundingTransactions", "dbo.sp_fundingTransactions_all", "dbo.sp_fundingTransactions_one"],
+    "hints": [
+      "Status machine: PENDING_CONFIRMATION -> CONFIRMED | REJECTED | ESCALATED; ESCALATED -> CONFIRMED | REJECTED (support only). Any other transition returns an error.",
+      "UNIQUE constraint on loanId (one funding per loan).",
+      "Every status change must INSERT a row into dbo.paymentHistory (subjectType='FUNDING', subjectId=fundingId, oldStatus, newStatus, actorUserId, reason) inside the same transaction — paymentHistory is append-only.",
+      "Extra action 'escalate_due': PENDING_CONFIRMATION rows with declaredAt older than @days → ESCALATED, returning affected rows for the support queue.",
+      "confirm action must return the loanId and borrowerUserId/lenderUserId so the caller can transition the loan to funded→active and push both parties.",
+      "Amount is validated against the intent expectedAmountMXN within 1.00 tolerance on declare (action 1)."
+    ]
+  }
+}

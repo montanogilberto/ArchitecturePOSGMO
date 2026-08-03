@@ -1,0 +1,132 @@
+{
+  "module": "transfer",
+  "description": "Outbound SPEI transfers (dispersión) from the platform to a client's verified bank account — loan disbursements, lender payouts and refunds, executed through the banking provider (STP). Each settled transfer stores the provider reference and the Banxico CEP receipt URL for audit. See docs/payment-banking-first-redesign.md (Phase 1).",
+  "fields": [
+    {
+      "name": "toClientId",
+      "type": "integer",
+      "required": true,
+      "description": "Client receiving the funds. Same id space as clients.clientId."
+    },
+    {
+      "name": "toBankAccountId",
+      "type": "integer",
+      "required": true,
+      "description": "Destination account. FK to bankAccounts.bankAccountId; must be verified at send time."
+    },
+    {
+      "name": "amountMXN",
+      "type": "decimal",
+      "required": true,
+      "description": "Amount in MXN. Stored as decimal(12,2)."
+    },
+    {
+      "name": "purpose",
+      "type": "string",
+      "required": true,
+      "max_length": 30,
+      "description": "Why the money moved. Allowed values: loan_disbursement, lender_payout, refund. Lookup values live in database hints, not a separate field table."
+    },
+    {
+      "name": "loanId",
+      "type": "integer",
+      "required": false,
+      "description": "Loan this transfer belongs to, when purpose = loan_disbursement."
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Banking rail used. Allowed values: stp, stripe (legacy fallback). Defaults to stp."
+    },
+    {
+      "name": "providerRef",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "Provider-side id of the transfer (STP claveRastreo / Stripe transfer id)."
+    },
+    {
+      "name": "cepUrl",
+      "type": "string",
+      "required": false,
+      "max_length": 2048,
+      "description": "Banxico CEP (Comprobante Electrónico de Pago) URL — the audit-grade settlement receipt."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Transfer state. Allowed values: pending, sent, settled, returned, failed. Defaults to pending; provider webhooks advance it. Lookup values live in database hints."
+    },
+    {
+      "name": "failureReason",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "Provider error / SPEI return reason when status = returned or failed."
+    },
+    {
+      "name": "idempotencyKey",
+      "type": "string",
+      "required": true,
+      "max_length": 64,
+      "description": "Caller-supplied unique key (e.g. loanId+purpose+attempt). UNIQUE — a retry with the same key must not create a second transfer."
+    },
+    {
+      "name": "settledAt",
+      "type": "datetime",
+      "required": false,
+      "description": "Timestamp when the provider confirmed settlement (CEP available)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "toClientId references clients."
+    },
+    {
+      "parentModule": "bankAccount",
+      "cardinality": "1:N",
+      "notes": "toBankAccountId references bankAccounts; only verified accounts receive transfers."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/transfers",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Detail Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "TransferListStep",
+        "description": "IonList filtered by companyId, optional toClientId / purpose / status. Rows show amount, purpose chip, status badge, settledAt."
+      },
+      {
+        "step": 2,
+        "name": "TransferDetailStep",
+        "description": "Detail view with provider reference, CEP link (opens the Banxico receipt), failure reason and the linked loan."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.transfers"
+    ],
+    "storedProcedures": [
+      "dbo.sp_transfers",
+      "dbo.sp_transfers_all",
+      "dbo.sp_transfers_one"
+    ]
+  }
+}

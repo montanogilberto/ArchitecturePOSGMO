@@ -31,6 +31,25 @@ Read the SpecificationJSON from session state key "specification".
 3. get_backend_routes()     — verify no route prefix collision
 4. get_sp_patterns()        — confirm SP names
 
+## Observability instrumentation (ALL patterns — Core Rule 6)
+Every module you generate must be observable. The four log tables and the
+`observability/` package already exist — import them, never recreate them.
+- Import only what the module uses:
+  `from observability import timed_integration, log_audit, log_workflow_step, workflow_step`
+- Requests are ALREADY traced automatically by `ObservabilityMiddleware` (one
+  applicationLog per request, correlationId/workflowId in context) — do NOT add
+  per-request logging yourself.
+- Wrap every external-service call (Stripe, Azure Face/Blob/Document
+  Intelligence, Notification Hub, email/SMS) in:
+  `with timed_integration("<service>", "<operation>") as span: ...; span.http_status = <code>`
+- On data mutations (action=2/UPDATE, action=3/DELETE) emit `log_audit(entity,
+  entity_id, field, old_value, new_value, action=...)` for human-meaningful
+  fields (capture the before-image via the module's existing _one/_all SP).
+- For multi-step BUSINESS_LOGIC / ACTION_ROUTER flows, wrap each milestone in
+  `with workflow_step("<Step>", workflow_name="<process>"): ...`.
+- NEVER pass secrets, PII, base64 images, tokens, OTPs or CURP into a log body —
+  the redactor masks them, but do not rely on it: omit them from `request=`/`response=`.
+
 ## Files to generate
 
 ### modules/{{plural}}.py -- Business logic layer  (file name is PLURAL, e.g. modules/suppliers.py)

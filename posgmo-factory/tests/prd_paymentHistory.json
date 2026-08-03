@@ -1,0 +1,46 @@
+{
+  "module": "paymentHistory",
+  "description": "APPEND-ONLY status history for funding transactions and loan payments (architecture v1.2 D16). Gold for audits: no status of fundingTransactions/loanPayments ever changes without an INSERT here in the same transaction, recording who, when, why, from which ip/device. Rows are NEVER updated or deleted — history accumulates, it is not edited.",
+  "fields": [
+    { "name": "subjectType", "type": "string", "required": true, "max_length": 10,
+      "description": "Allowed values: FUNDING, PAYMENT." },
+    { "name": "subjectId", "type": "integer", "required": true,
+      "description": "fundingId or paymentId depending on subjectType." },
+    { "name": "oldStatus", "type": "string", "required": false, "max_length": 25,
+      "description": "Previous status. NULL on creation." },
+    { "name": "newStatus", "type": "string", "required": true, "max_length": 25,
+      "description": "Status after the transition." },
+    { "name": "actorUserId", "type": "integer", "required": false,
+      "description": "User that caused the transition. NULL only for system crons (escalations, expirations)." },
+    { "name": "reason", "type": "string", "required": false, "max_length": 300,
+      "description": "Mandatory for reject/escalate/resolve transitions." },
+    { "name": "ipAddress", "type": "string", "required": false, "max_length": 50,
+      "description": "Actor ip captured from the observability middleware." },
+    { "name": "deviceInfo", "type": "string", "required": false, "max_length": 200,
+      "description": "Actor device captured from the observability middleware." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." }
+  ],
+  "roles_allowed": ["Admin"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/payment-history-admin",
+    "allowedRoles": ["Admin"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PaymentHistoryListStep",
+        "description": "IonList newest-first by companyId filtered by subjectType+subjectId: oldStatus→newStatus, actor, reason, created_At. Read-only timeline." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.paymentHistory"],
+    "storedProcedures": ["dbo.sp_paymentHistory", "dbo.sp_paymentHistory_all", "dbo.sp_paymentHistory_one"],
+    "hints": [
+      "APPEND-ONLY: the SP implements action 1 (insert) and reads; actions 2 (update) and 3 (delete) must return an error — history is never edited.",
+      "CHECK subjectType IN ('FUNDING','PAYMENT').",
+      "Index (subjectType, subjectId) for per-payment timelines."
+    ]
+  }
+}

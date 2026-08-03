@@ -1,0 +1,107 @@
+{
+  "module": "walletTransaction",
+  "description": "Immutable money ledger — one INSERT-only row per money event (deposits, reserves, loan funding, repayments, fees, withdrawals). Balances are projections over this ledger, replacing the mutable clientWallets totals as source of truth. Corrections are new REVERSAL entries, never updates. See docs/payment-banking-first-redesign.md (Phase 1) and the capability-model spec.",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": false,
+      "description": "Wallet owner. NULL means the platform's own ledger (commissions, float)."
+    },
+    {
+      "name": "entryType",
+      "type": "string",
+      "required": true,
+      "max_length": 30,
+      "description": "Money event type. Allowed values: DEPOSIT, RESERVE, RELEASE, LOAN_FUNDING, DISBURSEMENT_RECEIVED, REPAYMENT_PRINCIPAL, REPAYMENT_INTEREST, PLATFORM_FEE, WITHDRAWAL, REFUND, REVERSAL, ADJUSTMENT. Lookup values live in database hints, not a separate field table."
+    },
+    {
+      "name": "direction",
+      "type": "string",
+      "required": true,
+      "max_length": 1,
+      "description": "D = debit (balance down), C = credit (balance up), from the wallet owner's perspective."
+    },
+    {
+      "name": "amountMXN",
+      "type": "decimal",
+      "required": true,
+      "description": "Always positive; direction carries the sign. Stored as decimal(12,2)."
+    },
+    {
+      "name": "referenceType",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "What produced this entry. Allowed values: transfer, collection, loan, stripe_tx, manual."
+    },
+    {
+      "name": "referenceId",
+      "type": "integer",
+      "required": false,
+      "description": "Id in the referenced table (transfers.transferId, loans.loanId, ...). With referenceType forms the audit link."
+    },
+    {
+      "name": "idempotencyKey",
+      "type": "string",
+      "required": true,
+      "max_length": 64,
+      "description": "UNIQUE per company. The orchestrator's dedupe guarantee: replays never double-post a money event."
+    },
+    {
+      "name": "balanceAfter",
+      "type": "decimal",
+      "required": false,
+      "description": "Denormalized running available balance after applying this entry — makes statements and reconciliation O(1). Stored as decimal(12,2)."
+    },
+    {
+      "name": "note",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Short human-readable memo shown in the client's movement history."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "clientId references clients; NULL rows are the platform ledger."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/wallet-movements",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "WalletMovementListStep",
+        "description": "IonList of ledger entries newest-first, filtered by companyId + clientId, optional entryType. Rows show entryType chip, signed amount (D red / C green), note, created_At, running balanceAfter."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.walletTransactions"
+    ],
+    "storedProcedures": [
+      "dbo.sp_walletTransactions",
+      "dbo.sp_walletTransactions_all",
+      "dbo.sp_walletTransactions_one"
+    ],
+    "hints": [
+      "INSERT-only ledger: the CRUD SP must implement action 1 (insert) and reads; action 2 (update) and action 3 (delete) must return an error — corrections are REVERSAL inserts.",
+      "UNIQUE constraint on (companyId, idempotencyKey).",
+      "Indexes: (clientId, created_At DESC) for statements; (referenceType, referenceId) for reconciliation."
+    ]
+  }
+}

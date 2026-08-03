@@ -1,0 +1,62 @@
+{
+  "module": "loanPayment",
+  "description": "Declaration of a direct borrower→lender SPEI that AMORTIZES a loan (non-custodial model, RFC-003, architecture v1.2). Only repayment types — funding lives in its own fundingTransactions table (D13). Borrower declares ('Ya pagué') with clave de rastreo, lender confirms reception; no response escalates to support (D5: the system NEVER auto-confirms money). Confirmation emits a domain event consumed by the Risk Engine (Smart Score) — never inline (D7). Every status change also INSERTs into paymentHistory (D16).",
+  "fields": [
+    { "name": "loanId", "type": "integer", "required": true, "fk_table": "loans", "fk_column": "loanId",
+      "description": "Loan being amortized." },
+    { "name": "intentId", "type": "integer", "required": true, "fk_table": "paymentIntents", "fk_column": "intentId",
+      "description": "Intent this declaration fulfills (D14: every payment is born from an intent)." },
+    { "name": "installmentId", "type": "integer", "required": false, "fk_table": "loanInstallments", "fk_column": "installmentId",
+      "description": "Installment being paid. NULL for PARTIAL abonos and PAYOFF." },
+    { "name": "paymentType", "type": "string", "required": true, "max_length": 12,
+      "description": "Allowed values: INSTALLMENT, PARTIAL, PAYOFF. FUNDING is forbidden here — it has its own table." },
+    { "name": "payerClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Borrower who sent the SPEI." },
+    { "name": "payeeClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Lender who must confirm reception." },
+    { "name": "amountMXN", "type": "decimal", "required": true,
+      "description": "Declared amount, positive, decimal(18,2), validated vs intent within $1." },
+    { "name": "paymentDate", "type": "date", "required": true,
+      "description": "Date the SPEI was sent, between today-30d and today." },
+    { "name": "status", "type": "string", "required": true, "max_length": 25,
+      "description": "Allowed values: PENDING_CONFIRMATION, CONFIRMED, REJECTED, ESCALATED, CANCELLED. Defaults to PENDING_CONFIRMATION." },
+    { "name": "declaredAt", "type": "datetime", "required": false,
+      "description": "Defaults to GETUTCDATE()." },
+    { "name": "confirmedAt", "type": "datetime", "required": false,
+      "description": "When payee or support confirmed." },
+    { "name": "confirmedByClientId", "type": "integer", "required": false,
+      "description": "WHO confirmed (payee or support actor). Audit-critical." },
+    { "name": "rejectReason", "type": "string", "required": false, "max_length": 300,
+      "description": "Mandatory on REJECTED." },
+    { "name": "escalatedAt", "type": "datetime", "required": false,
+      "description": "Set by the escalate cron." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "loans", "cardinality": "1:N", "notes": "A loan accumulates many repayment declarations." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/loan-payments-admin",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "LoanPaymentListStep",
+        "description": "IonList newest-first by companyId + loanId: paymentType chip, amountMXN, payer→payee, paymentDate, status chip (PENDING amber / CONFIRMED green / REJECTED red / ESCALATED purple)." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.loanPayments"],
+    "storedProcedures": ["dbo.sp_loanPayments", "dbo.sp_loanPayments_all", "dbo.sp_loanPayments_one"],
+    "hints": [
+      "CHECK constraint: paymentType IN ('INSTALLMENT','PARTIAL','PAYOFF') — FUNDING must be rejected.",
+      "Status machine: PENDING_CONFIRMATION -> CONFIRMED | REJECTED | ESCALATED; ESCALATED -> CONFIRMED | REJECTED (support only); REJECTED -> no further transition here (disputes handle it). Illegal transitions return an error.",
+      "Every status change INSERTs into dbo.paymentHistory (subjectType='PAYMENT', subjectId=paymentId, oldStatus, newStatus, actorUserId, reason) in the same transaction.",
+      "confirm action: if installmentId is set, update loanInstallments.status='paid' + paidAt in the same transaction, and return loanId, remaining pending installments count, and borrowerUserId/lenderUserId for pushes; when 0 pending remain the caller transitions the loan to paid_off.",
+      "Extra action 'escalate_due': PENDING_CONFIRMATION older than @days → ESCALATED.",
+      "Indexes: (loanId, status) and (status, declaredAt) for the escalation sweep."
+    ]
+  }
+}

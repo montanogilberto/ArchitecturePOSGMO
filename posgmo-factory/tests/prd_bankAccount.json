@@ -1,0 +1,112 @@
+{
+  "module": "bankAccount",
+  "description": "Verified bank accounts (CLABE) per client — the payout/deposit destinations for the banking-first rails (SPEI via STP). A client registers a CLABE once, it is verified by micro-deposit or provider link, and disbursements/payouts are sent to the default verified account. See docs/payment-banking-first-redesign.md (Phase 1).",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "description": "Owner of the bank account. Same id space as clients.clientId."
+    },
+    {
+      "name": "clabe",
+      "type": "string",
+      "required": true,
+      "max_length": 18,
+      "description": "18-digit CLABE interbancaria. Personal financial data under LFPDPPP: never log in full (redact to last 4), unique per client. Not PCI (cards only)."
+    },
+    {
+      "name": "bankCode",
+      "type": "string",
+      "required": false,
+      "max_length": 5,
+      "description": "3-digit ABM bank code derived from the CLABE prefix (e.g. 014 Santander, 012 BBVA)."
+    },
+    {
+      "name": "bankName",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "Human-readable bank name resolved from bankCode."
+    },
+    {
+      "name": "holderName",
+      "type": "string",
+      "required": true,
+      "max_length": 255,
+      "description": "Account holder name as registered at the bank. Should match the client's verified KYC identity."
+    },
+    {
+      "name": "isVerified",
+      "type": "boolean",
+      "required": true,
+      "description": "True once ownership is proven. Defaults to false on create."
+    },
+    {
+      "name": "verificationMethod",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "How ownership was proven. Allowed values: micro_deposit, provider_link, manual. Lookup values live in database hints, not a separate field table."
+    },
+    {
+      "name": "verifiedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "Timestamp of successful verification."
+    },
+    {
+      "name": "isDefault",
+      "type": "boolean",
+      "required": true,
+      "description": "The account SPEI payouts/disbursements are sent to. Exactly one default per client; setting a new default clears the previous one."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "A client can register multiple accounts; UNIQUE (clientId, clabe). Payouts use the default verified one."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/bank-accounts",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Modal Form Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "BankAccountListStep",
+        "description": "IonList of a client's registered CLABEs showing bank name, masked CLABE (···· last 4), verification badge and default marker."
+      },
+      {
+        "step": 2,
+        "name": "BankAccountFormModal",
+        "description": "IonModal create form: CLABE input (18-digit numeric with bank auto-detect from prefix), holder name prefilled from the client's KYC identity."
+      },
+      {
+        "step": 3,
+        "name": "BankAccountVerifyStep",
+        "description": "Micro-deposit confirmation: the client enters the centavos amount received; on match sets isVerified + verifiedAt via action 2."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.bankAccounts"
+    ],
+    "storedProcedures": [
+      "dbo.sp_bankAccounts",
+      "dbo.sp_bankAccounts_all",
+      "dbo.sp_bankAccounts_one"
+    ]
+  }
+}

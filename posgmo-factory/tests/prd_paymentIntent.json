@@ -1,0 +1,53 @@
+{
+  "module": "paymentIntent",
+  "description": "Expectation of a direct SPEI transfer between loan parties (non-custodial model, RFC-002/003, docs/p2p-direct-payments-architecture.md v1.2 D14). Every funding or repayment declaration is born from an intent that records expected amount, beneficiary snapshot and suggested reference. FUNDING intents expire 5 days after contract signature (D12) sending the loan back to the marketplace. SmartLoans NEVER moves the money — intents only describe what the payer must transfer bank-to-bank.",
+  "fields": [
+    { "name": "loanId", "type": "integer", "required": true, "fk_table": "loans", "fk_column": "loanId",
+      "description": "Loan this intent belongs to." },
+    { "name": "installmentId", "type": "integer", "required": false, "fk_table": "loanInstallments", "fk_column": "installmentId",
+      "description": "Target installment. NULL for FUNDING and free PARTIAL/PAYOFF intents." },
+    { "name": "intentType", "type": "string", "required": true, "max_length": 12,
+      "description": "Allowed values: FUNDING, INSTALLMENT, PARTIAL, PAYOFF. Lookup values live in database hints, not a separate table." },
+    { "name": "expectedAmountMXN", "type": "decimal", "required": true,
+      "description": "Exact amount the payer must transfer. Positive, decimal(18,2)." },
+    { "name": "payerClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Who must send the SPEI (lender on FUNDING, borrower on repayments)." },
+    { "name": "payeeClientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Who receives the SPEI in their own bank account." },
+    { "name": "beneficiarySnapshotId", "type": "integer", "required": true,
+      "description": "bankAccountSnapshots row frozen at contract time (D19) — beneficiary bank, CLABE and expected holder name come from here, never from the live profile." },
+    { "name": "suggestedReference", "type": "string", "required": true, "max_length": 40,
+      "description": "Transfer reference the payer should use, format SL-{loanNumber}-{n}." },
+    { "name": "expiresAt", "type": "datetime", "required": false,
+      "description": "FUNDING only: contract signature + 5 days (D12). Cron expires OPEN intents past this moment." },
+    { "name": "status", "type": "string", "required": true, "max_length": 12,
+      "description": "Allowed values: OPEN, DECLARED, EXPIRED, CANCELLED. Transitions only via SP action; defaults to OPEN." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "loans", "cardinality": "1:N", "notes": "A loan has one FUNDING intent and many repayment intents." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/payment-intents",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PaymentIntentListStep",
+        "description": "IonList newest-first filtered by companyId + loanId: intentType chip, expectedAmountMXN, payer→payee, status chip (OPEN blue / DECLARED green / EXPIRED gray / CANCELLED red), expiresAt countdown for FUNDING." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.paymentIntents"],
+    "storedProcedures": ["dbo.sp_paymentIntents", "dbo.sp_paymentIntents_all", "dbo.sp_paymentIntents_one"],
+    "hints": [
+      "Status machine: OPEN -> DECLARED | EXPIRED | CANCELLED. Any other transition must return an error.",
+      "Extra action 'expire_due': marks OPEN intents with expiresAt <= GETUTCDATE() as EXPIRED and returns the affected loanIds so the caller can transition loans to 'expired'.",
+      "Only ONE intent with intentType='FUNDING' per loanId (unique filtered index).",
+      "Index (status, expiresAt) for the expiry cron sweep.",
+      "intentType and status allowed values are CHECK constraints, not lookup tables."
+    ]
+  }
+}

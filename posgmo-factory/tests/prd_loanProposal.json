@@ -1,0 +1,123 @@
+{
+  "module": "loanProposal",
+  "description": "Peer-to-peer loan proposal between a lender and a borrower. A lender proposes an amount, rate and term to a borrower, who accepts, rejects, or lets it expire; accepted proposals feed the loan and credit-score pipeline.",
+  "fields": [
+    {
+      "name": "lenderId",
+      "type": "integer",
+      "required": true,
+      "description": "The client acting as lender for this proposal."
+    },
+    {
+      "name": "borrowerId",
+      "type": "integer",
+      "required": true,
+      "description": "The client acting as borrower. Same id space as loans.clientId / creditScores.clientId."
+    },
+    {
+      "name": "requestedAmount",
+      "type": "decimal",
+      "required": true,
+      "description": "Principal proposed, in the company currency. Stored as decimal(18,2)."
+    },
+    {
+      "name": "proposedRate",
+      "type": "decimal",
+      "required": true,
+      "description": "Annual interest rate percentage offered. Stored as decimal(5,2), e.g. 12.50."
+    },
+    {
+      "name": "termMonths",
+      "type": "integer",
+      "required": true,
+      "description": "Repayment term in months."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Proposal state. Allowed values: pending, accepted, rejected, expired, cancelled. Defaults to pending on create. FK to loanProposals_status.statusCode."
+    },
+    {
+      "name": "lenderNote",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "Optional note from the lender attached to the proposal or its response."
+    },
+    {
+      "name": "borrowerNote",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "Optional note from the borrower."
+    },
+    {
+      "name": "pushNotificationId",
+      "type": "integer",
+      "required": false,
+      "description": "Links to the push notification raised for this proposal."
+    },
+    {
+      "name": "respondedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "Timestamp set when the borrower accepts or rejects the proposal."
+    },
+    {
+      "name": "expiresAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When the proposal lapses to expired if no response is given."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "Both lenderId and borrowerId reference clients; a client may take part in many proposals."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/loan-proposals",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Modal Form Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "ProposalListStep",
+        "description": "IonList of proposals filtered by companyId, optional lenderId / borrowerId / status. IonSearchbar + IonSelect (status) + infinite scroll. Each row shows amount, rate, term, status badge."
+      },
+      {
+        "step": 2,
+        "name": "ProposalFormModal",
+        "description": "IonModal create form: requestedAmount, proposedRate, termMonths, borrower selection, expiresAt, lenderNote."
+      },
+      {
+        "step": 3,
+        "name": "ProposalRespondStep",
+        "description": "Accept / reject actions that update status and set respondedAt via sp_loanProposals action 2."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.loanProposals",
+      "dbo.loanProposals_status"
+    ],
+    "storedProcedures": [
+      "dbo.sp_loanProposals",
+      "dbo.sp_loanProposals_all",
+      "dbo.sp_loanProposals_one"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "module": "paymentReminder",
+  "description": "Scheduled push reminders for loan installments (non-custodial model, RFC-003, architecture v1.2). Generated in batch when a loan becomes active (T-3, T-1, DUE, OVERDUE_3, OVERDUE_7 per installment) and dispatched by a cron that sends the push and marks sentAt. Reminders for a paid installment are skipped by the dispatcher. UNIQUE (installmentId, reminderType) keeps the cron re-runnable without duplicates.",
+  "fields": [
+    { "name": "installmentId", "type": "integer", "required": true, "fk_table": "loanInstallments", "fk_column": "installmentId",
+      "description": "Installment the reminder is about." },
+    { "name": "reminderType", "type": "string", "required": true, "max_length": 12,
+      "description": "Allowed values: T-3, T-1, DUE, OVERDUE_3, OVERDUE_7 (days relative to dueDate)." },
+    { "name": "scheduledFor", "type": "datetime", "required": true,
+      "description": "When the push should fire (dueDate offset by the reminderType)." },
+    { "name": "sentAt", "type": "datetime", "required": false,
+      "description": "NULL until the dispatcher cron sends it — the cron filter is sentAt IS NULL AND scheduledFor <= now." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "loanInstallments", "cardinality": "1:N", "notes": "Up to five reminders per installment." }
+  ],
+  "roles_allowed": ["Admin"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/payment-reminders-admin",
+    "allowedRoles": ["Admin"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PaymentReminderListStep",
+        "description": "IonList by companyId ordered by scheduledFor: installmentId, reminderType chip, scheduledFor, sent badge (pending gray / sent green with sentAt)." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.paymentReminders"],
+    "storedProcedures": ["dbo.sp_paymentReminders", "dbo.sp_paymentReminders_all", "dbo.sp_paymentReminders_one"],
+    "hints": [
+      "UNIQUE constraint on (installmentId, reminderType) — batch generation is idempotent.",
+      "Extra action 'schedule_for_loan': given a loanId, inserts the five reminder rows per pending installment computing scheduledFor from loanInstallments.dueDate.",
+      "Extra action 'due_now': returns unsent reminders with scheduledFor <= GETUTCDATE() joined to the installment and borrower userId for the push; skips installments already paid.",
+      "Extra action 'mark_sent': sets sentAt — the only allowed update.",
+      "Index (sentAt, scheduledFor) for the dispatcher sweep."
+    ]
+  }
+}

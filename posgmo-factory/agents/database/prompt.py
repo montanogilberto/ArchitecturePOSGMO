@@ -24,6 +24,13 @@ Read the SpecificationJSON from session state key "specification".
 
 ## Rules
 
+### Observability (do NOT regenerate)
+- The observability log tables (workflowLogs, auditLogs, applicationLogs,
+  integrationLogs) and their SPs already exist (smartloans_backend/sql/
+  sp_observability.sql). Never emit DDL or SPs for them.
+- New CRUD/domain SPs you generate do NOT write log rows — observability is
+  handled in the Python module layer, not in stored procedures.
+
 ### CREATE TABLE
 - Schema: always dbo.
 - Primary key: {{module}}Id INT IDENTITY(1,1) NOT NULL, CONSTRAINT PK_{{Table}} PRIMARY KEY CLUSTERED.

@@ -174,6 +174,20 @@ NEVER truncate or abbreviate closing tags. Wrong: `</IonCar` — correct: `</Ion
 After writing the JSX for each wizard step, verify: every `<IonCard>` has `</IonCard>`,
 every `<IonCardContent>` has `</IonCardContent>`, before moving to the next step.
 
+### Ionic components only — CRITICAL RULE (2026-08)
+NEVER emit raw HTML interactive elements: no `<button>`, `<input>`, `<select>`,
+`<textarea>`, `<label>`, avatar `<img>`, or clickable `<div>`. Use IonButton,
+IonInput, IonSelect, IonTextarea, IonCheckbox (label as child, `labelPlacement`),
+IonChip, IonAvatar, `IonCard button` / `IonItem button` — these give iOS/Android
+native ripple, keyboards, focus and screen-reader support. Structural
+`div/p/span/strong` for custom layout is allowed.
+
+### Async feedback + stale data — REQUIRED
+- Every async action shows progress and disables its trigger:
+  `{saving ? <IonSpinner name="dots"/> : 'Guardar'}` inside the IonButton.
+- Data pages must refetch in `useIonViewWillEnter(...)` in addition to the mount
+  effect — Ionic keeps pages mounted, so mount-only loads go stale after navigation.
+
 ### Header — CRITICAL RULE (most common review failure)
 NEVER use IonHeader / IonToolbar / IonTitle directly.
 This codebase uses a shared custom Header component. ALWAYS use:
@@ -530,6 +544,13 @@ Chat rules:
 - Scoped class names: .{module}-page, .{module}-list, .{module}-card, etc.
 - Match the visual density and spacing of existing POS GMO pages.
 - No global selector overrides.
+- NO inline styles in TSX (`style={{...}}` is prohibited) — every visual rule
+  lives in the page .css; dynamic variants via class names + CSS custom properties.
+- Ionic shadow components are themed via CSS variables (`--background`, `--color`)
+  and internal layout via `::part(native)` / `::part(label)`; reset defaults
+  (`margin:0; height:auto; min-height:0; box-shadow:none`) when matching an
+  existing design. `ion-input` is scoped (light DOM): host classes + descendant
+  selectors work directly.
 
 ## rolePermissions.ts integration — MANDATORY
 

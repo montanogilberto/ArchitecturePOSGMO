@@ -1,50 +1,98 @@
 [
-  {
-    "patternId": "utc_timezone_normalization",
-    "patternName": "UTC Database to Local Time Horizon Conversion",
-    "description": "Converts UTC database strings explicitly into the local Hermosillo, Sonora (UTC-7) presentation target before rendering timestamps to lists or thermal printing templates.",
-    "implementationExample": "const utcDate = new Date(item.paymentDate + (item.paymentDate.includes('Z') ? '' : 'Z')); const hermosilloDate = new Date(utcDate.getTime() - (7 * 60 * 60 * 1000));"
-  },
-  {
-    "patternId": "inactivity_session_watchdog",
-    "patternName": "Multi-Event Loop Activity Control Watchdog",
-    "description": "Hooks listeners into native window interactions ('mousemove', 'keypress', 'touchstart') to sustain context validity, safely launching a non-blocking 10-second warning overlay before enforcing logouts.",
-    "implementationExample": "useInactivityTimer(timeoutDuration = 300000, onTimeout)"
-  },
-  {
-    "patternId": "api_resilience_fallback",
-    "patternName": "Network Resilience & Local Paths Recovery Pattern",
-    "description": "Protects asset rendering pipeline by intercepting structural data failures and transparently routing execution toward predictable internal paths.",
-    "implementationExample": "catch (error) { console.warn('Error saving image, using local path'); return `/public/assets/${filename}`; }"
-  },
-  {
-    "patternId": "infinite_scroll_pagination",
-    "patternName": "Virtual Buffer Infinite Scroll Data Loading",
-    "description": "Protects mobile DOM memory capacity metrics during massive list evaluations by splitting state objects into dynamic window arrays.",
-    "implementationExample": "displayedIncome.length < filteredIncome.length && <IonInfiniteScroll onIonInfinite={loadMoreIncomes}>"
-  },
-  {
-    "patternId": "local_tax_force_override",
-    "patternName": "Explicit Localized Zero Tax Override (IVA = 0)",
-    "description": "Guarantees layout normalization parameters on regional printing processes by locking local variables to zero regardless of server response state variations.",
-    "implementationExample": "const iva = 0; const subtotal = Number(data.totals.subtotal ?? 0);"
-  },
-  {
-    "patternId": "ionToast_over_ionAlert",
-    "patternName": "Non-Blocking Toast Instead of Blocking Confirm Alert",
-    "description": "Staff-facing wizard flows use a single dynamically-colored IonToast (success/warning/danger by message prefix) instead of an IonAlert confirm dialog. Avoids gating a workflow on a modal decision when the real follow-up (e.g. an incomplete step) can instead be handled asynchronously via a push-notification reminder rather than blocking the current screen.",
-    "implementationExample": "<IonToast isOpen={showToast} onDidDismiss={() => setShowToast(false)} message={toastMessage} duration={toastMessage.startsWith('warningEmoji') ? 4000 : 2500} color={toastMessage.toLowerCase().includes('error') ? 'danger' : toastMessage.startsWith('warningEmoji') ? 'warning' : 'success'} />"
-  },
-  {
-    "patternId": "wizard_step_autoscroll",
-    "patternName": "Auto-Scroll Active Step Into View",
-    "description": "A horizontally-scrollable multi-step wizard indicator (7+ steps) never auto-scrolled on its own, so the active step could sit off-screen with no visual indication of progress. Fix: hold a ref on the active step's element and call scrollIntoView on every step change.",
-    "implementationExample": "const activeStepRef = useRef<HTMLDivElement | null>(null); useEffect(() => { activeStepRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, [wizardStep]);"
-  },
-  {
-    "patternId": "embedded_stripe_connect_no_redirect",
-    "patternName": "Embedded Stripe Components Instead of Hosted-URL Redirect",
-    "description": "Stripe Connect onboarding (and card SetupIntent collection) render in-app via @stripe/connect-js / @stripe/react-stripe-js Elements rather than window.open()-ing Stripe's hosted AccountLink URL. Keeps the client inside the native wizard flow end-to-end; required once the account moved from sandbox to Stripe live mode.",
-    "implementationExample": "<ConnectComponentsProvider connectInstance={stripeConnectInstance}><ConnectAccountOnboarding onExit={onExit} /></ConnectComponentsProvider>"
-  }
+ {
+  "patternId": "utc_timezone_normalization",
+  "patternName": "UTC Database to Local Time Horizon Conversion",
+  "description": "Converts UTC database strings explicitly into the local Hermosillo, Sonora (UTC-7) presentation target before rendering timestamps to lists or thermal printing templates.",
+  "implementationExample": "const utcDate = new Date(item.paymentDate + (item.paymentDate.includes('Z') ? '' : 'Z')); const hermosilloDate = new Date(utcDate.getTime() - (7 * 60 * 60 * 1000));"
+ },
+ {
+  "patternId": "inactivity_session_watchdog",
+  "patternName": "Multi-Event Loop Activity Control Watchdog",
+  "description": "Hooks listeners into native window interactions ('mousemove', 'keypress', 'touchstart') to sustain context validity, safely launching a non-blocking 10-second warning overlay before enforcing logouts.",
+  "implementationExample": "useInactivityTimer(timeoutDuration = 300000, onTimeout)"
+ },
+ {
+  "patternId": "api_resilience_fallback",
+  "patternName": "Network Resilience & Local Paths Recovery Pattern",
+  "description": "Protects asset rendering pipeline by intercepting structural data failures and transparently routing execution toward predictable internal paths.",
+  "implementationExample": "catch (error) { console.warn('Error saving image, using local path'); return `/public/assets/${filename}`; }"
+ },
+ {
+  "patternId": "infinite_scroll_pagination",
+  "patternName": "Virtual Buffer Infinite Scroll Data Loading",
+  "description": "Protects mobile DOM memory capacity metrics during massive list evaluations by splitting state objects into dynamic window arrays.",
+  "implementationExample": "displayedIncome.length < filteredIncome.length && <IonInfiniteScroll onIonInfinite={loadMoreIncomes}>"
+ },
+ {
+  "patternId": "local_tax_force_override",
+  "patternName": "Explicit Localized Zero Tax Override (IVA = 0)",
+  "description": "Guarantees layout normalization parameters on regional printing processes by locking local variables to zero regardless of server response state variations.",
+  "implementationExample": "const iva = 0; const subtotal = Number(data.totals.subtotal ?? 0);"
+ },
+ {
+  "patternId": "ionToast_over_ionAlert",
+  "patternName": "Non-Blocking Toast Instead of Blocking Confirm Alert",
+  "description": "Staff-facing wizard flows use a single dynamically-colored IonToast (success/warning/danger by message prefix) instead of an IonAlert confirm dialog. Avoids gating a workflow on a modal decision when the real follow-up (e.g. an incomplete step) can instead be handled asynchronously via a push-notification reminder rather than blocking the current screen.",
+  "implementationExample": "<IonToast isOpen={showToast} onDidDismiss={() => setShowToast(false)} message={toastMessage} duration={toastMessage.startsWith('warningEmoji') ? 4000 : 2500} color={toastMessage.toLowerCase().includes('error') ? 'danger' : toastMessage.startsWith('warningEmoji') ? 'warning' : 'success'} />"
+ },
+ {
+  "patternId": "wizard_step_autoscroll",
+  "patternName": "Auto-Scroll Active Step Into View",
+  "description": "A horizontally-scrollable multi-step wizard indicator (7+ steps) never auto-scrolled on its own, so the active step could sit off-screen with no visual indication of progress. Fix: hold a ref on the active step's element and call scrollIntoView on every step change.",
+  "implementationExample": "const activeStepRef = useRef<HTMLDivElement | null>(null); useEffect(() => { activeStepRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, [wizardStep]);"
+ },
+ {
+  "patternId": "embedded_stripe_connect_no_redirect",
+  "patternName": "Embedded Stripe Components Instead of Hosted-URL Redirect",
+  "description": "Stripe Connect onboarding (and card SetupIntent collection) render in-app via @stripe/connect-js / @stripe/react-stripe-js Elements rather than window.open()-ing Stripe's hosted AccountLink URL. Keeps the client inside the native wizard flow end-to-end; required once the account moved from sandbox to Stripe live mode.",
+  "implementationExample": "<ConnectComponentsProvider connectInstance={stripeConnectInstance}><ConnectAccountOnboarding onExit={onExit} /></ConnectComponentsProvider>"
+ },
+ {
+  "patternId": "ionic_native_components_only",
+  "patternName": "Ionic Components for Every Interactive Element",
+  "description": "Never use raw HTML interactive elements (<button>, <input>, <select>, <label>, <img> for avatars, clickable <div>). Use IonButton/IonInput/IonSelect/IonCheckbox/IonChip/IonAvatar/IonCard button/IonItem button so iOS/Android get native ripple, keyboards, focus and screen-reader support. Structural <div>/<p>/<span> for custom layout (chat bubbles, stat grids) are fine. Established during the 2026-08 loans-folder migration.",
+  "implementationExample": "<IonCard button className=\"tile\" onClick={...}><IonIcon icon={cardOutline}/><strong>Cuenta SPEI</strong></IonCard>  /* CSS: .tile::part(native){display:flex;flex-direction:column} */"
+ },
+ {
+  "patternId": "shadow_dom_styling",
+  "patternName": "Styling Ionic Shadow Components",
+  "description": "Ionic shadow components (ion-card, ion-chip, ion-badge, ion-checkbox) are styled via CSS variables (--background, --color) plus host-level rules, and internal layout via ::part(native)/::part(label). ion-input is scoped (light DOM) so host classes and descendant selectors work directly. Reset defaults when reusing an existing design: margin:0, height:auto, min-height:0, box-shadow:none.",
+  "implementationExample": ".chip{margin:0;height:auto;--background:#eef2ff;--color:#3730a3} .check::part(label){white-space:normal}"
+ },
+ {
+  "patternId": "no_inline_styles",
+  "patternName": "Page CSS Only — No Inline Styles",
+  "description": "Every page owns a {Module}Page.css; style={{...}} in TSX is prohibited (theming, dark mode and maintenance depend on it). Dynamic values use CSS custom properties set via class variants, not inline style objects.",
+  "implementationExample": "<IonBadge className={`status-chip status-${p.status}`}/>  /* css: .status-pending{--background:#fef3c7;--color:#92400e} */"
+ },
+ {
+  "patternId": "spinner_every_async",
+  "patternName": "Visible Progress on Every Async Action",
+  "description": "Every async user action shows progress and disables its trigger: IonSpinner inside the button while awaiting, IonLoading for page-level loads, typing indicator in chat. Reference implementation: LoanChatPage (sending/agentTyping) and LoanPaymentPage confirming state.",
+  "implementationExample": "<IonButton disabled={saving} onClick={save}>{saving ? <IonSpinner name=\"dots\"/> : 'Guardar'}</IonButton>"
+ },
+ {
+  "patternId": "view_reenter_refresh",
+  "patternName": "Refetch on Ionic View Re-Enter",
+  "description": "Ionic keeps pages mounted, so mount-only useEffect data loads go stale after navigation (e.g. dashboard not reflecting a payment). Every data page must also refetch in useIonViewWillEnter. Applied to P2PLendingPage, LenderDashboardPage, ClientDashboardPage.",
+  "implementationExample": "useIonViewWillEnter(() => { fetchAll(); }, [companyId, clientId]);"
+ },
+ {
+  "patternId": "push_foreground_display",
+  "patternName": "Push Notifications Always Visible (Foreground Included)",
+  "description": "iOS: capacitor.config PushNotifications.presentationOptions=['badge','sound','alert'] shows remote pushes in foreground natively. Android: create the 'push_notifications' channel (importance 5) at startup — FCM payloads target it and unknown channels drop silently; foreground pushes are mirrored via LocalNotifications (id must be int32, not Date.now()). Taps deep-link via data.navigationRoute on both paths.",
+  "implementationExample": "await PushNotifications.createChannel({id:'push_notifications',name:'Notificaciones',importance:5}); LocalNotifications.schedule({notifications:[{id: Math.floor(Date.now()%2147483647), extra: notification.data}]})"
+ },
+ {
+  "patternId": "app_env_flag",
+  "patternName": "Developer vs Real-User Build Flag",
+  "description": "src/utils/appEnv.ts exposes APP_ENV (VITE_APP_ENV override; else dev on Vite dev server, prod on builds) and IS_DEV_BUILD. Device registration sends appEnv so the Notification Hub tags installations env_dev/env_prod; the Header shows a DEV badge on non-prod builds.",
+  "implementationExample": "body: JSON.stringify({ userId, token, platform, appEnv: APP_ENV })"
+ },
+ {
+  "patternId": "stripe_fee_transparency",
+  "patternName": "Stripe Fee Transparency + Net Crediting",
+  "description": "Every card payment screen shows the Stripe MX commission (3.6% + $3 MXN + IVA 16%) and the resulting net before confirming; the wallet is credited the REAL net (backend reads the charge's balance_transaction; formula is preview/fallback). Receipts, success messages and pushes report paid/fee/net, and the /confirm response returns feeMXN + netCreditedMXN.",
+  "implementationExample": "const stripeFee = (m)=> m>0 ? (m*0.036+3)*1.16 : 0; // preview only — backend balance_transaction is truth"
+ }
 ]

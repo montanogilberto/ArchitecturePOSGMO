@@ -89,6 +89,13 @@ src/pages/{Module}Page.css
 
 Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` only.
 
+**UI rules (established 2026-08, loans-folder migration — see `Frontend/frontend_ui_patterns.json.json` for examples):**
+1. **Ionic components for every interactive element** — never raw `<button>/<input>/<select>/<label>/<img>` or clickable `<div>`; use `IonButton/IonInput/IonSelect/IonCheckbox/IonChip/IonAvatar/IonCard button/IonItem button` (native ripple, keyboards, a11y). Structural `div/p/span` for custom layout is fine.
+2. **No inline styles** — every page owns its `.css`; dynamic values via class variants + CSS custom properties. Shadow components styled with `--background`/`--color` + `::part()`.
+3. **Spinner on every async action** — button-level `IonSpinner` + disabled while awaiting (reference: LoanChatPage, LoanPaymentPage).
+4. **Refetch on view re-enter** — Ionic keeps pages mounted; data pages must reload in `useIonViewWillEnter`, not only on mount.
+5. **`APP_ENV` flag** (`src/utils/appEnv.ts`) — dev builds show a DEV badge in the Header and register devices with `appEnv` for `env_*` Hub tags.
+
 ## Business Domains
 
 | Domain | Backend modules |
@@ -99,6 +106,8 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 | ERP / HR | `employees`, `contractors`, `departaments`, `projects`, `employeeProjectAssignments` |
 | P2P Lending Core | `loans`, `loanOffers`, `loanProposals`, `loanChat`, `creditScore` |
 | Stripe Payments, Wallets & Automated Collection | `stripe_payments`, `automatedPayments`, `walletBalance`, `onboardingReminders`, `disbursement` (legacy/dormant) |
+| SPEI Banking Rail (primary money-out) | `bankAccounts`, `transfers`, `stpProvider`, `walletTransactions` |
+| Push Notifications & Client Comms | `pushNotifications`, `azure_notifications`, `ticket_notifications`, `contact_email` |
 | KYC, Biometric Verification & Legal Recovery | `clientFaceRecognitions`, `document_intelligence`, `signatureMatching`, `geocoding`, `digitalContracts`, `legalCases` |
 
 ## AI Features
@@ -117,6 +126,28 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 - `income` + `incomeDetails` + `incomeDetailOptions` form the sales receipt hierarchy.
 - `unifiedProducts` is the master catalog; `productMatches` links marketplace listings to it.
 - `tickets` stores receipt blobs (Azure Blob) and tracks WhatsApp/SMS delivery status.
+
+## Payments & Money Rails (2026-08)
+
+Two rails, direction-dependent:
+
+- **Money IN (deposits, cuota card payments): Stripe only.** A CLABE cannot be charged (SPEI is push-only), so until STP virtual CLABEs exist all deposits are card charges (Payment Element, card + OXXO).
+- **Money OUT (loan disbursement, lender withdrawal): SPEI first, Stripe Connect Transfer second.** `/payments/disburse` debits the `walletTransactions` ledger, sends to the verified CLABE (mock STP until contract), auto-reverses on failure; handlers fall back to Stripe when SPEI isn't eligible.
+
+**Rules the factory must preserve:**
+- Wallet top-ups credit the **real net**: `confirm_payment_intent` reads the charge's `balance_transaction` (fee/net); the published MX formula (3.6% + $3 MXN + IVA 16%) is preview/fallback only. The client sees paid/fee/net on the amount step, card summary, receipt, success push and comprobante email.
+- `POST /stripe/payment-intents/confirm` accepts `savePaymentMethod` → persists the card used via `sp_savedPaymentMethods` (same table `/automated-payments/saved-method` reads). Standalone card-saving uses the SetupIntent flow (`/automated-payments/setup-intent` → `save-method`).
+- Every succeeded charge sends a **comprobante email** (folio = `stripeTransactions.transactionId`, Stripe reference, montos, comisión) via `modules.users._send_email` in a daemon thread — best-effort, never blocks the response.
+- Frontend: the Stripe Payment Element must stay **mounted during `stripe.confirmPayment()`** — switching UI steps before the charge unmounts it and throws IntegrationError (frozen "Procesando…"). Show the processing screen only after the charge succeeds.
+- Pending PRD: `transactionNotification` (per-channel money-movement confirmation record, `pending→sent→confirmed` via webhook) — `posgmo-factory/tests/prd_transactionNotifications.json`.
+
+## Push Notifications
+
+Azure Notification Hub. Installations are tagged `user_{userId}` — **never clientId** (the backend maps clientId→userId; wrong id yields empty tags with a silent "success") — plus `env_{appEnv}` (`dev`/`prod` device flag from `src/utils/appEnv.ts`, sent by `/registerDevice`).
+
+- Sends always fire regardless of app state. FCM payloads target Android channel `push_notifications` (the app creates it at startup — importance 5; unknown channels drop silently) and carry `data.navigationRoute` for tap deep-links.
+- iOS foreground display via `capacitor.config` → `PushNotifications.presentationOptions: ['badge','sound','alert']`; Android foreground mirrors the push through `LocalNotifications` (id must be int32, not `Date.now()`).
+- `NotificationDeliveries` backs the per-user in-app inbox (`/myNotifications`); the system push and the inbox are parallel channels.
 
 ## Observability
 

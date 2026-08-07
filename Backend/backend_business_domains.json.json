@@ -1,41 +1,146 @@
 {
-  "business_domains": [
-    {
-      "domain": "POS & Cash Operations",
-      "modules": ["modules/cashRegister.py", "modules/tickets.py", "modules/income.py", "modules/expenses.py"],
-      "entities": ["register_sessions", "movements", "sales_receipts", "ticket_slips"]
-    },
-    {
-      "domain": "Omnichannel Marketplace Aggregator",
-      "modules": ["modules/unifiedProducts.py", "modules/productMatches.py", "modules/marketplaceOrders.py", "modules/opportunities.py", "modules/sellListings.py"],
-      "entities": ["unified_catalog", "marketplace_matches", "arbitrage_listings", "channel_orders"]
-    },
-    {
-      "domain": "IoT & Automation Telemetry",
-      "modules": ["modules/IOT.py", "modules/vending.py", "modules/laundry.py"],
-      "entities": ["led_status", "tank_waters", "vending_inventory", "laundry_machines"]
-    },
-    {
-      "domain": "Corporate Resource Management (ERP/HR)",
-      "modules": ["modules/employees.py", "modules/contractors.py", "modules/departaments.py", "modules/projects.py", "modules/employeeProjectAssignments.py"],
-      "entities": ["staff_records", "departmental_org", "project_rosters"]
-    },
-    {
-      "domain": "P2P Lending Core",
-      "modules": ["modules/loans.py", "modules/loanOffers.py", "modules/loanProposals.py", "modules/loanChat.py", "modules/creditScore.py"],
-      "entities": ["loans", "loanOffers", "loanProposals", "loanChat", "creditScore"]
-    },
-    {
-      "domain": "Stripe Payments, Wallets & Automated Collection",
-      "modules": ["modules/stripe_payments.py", "modules/automatedPayments.py", "modules/walletBalance.py", "modules/onboardingReminders.py", "modules/disbursement.py"],
-      "entities": ["stripeConnectedAccounts", "stripeTransactions", "clientWallets", "loanInstallments", "savedPaymentMethods", "onboardingReminders"],
-      "notes": "stripe_payments.py owns Connect Express account onboarding (bank/CLABE payout target) via embedded AccountSession (@stripe/connect-js on the frontend, no hosted-URL redirect). automatedPayments.py owns SetupIntent-based card saving and the daily off-session installment charge (APScheduler job 'daily_charge_due' at 07:00 UTC in main.py), which on success Transfers the collected amount into the lender's Connected Account and credits their clientWallets row. walletBalance.py exposes reserve/release/debit/credit actions used by loan disbursement (acceptProposal -> reserveWallet -> Stripe Transfer -> debitWallet) and on-demand withdrawal (POST /stripe/withdraw -> stripe.Payout.create). onboardingReminders.py is a daily scan (APScheduler job 'daily_onboarding_reminders' at 15:00 UTC) that reminds a client once via push notification for any incomplete step (QR, documents, verification, contract, payment account). disbursement.py is a dormant/legacy manual-wire-transfer alternative to the Stripe path — not called by the frontend, kept for reference only, do not extend it."
-    },
-    {
-      "domain": "KYC, Biometric Verification & Legal Recovery",
-      "modules": ["modules/clientFaceRecognitions.py", "modules/document_intelligence.py", "modules/signatureMatching.py", "modules/geocoding.py", "modules/digitalContracts.py", "modules/legalCases.py"],
-      "entities": ["clientFaceRecognitions", "digitalContracts", "legalCases"],
-      "notes": "Face liveness verification (4-direction challenge + blink detection, consistency/match distance thresholds) runs entirely client-side via @vladmandic/face-api in faceLiveness.ts — Azure Face API/Face-Liveness-With-Verify was removed from the backend and is no longer used anywhere. document_intelligence.py calls Azure AI Document Intelligence (prebuilt ID model, poll-based analyze) for INE/ID field extraction; Tesseract.js (idOcr.ts) is a client-side fallback OCR. signatureMatching.py does OpenCV (cv2) contour comparison between the ID's signature crop and the contract signature capture. geocoding.py is a thin httpx reverse-geocoding proxy used by the presence-capture step (latitude/longitude -> address)."
-    }
-  ]
+ "business_domains": [
+  {
+   "domain": "POS & Cash Operations",
+   "modules": [
+    "modules/cashRegister.py",
+    "modules/tickets.py",
+    "modules/income.py",
+    "modules/expenses.py"
+   ],
+   "entities": [
+    "register_sessions",
+    "movements",
+    "sales_receipts",
+    "ticket_slips"
+   ]
+  },
+  {
+   "domain": "Omnichannel Marketplace Aggregator",
+   "modules": [
+    "modules/unifiedProducts.py",
+    "modules/productMatches.py",
+    "modules/marketplaceOrders.py",
+    "modules/opportunities.py",
+    "modules/sellListings.py"
+   ],
+   "entities": [
+    "unified_catalog",
+    "marketplace_matches",
+    "arbitrage_listings",
+    "channel_orders"
+   ]
+  },
+  {
+   "domain": "IoT & Automation Telemetry",
+   "modules": [
+    "modules/IOT.py",
+    "modules/vending.py",
+    "modules/laundry.py"
+   ],
+   "entities": [
+    "led_status",
+    "tank_waters",
+    "vending_inventory",
+    "laundry_machines"
+   ]
+  },
+  {
+   "domain": "Corporate Resource Management (ERP/HR)",
+   "modules": [
+    "modules/employees.py",
+    "modules/contractors.py",
+    "modules/departaments.py",
+    "modules/projects.py",
+    "modules/employeeProjectAssignments.py"
+   ],
+   "entities": [
+    "staff_records",
+    "departmental_org",
+    "project_rosters"
+   ]
+  },
+  {
+   "domain": "P2P Lending Core",
+   "modules": [
+    "modules/loans.py",
+    "modules/loanOffers.py",
+    "modules/loanProposals.py",
+    "modules/loanChat.py",
+    "modules/creditScore.py"
+   ],
+   "entities": [
+    "loans",
+    "loanOffers",
+    "loanProposals",
+    "loanChat",
+    "creditScore"
+   ]
+  },
+  {
+   "domain": "Stripe Payments, Wallets & Automated Collection",
+   "modules": [
+    "modules/automatedPayments.py",
+    "modules/disbursement.py",
+    "modules/onboardingReminders.py",
+    "modules/stripe_payments.py",
+    "modules/walletBalance.py"
+   ],
+   "entities": [
+    "clientWallets",
+    "loanInstallments",
+    "onboardingReminders",
+    "savedPaymentMethods",
+    "stripeConnectedAccounts",
+    "stripeTransactions"
+   ],
+   "notes": "Top-ups credit the wallet with the REAL net (gross minus Stripe MX fee 3.6% + $3 + IVA), read from the charge's balance_transaction in confirm_payment_intent; formula is fallback only. /stripe/payment-intents/confirm accepts savePaymentMethod (persists card via sp_savedPaymentMethods) and sends a comprobante email (folio = stripeTransactions.transactionId) via modules.users._send_email in a daemon thread. Card-saving standalone flow: /automated-payments/setup-intent → save-method → saved-method."
+  },
+  {
+   "domain": "KYC, Biometric Verification & Legal Recovery",
+   "modules": [
+    "modules/clientFaceRecognitions.py",
+    "modules/document_intelligence.py",
+    "modules/signatureMatching.py",
+    "modules/geocoding.py",
+    "modules/digitalContracts.py",
+    "modules/legalCases.py"
+   ],
+   "entities": [
+    "clientFaceRecognitions",
+    "digitalContracts",
+    "legalCases"
+   ],
+   "notes": "Face liveness verification (4-direction challenge + blink detection, consistency/match distance thresholds) runs entirely client-side via @vladmandic/face-api in faceLiveness.ts — Azure Face API/Face-Liveness-With-Verify was removed from the backend and is no longer used anywhere. document_intelligence.py calls Azure AI Document Intelligence (prebuilt ID model, poll-based analyze) for INE/ID field extraction; Tesseract.js (idOcr.ts) is a client-side fallback OCR. signatureMatching.py does OpenCV (cv2) contour comparison between the ID's signature crop and the contract signature capture. geocoding.py is a thin httpx reverse-geocoding proxy used by the presence-capture step (latitude/longitude -> address)."
+  },
+  {
+   "domain": "SPEI Banking Rail (primary money-out)",
+   "modules": [
+    "modules/bankAccounts.py",
+    "modules/transfers.py",
+    "modules/stpProvider.py",
+    "modules/walletTransactions.py"
+   ],
+   "entities": [
+    "bankAccounts",
+    "walletTransactions",
+    "transfers"
+   ],
+   "notes": "Disbursements and withdrawals go SPEI-first (/payments/disburse: ledger debit → transfer to verified CLABE, auto-reverse on failure; STP is MOCK until the contract) with Stripe Connect Transfer as second rail. There is NO SPEI-in: a CLABE cannot be charged, so deposits are Stripe card charges until STP virtual CLABEs exist. Ledger = walletTransactions (idempotencyKey per attempt)."
+  },
+  {
+   "domain": "Push Notifications & Client Comms",
+   "modules": [
+    "modules/pushNotifications.py",
+    "modules/azure_notifications.py",
+    "modules/ticket_notifications.py",
+    "modules/contact_email.py"
+   ],
+   "entities": [
+    "pushNotifications",
+    "NotificationDeliveries"
+   ],
+   "notes": "Azure Notification Hub installations tagged user_{userId} (NEVER clientId — backend maps clientId→userId) plus env_{appEnv} (dev/prod device flag). Sends always fire regardless of app state; FCM payload targets Android channel 'push_notifications' and carries data.navigationRoute for tap deep-links. NotificationDeliveries backs the in-app inbox (/myNotifications). Pending factory PRD: transactionNotification (per-channel money-movement confirmation record, pending→sent→confirmed via webhook) — tests/prd_transactionNotifications.json."
+  }
+ ]
 }

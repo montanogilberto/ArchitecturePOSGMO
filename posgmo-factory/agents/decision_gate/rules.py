@@ -108,8 +108,8 @@ def _classify_tier(spec: dict, schema_analysis: dict) -> tuple[str, str]:
     Priority: TIER_4 > TIER_3 > TIER_2 > TIER_1
     """
     desc = _words(spec.get("description", ""))
-    columns = spec.get("db", {}).get("columns", [])
-    prd_hints = spec.get("prd_hints", {})
+    columns = (spec.get("db") or {}).get("columns") or []
+    prd_hints = spec.get("prd_hints") or {}
 
     # ── TIER_4: physical hardware only ──────────────────────────────────────
     if _has_any(desc, _TIER4_SIGNALS):
@@ -160,10 +160,10 @@ def _classify_backend_pattern(spec: dict) -> tuple[str, list[dict]]:
     Returns (backend_pattern, connector_endpoints[]).
     CRUD_AND_CONNECTOR when PRD declares custom endpoints that mention external services.
     """
-    prd_hints = spec.get("prd_hints", {})
-    endpoints = prd_hints.get("backend_endpoints", [])
+    prd_hints = spec.get("prd_hints") or {}
+    endpoints = prd_hints.get("backend_endpoints") or []
     module = spec.get("module", "module")
-    columns = spec.get("db", {}).get("columns", [])
+    columns = (spec.get("db") or {}).get("columns") or []
     plural = f"{module}s"
 
     connectors = []
@@ -266,15 +266,15 @@ def _build_index_recommendations(tier: str, columns: list) -> list[dict]:
 def _detect_soft_delete_parents(spec: dict, schema_analysis: dict) -> list[dict]:
     """Check schema_analysis.table_details for parent tables that have an 'active' column."""
     result = []
-    table_details = schema_analysis.get("table_details", {})
-    columns = spec.get("db", {}).get("columns", [])
+    table_details = schema_analysis.get("table_details") or {}
+    columns = (spec.get("db") or {}).get("columns") or []
 
     for col in columns:
         fk_table = col.get("fk_table")
         if not fk_table or fk_table == "companies":
             continue
         details = table_details.get(fk_table, {})
-        has_active = "active" in [c.lower() for c in details.get("columns", [])]
+        has_active = "active" in [c.lower() for c in (details.get("columns") or [])]
         if has_active:
             result.append({
                 "fk_table": fk_table,
@@ -294,8 +294,8 @@ def _hard_block_check(spec: dict, schema_analysis: dict) -> dict | None:
     Current hard blocks: invalid FK targets.
     (table_already_exists is a warning, not a block — CREATE OR ALTER handles it.)
     """
-    valid_fk_targets = {t["table"].lower() for t in schema_analysis.get("valid_fk_targets", [])}
-    columns = spec.get("db", {}).get("columns", [])
+    valid_fk_targets = {t["table"].lower() for t in (schema_analysis.get("valid_fk_targets") or [])}
+    columns = (spec.get("db") or {}).get("columns") or []
 
     for col in columns:
         fk_table = col.get("fk_table")
@@ -376,7 +376,7 @@ def compute_gate_result(state: dict) -> dict:
 
     tier, tier_reason = _classify_tier(spec, schema)
     backend_pattern, connector_endpoints = _classify_backend_pattern(spec)
-    columns = spec.get("db", {}).get("columns", [])
+    columns = (spec.get("db") or {}).get("columns") or []
     mandatory_constraints = _build_mandatory_constraints(tier, backend_pattern, connector_endpoints)
     soft_delete_parents = _detect_soft_delete_parents(spec, schema)
     index_recommendations = _build_index_recommendations(tier, columns)
@@ -384,9 +384,9 @@ def compute_gate_result(state: dict) -> dict:
     warnings = []
     if schema.get("table_already_exists"):
         warnings.append("Table already exists — Database Agent will use CREATE OR ALTER. No action needed.")
-    for ref in schema.get("risky_references", []):
+    for ref in (schema.get("risky_references") or []):
         warnings.append(f"PRD references '{ref}' but it was not found in the DB — will not be generated.")
-    prd_hints = spec.get("prd_hints", {})
+    prd_hints = spec.get("prd_hints") or {}
     if prd_hints.get("frontend_ui_pattern") == "Wizard Flow Layout":
         warnings.append("Wizard Flow Layout detected — Camera capture (Capacitor) must be wired manually after generation.")
 

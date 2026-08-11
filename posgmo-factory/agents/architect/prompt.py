@@ -27,6 +27,12 @@ RULE: Only add fk_table/fk_column for tables that appear in
 schema_analysis.valid_fk_targets. If a relationship references a table not in
 that list, set fk_table=null and fk_column=null for that column.
 
+RULE: `companyId` is NEVER a foreign key in this schema. Every table has its
+own `companyId INT NOT NULL` column for multi-tenancy, enforced entirely at
+the application layer — there is no `companies` table and no FK constraint
+on `companyId` anywhere in this codebase. Do not propose
+`FK_{Table}_companies` or any FK on the `companyId` column, ever.
+
 RULE: When enriched_prd.domain_context.workflow is present:
   - Add the workflow.field (e.g. "status") to db.columns as nvarchar(50) NOT NULL,
     default = workflow.initial_state, if not already in the PRD fields.

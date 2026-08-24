@@ -1,6 +1,6 @@
 {
   "module": "transfer",
-  "description": "Outbound SPEI transfers (dispersión) from the platform to a client's verified bank account — loan disbursements, lender payouts and refunds, executed through the banking provider (STP). Each settled transfer stores the provider reference and the Banxico CEP receipt URL for audit. See docs/payment-banking-first-redesign.md (Phase 1).",
+  "description": "DEFERRED / FUTURE capability ('SPEI Auto', not v1) — platform-INITIATED outbound SPEI transfers, for a future state where SmartLoans has a real STP payment-initiation contract and can disperse on the platform's own authority. NOT the v1 funding/repayment flow: those are direct lender-to-borrower and borrower-to-lender SPEI transfers the PARTIES send themselves from their own banks, which SmartLoans only records via fundingTransactions/loanPayments (declare+confirm), never initiates or executes (see RFC-002, RFC-003, docs/p2p-direct-payments-architecture.md). This module models a same-shape record for whenever platform-initiated dispersión is actually built — do not wire it into the v1 acceptProposal/funding path.",
   "fields": [
     {
       "name": "toClientId",
@@ -38,7 +38,7 @@
       "type": "string",
       "required": true,
       "max_length": 20,
-      "description": "Banking rail used. Allowed values: stp, stripe (legacy fallback). Defaults to stp."
+      "description": "Banking rail used. Allowed values: stp. (Stripe removed as a rail for moving loan principal/repayments — SmartLoans is non-custodial and Stripe is reserved only for direct, one-shot platform charges such as subscription billing, never for holding or routing loan funds.) Defaults to stp."
     },
     {
       "name": "providerRef",

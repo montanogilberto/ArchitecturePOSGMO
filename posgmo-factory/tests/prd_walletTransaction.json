@@ -13,7 +13,7 @@
       "type": "string",
       "required": true,
       "max_length": 30,
-      "description": "Money event type. Allowed values: DEPOSIT, RESERVE, RELEASE, LOAN_FUNDING, DISBURSEMENT_RECEIVED, REPAYMENT_PRINCIPAL, REPAYMENT_INTEREST, PLATFORM_FEE, WITHDRAWAL, REFUND, REVERSAL, ADJUSTMENT. Lookup values live in database hints, not a separate field table."
+      "description": "Money event type. Allowed values: DEPOSIT, RESERVE, RELEASE, LOAN_FUNDING, DISBURSEMENT_RECEIVED, REPAYMENT_PRINCIPAL, REPAYMENT_INTEREST, PLATFORM_FEE, WITHDRAWAL, REFUND, REVERSAL, ADJUSTMENT, CAPITAL_DECLARED, CAPITAL_COMMITTED, CAPITAL_UNDECLARED. Lookup values live in database hints, not a separate field table. CAPITAL_* describe a lender's declared-capital STATE (see RFC-002/RFC-003) — they are NEVER real money and must never be interpreted as SmartLoans holding, receiving, or moving funds; they coexist with the real-money types above, they do not replace DEPOSIT/WITHDRAWAL (the simulated/real SPEI-in-testing path still uses DEPOSIT)."
     },
     {
       "name": "direction",

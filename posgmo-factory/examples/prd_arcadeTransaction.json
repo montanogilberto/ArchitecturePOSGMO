@@ -1,0 +1,43 @@
+{
+  "module": "arcadeTransaction",
+  "description": "Libro mayor de fichas del arcade: una fila inmutable por cada movimiento de fichas, de modo que el saldo del monedero siempre sea reconstruible.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Dueno del movimiento" },
+    { "name": "roundId", "type": "integer", "required": false, "fk_table": "arcadeRounds", "fk_column": "roundId",
+      "description": "Ronda que origino el movimiento; nulo en bonos y ajustes" },
+    { "name": "txType", "type": "string", "required": true, "max_length": 20,
+      "description": "bet_debit | payout_credit | welcome_grant | daily_bonus | refund | adjustment" },
+    { "name": "amount", "type": "integer", "required": true,
+      "description": "Fichas del movimiento con signo: negativo debita, positivo acredita" },
+    { "name": "balanceAfter", "type": "integer", "required": true,
+      "description": "Saldo del monedero despues de aplicar el movimiento — permite auditar sin re-sumar todo el libro" },
+    { "name": "description", "type": "string", "required": false, "max_length": 200,
+      "description": "Texto legible para el historial del jugador" }
+  ],
+  "relationships": [
+    { "parentModule": "clients", "cardinality": "many-to-one" },
+    { "parentModule": "arcadeRound", "cardinality": "many-to-one" },
+    { "parentModule": "companies", "cardinality": "many-to-one" }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/arcade",
+    "allowedRoles": ["admin", "manager", "borrower", "lender", "business"],
+    "uiPattern": "list"
+  },
+  "database": {
+    "tables": ["arcadeTransactions"],
+    "storedProcedures": ["sp_arcadeTransactions_all"]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/all_arcadeTransactions", "method": "POST",
+        "description": "Historial de fichas del jugador",
+        "requestSchema": "{ arcadeTransactions: [{ companyId: int, clientId: int, top?: int }] }",
+        "responseSchema": "{ arcadeTransactions: ArcadeTransaction[] }" }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "module": "arcadePurchase",
+  "description": "Compras de fichas ya verificadas contra Apple o Google; una fila por recibo valido y su abono de fichas.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId" },
+    { "name": "packKey", "type": "string", "required": true, "max_length": 40, "fk_table": "arcadeChipPacks", "fk_column": "packKey" },
+    { "name": "platform", "type": "string", "required": true, "max_length": 10,
+      "description": "ios | android" },
+    { "name": "productId", "type": "string", "required": true, "max_length": 120 },
+    { "name": "storeTransactionId", "type": "string", "required": true, "max_length": 120,
+      "description": "Id de la compra en la tienda. UNICO junto con platform: es el candado de idempotencia, y sin el un recibo reenviado imprimiria fichas" },
+    { "name": "storeOriginalTransactionId", "type": "string", "required": false, "max_length": 120 },
+    { "name": "chipsCredited", "type": "integer", "required": true,
+      "description": "chips + bonusChips del paquete al momento de la compra" },
+    { "name": "priceCharged", "type": "decimal", "required": false,
+      "description": "Lo que de verdad cobro la tienda, para conciliar ingresos sin depender del precio de catalogo" },
+    { "name": "currency", "type": "string", "required": false, "max_length": 8 },
+    { "name": "environment", "type": "string", "required": false, "max_length": 12,
+      "description": "production | sandbox — una compra de TestFlight no es ingreso real" }
+  ],
+  "relationships": [
+    { "parentModule": "clients", "cardinality": "many-to-one" },
+    { "parentModule": "arcadeChipPack", "cardinality": "many-to-one" },
+    { "parentModule": "companies", "cardinality": "many-to-one" }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/arcade/tienda",
+    "allowedRoles": ["admin", "manager", "borrower", "lender", "business"],
+    "uiPattern": "list"
+  },
+  "database": {
+    "tables": ["arcadePurchases"],
+    "storedProcedures": ["sp_arcadePurchases_credit", "sp_arcadePurchases_all"]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/arcade/purchase", "method": "POST",
+        "description": "SENTIDO UNICO dinero->fichas. Verifica el recibo contra Apple/Google y solo entonces acredita. Falla cerrado: sin credenciales de tienda NO se acreditan fichas. Reenviar un recibo ya usado devuelve already_credited sin volver a abonar",
+        "requestSchema": "{ arcadePurchases: [{ companyId, clientId, packKey, platform, productId, transactionId? , purchaseToken? }] }",
+        "responseSchema": "{ status: 'credited'|'already_credited', chipsCredited: int, coinBalance: int }" },
+      { "path": "/all_arcadePurchases", "method": "POST",
+        "description": "Historial de compras del jugador",
+        "requestSchema": "{ arcadePurchases: [{ companyId: int, clientId: int, top?: int }] }",
+        "responseSchema": "{ arcadePurchases: Purchase[] }" }
+    ]
+  }
+}

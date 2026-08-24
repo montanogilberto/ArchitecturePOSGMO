@@ -1,0 +1,55 @@
+{
+  "module": "arcadeGame",
+  "description": "Catalogo de los mini-juegos de apuesta con fichas virtuales (arcade house-banked): un renglon por juego, con sus limites de apuesta y su RTP.",
+  "fields": [
+    { "name": "gameKey", "type": "string", "required": true, "max_length": 40,
+      "description": "Identificador estable usado por el frontend y por arcadeRounds: blackjack, mole, bowling, dice, coinflip, higherlower, mines, wheel, scratch, penalty" },
+    { "name": "name", "type": "string", "required": true, "max_length": 60,
+      "description": "Nombre visible en el tile del dashboard, en espanol" },
+    { "name": "tagline", "type": "string", "required": false, "max_length": 120,
+      "description": "Una linea de gancho bajo el nombre en el tile" },
+    { "name": "iconName", "type": "string", "required": true, "max_length": 60,
+      "description": "Nombre del icono de ionicons usado por el tile, ej. 'diamondOutline'" },
+    { "name": "category", "type": "string", "required": true, "max_length": 20,
+      "description": "cards | reflex | sports | luck — agrupa los tiles del dashboard" },
+    { "name": "minBet", "type": "integer", "required": true,
+      "description": "Apuesta minima en fichas virtuales" },
+    { "name": "maxBet", "type": "integer", "required": true,
+      "description": "Apuesta maxima en fichas virtuales" },
+    { "name": "rtp", "type": "decimal", "required": true,
+      "description": "Return-to-player teorico, 0.0000-1.0000. La ventaja de la casa es 1 - rtp. Se muestra al jugador en la hoja de juego limpio" },
+    { "name": "maxMultiplier", "type": "decimal", "required": true,
+      "description": "Multiplicador maximo posible sobre la apuesta, para el tile y para acotar el pago" },
+    { "name": "isActive", "type": "string", "required": true, "max_length": 1,
+      "description": "1 = activo, 0 = inactivo — convencion POS GMO" },
+    { "name": "comingSoon", "type": "string", "required": true, "max_length": 1,
+      "description": "1 = el tile se pinta bloqueado con 'Proximamente'; solo blackjack y mole salen en 0 en la primera entrega" },
+    { "name": "sortOrder", "type": "integer", "required": true,
+      "description": "Orden del tile en el dashboard" }
+  ],
+  "relationships": ["companies"],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/arcade",
+    "allowedRoles": ["admin", "manager", "borrower", "lender", "business"],
+    "uiPattern": "dashboard-grid",
+    "components": [
+      { "step": 1, "name": "CoinWalletHero", "description": "Saldo de fichas, bono diario y estadisticas" },
+      { "step": 2, "name": "GameTile", "description": "Tile por juego con RTP, limites y estado bloqueado" }
+    ]
+  },
+  "database": {
+    "tables": ["arcadeGames"],
+    "storedProcedures": ["sp_arcadeGames", "sp_arcadeGames_all", "sp_arcadeGames_one"]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/all_arcadeGames", "method": "POST",
+        "description": "Catalogo completo para el dashboard",
+        "requestSchema": "{ arcadeGames: [{ companyId: int, isActive?: str }] }",
+        "responseSchema": "{ arcadeGames: ArcadeGame[] }" }
+    ]
+  }
+}

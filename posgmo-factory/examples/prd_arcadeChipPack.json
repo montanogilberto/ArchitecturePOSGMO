@@ -1,0 +1,44 @@
+{
+  "module": "arcadeChipPack",
+  "description": "Catalogo de paquetes de fichas virtuales comprables con dinero real a traves de la tienda del sistema (StoreKit / Play Billing).",
+  "fields": [
+    { "name": "packKey", "type": "string", "required": true, "max_length": 40,
+      "description": "Identificador estable del paquete: starter, popular, pro, mega" },
+    { "name": "name", "type": "string", "required": true, "max_length": 60 },
+    { "name": "chips", "type": "integer", "required": true,
+      "description": "Fichas base del paquete" },
+    { "name": "bonusChips", "type": "integer", "required": true,
+      "description": "Fichas de regalo; el abono acredita chips + bonusChips" },
+    { "name": "priceMXN", "type": "decimal", "required": true,
+      "description": "SOLO para pintar la tarjeta antes de que responda la tienda. El precio real, en la moneda del usuario, lo da StoreKit / Play Billing. NUNCA se cobra a partir de esta columna" },
+    { "name": "productIdIos", "type": "string", "required": true, "max_length": 120,
+      "description": "Debe coincidir con el producto dado de alta en App Store Connect" },
+    { "name": "productIdAndroid", "type": "string", "required": true, "max_length": 120,
+      "description": "Debe coincidir con el producto dado de alta en Google Play Console" },
+    { "name": "badge", "type": "string", "required": false, "max_length": 30,
+      "description": "Etiqueta de la tarjeta: 'Mas popular', 'Mejor valor'" },
+    { "name": "isActive", "type": "string", "required": true, "max_length": 1 },
+    { "name": "sortOrder", "type": "integer", "required": true }
+  ],
+  "relationships": ["companies"],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/arcade/tienda",
+    "allowedRoles": ["admin", "manager", "borrower", "lender", "business"],
+    "uiPattern": "store-grid"
+  },
+  "database": {
+    "tables": ["arcadeChipPacks"],
+    "storedProcedures": ["sp_arcadeChipPacks_all"]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/all_arcadeChipPacks", "method": "POST",
+        "description": "Catalogo de paquetes para la tienda",
+        "requestSchema": "{ arcadeChipPacks: [{ companyId: int }] }",
+        "responseSchema": "{ arcadeChipPacks: ChipPack[] }" }
+    ]
+  }
+}

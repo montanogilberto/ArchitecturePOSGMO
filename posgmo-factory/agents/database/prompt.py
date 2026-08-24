@@ -359,21 +359,37 @@ with actions: `insert`, `list`, `due`, `update_status`. Used by automatedPayment
 - `due` action: returns all installments with `dueDate <= @asOfDate AND status = 'pending'`
 - `update_status` action: updates `status`, `paidAt`, `stripePaymentIntentId`, `attemptCount`
 
-**Wallet SP** (`sp_clientWallets`) — ACTION_ROUTER style with actions: `get`, `credit`, `debit`,
-`reserve`, `list`. `credit` increments `totalTopUps` or `totalRepaid`; `debit` decrements
-`availableBalance` (with guard: fail if insufficient); `reserve` moves amount to `reservedBalance`.
+**Wallet/ledger SP** (`sp_walletTransactions`, the money-ledger pattern used across SmartLoans) —
+this is an IMMUTABLE, INSERT-only ledger, NOT a mutable-balance table. There is no `clientWallets`
+UPDATE-based balance to credit/debit — that pattern is deprecated (SmartLoans is a non-custodial
+connector, it must never hold a mutable pot of money it can silently rewrite). Balance is always a
+PROJECTION computed at insert time from the previous row:
+  ```sql
+  DECLARE @prev DECIMAL(12,2) = ISNULL(
+      (SELECT TOP 1 balanceAfter FROM walletTransactions WITH (UPDLOCK, HOLDLOCK)
+       WHERE companyId = @companyId AND clientId = @clientId
+         AND entryType NOT IN ('CAPITAL_DECLARED','CAPITAL_COMMITTED','CAPITAL_UNDECLARED')
+       ORDER BY entryId DESC), 0);
+  DECLARE @newBalance DECIMAL(12,2) = @prev + CASE @direction WHEN 'C' THEN @amountMXN ELSE -@amountMXN END;
+  IF @newBalance < 0
+      SELECT '{"error":"Saldo insuficiente"}' AS [jsonResult]
+  ELSE
+      INSERT INTO walletTransactions (..., balanceAfter) VALUES (..., @newBalance)
+  ```
+  Critical: any entryType that describes a DECLARED/virtual state rather than real money (e.g.
+  CAPITAL_DECLARED/CAPITAL_COMMITTED/CAPITAL_UNDECLARED) must be EXCLUDED from both the `@prev`
+  lookup above and from balance-read SPs (`sp_..._balance`) — store `balanceAfter = NULL` for those
+  rows and never let them become a candidate "current balance" row. Mixing a virtual/declared entry
+  into the real-money running balance is a real bug this codebase hit once already (see
+  MD/PR1B_CAPITAL_VOCABULARY_MIGRATION.md and the walletTransaction incident notes in the backend
+  repo) — do not reintroduce it.
+- `reserve`/`release` actions work the same way — they're just entries with `entryType` RESERVE/
+  RELEASE, no separate `reservedBalance` column to mutate; a balance-read SP sums them separately.
 
 BUSINESS_LOGIC SP rules:
 - Data-aggregation SPs use `NVARCHAR(MAX)` parameter and `FOR JSON PATH, WITHOUT_ARRAY_WRAPPER`.
 - Persist/upsert SPs may use `MERGE` for upsert logic.
 - All history SPs return array result with `FOR JSON PATH` (no root), fallback `'[]'`.
-- Wallet `debit` must check `availableBalance >= amountMXN` before UPDATE:
-  ```sql
-  IF (SELECT availableBalance FROM clientWallets WHERE clientId = @clientId) < @amountMXN
-      SELECT ('{"error":"Insufficient balance"}') AS [jsonResult]
-  ELSE
-      UPDATE ...
-  ```
 - For BUSINESS_LOGIC output format, output `"sp_data"` and `"sp_persist"` keys (not `sp_upsert`).
 
 ## Execution step (MANDATORY — do this after generating SQL)

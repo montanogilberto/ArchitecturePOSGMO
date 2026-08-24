@@ -1,0 +1,194 @@
+{
+  "module": "arcadeRound",
+  "description": "Una ronda apostada de un mini-juego del arcade, con su registro de juego limpio (provably fair) y el resultado liquidado por el servidor.",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "Jugador que abrio la ronda"
+    },
+    {
+      "name": "gameKey",
+      "type": "string",
+      "required": true,
+      "max_length": 40,
+      "fk_table": "arcadeGames",
+      "fk_column": "gameKey",
+      "description": "Juego jugado"
+    },
+    {
+      "name": "betAmount",
+      "type": "integer",
+      "required": true,
+      "description": "Fichas apostadas, debitadas al abrir la ronda. Doblar en blackjack cobra OTRA vez este mismo importe (sp_arcadeRounds_double): la exposicion se duplica, asi que el cobro tambien."
+    },
+    {
+      "name": "payoutAmount",
+      "type": "integer",
+      "required": true,
+      "description": "Fichas acreditadas al liquidar. 0 si se pierde. Incluye la apuesta devuelta cuando aplica (push en blackjack)"
+    },
+    {
+      "name": "multiplier",
+      "type": "decimal",
+      "required": true,
+      "description": "payoutAmount / betAmount de la ronda ya liquidada"
+    },
+    {
+      "name": "outcome",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "win | lose | push | blackjack — resultado legible del juego"
+    },
+    {
+      "name": "roundStatus",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "open | settled | voided. Una ronda open bloquea otra apuesta del mismo jugador en el mismo juego"
+    },
+    {
+      "name": "serverSeedHash",
+      "type": "string",
+      "required": true,
+      "max_length": 64,
+      "description": "SHA-256 del serverSeed, entregado al jugador ANTES de jugar — el compromiso del juego limpio"
+    },
+    {
+      "name": "serverSeed",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "Semilla del servidor; se revela SOLO al liquidar para que el jugador verifique el hash"
+    },
+    {
+      "name": "clientSeed",
+      "type": "string",
+      "required": true,
+      "max_length": 64,
+      "description": "Semilla que aporta el jugador — impide que el servidor elija el resultado a posteriori"
+    },
+    {
+      "name": "nonce",
+      "type": "integer",
+      "required": true,
+      "description": "Contador por monedero; junto con las semillas hace irrepetible cada barajada"
+    },
+    {
+      "name": "stateJson",
+      "type": "text",
+      "required": false,
+      "description": "Estado autoritativo del servidor mientras la ronda esta open (mano de blackjack, calendario de topos). Nunca se confia el estado al cliente"
+    },
+    {
+      "name": "resultJson",
+      "type": "text",
+      "required": false,
+      "description": "Resultado final para el modal y para auditoria"
+    },
+    {
+      "name": "settledAt",
+      "type": "datetime",
+      "required": false,
+      "description": "Momento de la liquidacion"
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "clients",
+      "cardinality": "many-to-one"
+    },
+    {
+      "parentModule": "arcadeGame",
+      "cardinality": "many-to-one",
+      "notes": "gameKey referencia el catalogo"
+    },
+    {
+      "parentModule": "companies",
+      "cardinality": "many-to-one"
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/arcade/:gameKey",
+    "allowedRoles": [
+      "admin",
+      "manager",
+      "borrower",
+      "lender",
+      "business"
+    ],
+    "uiPattern": "game-canvas",
+    "components": [
+      {
+        "step": 1,
+        "name": "BetSelector",
+        "description": "Fichas a apostar dentro de minBet/maxBet"
+      },
+      {
+        "step": 2,
+        "name": "ProvablyFairSheet",
+        "description": "Muestra hash del servidor, semilla del cliente y nonce; revela la semilla al liquidar"
+      },
+      {
+        "step": 3,
+        "name": "RoundResultModal",
+        "description": "Resultado, multiplicador y saldo nuevo"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "arcadeRounds"
+    ],
+    "storedProcedures": [
+      "sp_arcadeRounds_open",
+      "sp_arcadeRounds_state",
+      "sp_arcadeRounds_double",
+      "sp_arcadeRounds_settle",
+      "sp_arcadeRounds_one",
+      "sp_arcadeRounds_all"
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/arcade/bet",
+        "method": "POST",
+        "description": "Abre una ronda: valida limites, debita la apuesta y devuelve serverSeedHash + el estado inicial que el juego necesite (mano de blackjack, calendario de topos)",
+        "requestSchema": "{ arcadeRounds: [{ companyId: int, clientId: int, gameKey: str, betAmount: int, clientSeed?: str }] }",
+        "responseSchema": "{ roundId: int, serverSeedHash: str, nonce: int, coinBalance: int, state: object }"
+      },
+      {
+        "path": "/arcade/action",
+        "method": "POST",
+        "description": "Aplica una jugada sobre una ronda open y la liquida si termina. El servidor resuelve; el cliente solo declara la accion",
+        "requestSchema": "{ arcadeRounds: [{ roundId: int, clientId: int, action: str, payload?: object }] }",
+        "responseSchema": "{ roundStatus: str, state: object, result?: object, coinBalance: int }"
+      },
+      {
+        "path": "/one_arcadeRound",
+        "method": "POST",
+        "description": "Una ronda con el estado ya recortado. Permite RETOMAR una mano que quedo abierta cuando la app se fue a segundo plano; sin esto el jugador queda encerrado fuera del juego por round_in_progress.",
+        "requestSchema": "{ arcadeRounds: [{ roundId: int, clientId: int }] }",
+        "responseSchema": "{ arcadeRounds: [{ roundId, gameKey, betAmount, roundStatus, state }] }"
+      },
+      {
+        "path": "/all_arcadeRounds",
+        "method": "POST",
+        "description": "Historial de rondas del jugador",
+        "requestSchema": "{ arcadeRounds: [{ companyId: int, clientId: int, gameKey?: str, top?: int }] }",
+        "responseSchema": "{ arcadeRounds: ArcadeRound[] }"
+      }
+    ]
+  }
+}

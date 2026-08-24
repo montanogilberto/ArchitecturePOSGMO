@@ -1,0 +1,50 @@
+{
+  "module": "arcadeWallet",
+  "description": "Monedero de fichas virtuales del arcade: un renglon por cliente, con saldo, limites de juego responsable y acumulados de por vida.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Dueno del monedero. Una fila por cliente por compania" },
+    { "name": "coinBalance", "type": "integer", "required": true,
+      "description": "Saldo actual en fichas virtuales. NO es dinero: no existe ruta de retiro (el arcade es de fichas no canjeables)" },
+    { "name": "lifetimeWagered", "type": "integer", "required": true,
+      "description": "Fichas apostadas acumuladas — denominador del RTP real del jugador" },
+    { "name": "lifetimeWon", "type": "integer", "required": true,
+      "description": "Fichas pagadas acumuladas — numerador del RTP real del jugador" },
+    { "name": "lifetimeRounds", "type": "integer", "required": true,
+      "description": "Rondas liquidadas acumuladas" },
+    { "name": "dailyWagerLimit", "type": "integer", "required": true,
+      "description": "Tope de fichas apostables por dia (juego responsable). 0 = sin tope" },
+    { "name": "lastDailyBonusAt", "type": "datetime", "required": false,
+      "description": "Ultimo cobro del bono diario; el backend rechaza otro antes de 24 h" },
+    { "name": "isLocked", "type": "string", "required": true, "max_length": 1,
+      "description": "1 = monedero bloqueado (autoexclusion o revision); toda apuesta se rechaza" }
+  ],
+  "relationships": [
+    { "parentModule": "clients", "cardinality": "one-to-one", "notes": "Un monedero de arcade por cliente por compania" },
+    { "parentModule": "companies", "cardinality": "many-to-one" }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/arcade",
+    "allowedRoles": ["admin", "manager", "borrower", "lender", "business"],
+    "uiPattern": "hero-card"
+  },
+  "database": {
+    "tables": ["arcadeWallets"],
+    "storedProcedures": ["sp_arcadeWallets", "sp_arcadeWallets_one", "sp_arcadeWallets_dailyBonus"]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/one_arcadeWallet", "method": "POST",
+        "description": "Saldo + estadisticas del jugador; crea el monedero con saldo de bienvenida si no existe",
+        "requestSchema": "{ arcadeWallets: [{ companyId: int, clientId: int }] }",
+        "responseSchema": "{ arcadeWallets: [ArcadeWallet] }" },
+      { "path": "/arcade/dailyBonus", "method": "POST",
+        "description": "Acredita el bono diario de fichas una vez cada 24 h",
+        "requestSchema": "{ arcadeWallets: [{ companyId: int, clientId: int }] }",
+        "responseSchema": "{ granted: bool, amount: int, coinBalance: int, nextBonusAt: str }" }
+    ]
+  }
+}

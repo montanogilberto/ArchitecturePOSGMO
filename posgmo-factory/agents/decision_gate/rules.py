@@ -169,9 +169,9 @@ def _classify_backend_pattern(spec: dict) -> tuple[str, list[dict]]:
     connectors = []
     for ep in endpoints:
         path = ep.get("path", "")
-        desc = ep.get("description", "")
-        req_schema = ep.get("requestSchema", "")
-        res_schema = ep.get("responseSchema", "")
+        desc = ep.get("description") or ""
+        req_schema = ep.get("requestSchema") or ""
+        res_schema = ep.get("responseSchema") or ""
 
         # Skip if path matches standard CRUD pattern
         normalized = path.replace(plural, "{plural}").replace(module, "{plural}")

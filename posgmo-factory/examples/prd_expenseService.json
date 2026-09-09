@@ -1,0 +1,16 @@
+{
+    "module": "expenseService",
+    "description": "Catalog of recurring service billers (agua, electricidad, internet, renta, etc.) used to categorize POS GMO 'Servicios' expenses — distinct from Suppliers, which are goods vendors (e.g. Sam's Club).",
+    "fields": [
+      { "name": "serviceName", "type": "string", "required": true, "max_length": 200,
+        "description": "Display name, e.g. \"CFE - Electricidad\", \"OOMAPAS - Agua\", \"Telmex - Internet\"" },
+      { "name": "category", "type": "string", "required": true, "max_length": 30,
+        "description": "One of: agua | electricidad | internet | renta | otro" },
+      { "name": "active", "type": "string", "required": true, "max_length": 1,
+        "description": "1 = active, 0 = inactive — matches existing POS GMO convention (see dbo.Suppliers.active)" }
+    ],
+    "relationships": ["companies"],
+    "roles_allowed": ["Admin", "Manager"],
+    "has_list_view": true,
+    "has_detail_view": false
+  }

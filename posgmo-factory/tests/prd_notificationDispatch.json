@@ -1,0 +1,180 @@
+{
+  "module": "notificationDispatch",
+  "description": "Cost-minimizing multi-channel notification router for customer/staff-facing events (POS income tickets, expense alerts, generic messaging). One row per dispatch decision, not per channel: records which channel was preferred, which one actually carried the message, and the full attempt history so a fallback is auditable after the fact. Cascade order is push -> whatsapp -> sms by default (push is free, WhatsApp is cheaper than SMS, SMS is last resort). OTP and other security-critical sends bypass this cascade entirely and go straight to sms via the existing OTP flow -- notificationDispatch is not used for OTP.",
+  "fields": [
+    {
+      "name": "sourceType",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Domain event that triggered this notification. Allowed values: income, expense, ticket (extensible later to loan, p2p). Selects which row in notificationDispatch_policy governs the cascade for this event."
+    },
+    {
+      "name": "sourceId",
+      "type": "integer",
+      "required": true,
+      "description": "Id of the originating record in its own domain table (incomeId, expenseId, ticketId), interpreted according to sourceType. Polymorphic by design -- no single fk_table applies, so no FK is declared here."
+    },
+    {
+      "name": "recipientType",
+      "type": "string",
+      "required": true,
+      "max_length": 10,
+      "description": "Who receives the message. Allowed values: client, user (internal staff). Needed because recipientId is also polymorphic."
+    },
+    {
+      "name": "recipientId",
+      "type": "integer",
+      "required": true,
+      "description": "clients.clientId or users.userId depending on recipientType. Polymorphic -- no FK enforced at the DB level, resolved in application code from recipientType."
+    },
+    {
+      "name": "eventName",
+      "type": "string",
+      "required": true,
+      "max_length": 40,
+      "description": "Cascade policy key looked up in notificationDispatch_policy, e.g. income_created, expense_created, ticket_ready. Determines the ordered channel list and whether SMS fallback is permitted for this event -- this is what keeps the priority list data-driven instead of hardcoded in the router."
+    },
+    {
+      "name": "preferredChannel",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "First channel the router attempted, per the eventName policy. Allowed values: push, whatsapp, sms."
+    },
+    {
+      "name": "selectedChannel",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Channel that actually carried the message. Equals preferredChannel unless a fallback occurred. Allowed values: push, whatsapp, sms."
+    },
+    {
+      "name": "attemptedChannels",
+      "type": "text",
+      "required": true,
+      "description": "JSON array logging every attempt in cascade order: each entry holds the channel name, the outcome code, and a timestamp. Source for the cost-avoidance report (percent delivered on push vs whatsapp vs sms)."
+    },
+    {
+      "name": "fallbackReason",
+      "type": "string",
+      "required": false,
+      "max_length": 30,
+      "description": "Why the router moved past preferredChannel. Allowed values: NO_DEVICE (no registered/active push target -- fall through immediately, do not attempt a send), PUSH_REJECTED (provider returned a hard rejection, e.g. invalid registration), PUSH_TIMEOUT (no response within the provider timeout), WHATSAPP_UNAVAILABLE (Twilio error, including a 63016-shaped 24h-window rejection), MANUAL_OVERRIDE. Null when preferredChannel succeeded on the first attempt. Business rule: PUSH_TIMEOUT and PUSH_REJECTED both advance the cascade to whatsapp next, same as NO_DEVICE -- none of them may skip directly to sms. Only a whatsapp-stage failure (WHATSAPP_UNAVAILABLE) may advance to sms."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "pending -> sent -> confirmed, or failed. FK to notificationDispatch_status.statusCode. 'confirmed' means the provider's own delivery callback came back positive for selectedChannel (Twilio delivered/read status webhook, or a push read receipt) -- this is a channel-delivery confirmation, not a money-movement confirmation like transactionNotifications.status."
+    },
+    {
+      "name": "providerMessageId",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "Twilio messageSid (whatsapp/sms) or Azure Notification Hub notification id for selectedChannel. Used to correlate an inbound provider delivery webhook back to this row."
+    },
+    {
+      "name": "providerName",
+      "type": "string",
+      "required": false,
+      "max_length": 30,
+      "description": "Which integration actually handled selectedChannel: twilio_whatsapp, twilio_sms, or azure_notification_hub."
+    },
+    {
+      "name": "messagePreview",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Short human-readable summary of what was sent (e.g. the ticket receipt link, an expense-alert title) -- deliberately not the full message body, to limit stored PII per the observability redaction rules."
+    },
+    {
+      "name": "sentAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When selectedChannel's dispatch attempt fired."
+    },
+    {
+      "name": "confirmedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When the provider confirmed delivery for selectedChannel, if that channel supports a delivery callback."
+    },
+    {
+      "name": "failedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When status moved to failed -- i.e. every channel in the eventName's configured cascade was exhausted without success."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId -- injected automatically by stored procedures, same as every other module."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "N:1",
+      "notes": "Informational only, not a DB-enforced FK: recipientId resolves to clients.clientId when recipientType = 'client'. See recipientType/recipientId field descriptions."
+    },
+    {
+      "parentModule": "users",
+      "cardinality": "N:1",
+      "notes": "Informational only, not a DB-enforced FK: recipientId resolves to users.userId when recipientType = 'user'."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/notification-dispatch-log",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Detail Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "DispatchLogFeedStep",
+        "description": "IonList of dispatch rows, newest first: sourceType/sourceId, eventName, selectedChannel badge (push=blue, whatsapp=green, sms=orange -- orange draws the eye to the expensive channel), status badge, createdAt. IonSelect filters by sourceType/eventName/status/selectedChannel."
+      },
+      {
+        "step": 2,
+        "name": "DispatchDetailModal",
+        "description": "IonModal opened from a feed row: full attemptedChannels timeline (channel, outcome, timestamp per hop), fallbackReason, providerMessageId, providerName, sentAt/confirmedAt/failedAt. Answers 'why did this end up on SMS.'"
+      },
+      {
+        "step": 3,
+        "name": "ChannelCostSummaryCard",
+        "description": "Aggregate tile for a selected date range: percent of dispatches resolved on push vs whatsapp vs sms, and an estimated SMS-cost-avoided figure (count of dispatches that resolved on push or whatsapp instead of falling through to sms)."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/notificationDispatch/dispatch",
+        "method": "POST",
+        "description": "Body: { companyId, sourceType, sourceId, recipientType, recipientId, eventName, messagePreview }. Idempotent per (sourceType, sourceId, eventName) -- if a row already has status in (sent, confirmed) for that triple, returns it unchanged instead of re-sending. Otherwise: looks up the ordered channel list for eventName from notificationDispatch_policy, then walks it in order. For channel=push: resolve the recipient's registered push target (existing pushNotifications/registerDevice recipient-resolution logic) -- if none exists, record fallbackReason=NO_DEVICE and advance without attempting a send; otherwise call azure_notifications.send_azure_push -- a hard rejection records PUSH_REJECTED and advances, a timeout records PUSH_TIMEOUT and advances (never straight to sms -- always to the next channel in the policy list, i.e. whatsapp). For channel=whatsapp: call the existing Twilio freeform WhatsApp send (modules/ticket_notifications.py-style) -- any Twilio error, including a 63016-shaped 24h-window rejection, records fallbackReason=WHATSAPP_UNAVAILABLE and advances to sms only if sms is in the policy's channel list for this eventName. For channel=sms: call the existing Twilio SMS send -- this is always the last hop, no further fallback. Writes exactly one notificationDispatch row per call, with attemptedChannels holding every hop tried. Must wrap each provider call in timed_integration() (twilio_whatsapp / twilio_sms / azure_notification_hub) and the whole cascade in a workflow_step(), per Core Rule 6 -- the existing ticket_notifications.py and pushNotifications.py sends this module reuses do not have this instrumentation today, so it must not be silently inherited as a gap here."
+      },
+      {
+        "path": "/notificationDispatch/confirm",
+        "method": "POST",
+        "description": "Webhook-style callback target: Twilio status callback (delivered/read/undelivered) for whatsapp/sms rows, or a push read-receipt hook for push rows. Matches by providerMessageId, updates status to confirmed (stamping confirmedAt) or failed (stamping failedAt), and appends the callback outcome to attemptedChannels for audit."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.notificationDispatch",
+      "dbo.notificationDispatch_status",
+      "dbo.notificationDispatch_policy"
+    ],
+    "storedProcedures": [
+      "dbo.sp_notificationDispatch",
+      "dbo.sp_notificationDispatch_all",
+      "dbo.sp_notificationDispatch_one"
+    ]
+  }
+}

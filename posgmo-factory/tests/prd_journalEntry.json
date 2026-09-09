@@ -1,0 +1,139 @@
+{
+  "module": "journalEntry",
+  "description": "Asiento contable de partida doble: el registro central del ciclo contable. Cada asiento tiene un encabezado (fecha, concepto, origen) y N líneas de detalle (Debe/Haber contra una cuenta del chartOfAccounts) que deben sumar lo mismo. Libro Diario, Libro Mayor, Balanza de Comprobación y los Estados Financieros se derivan todos de aquí.",
+  "fields": [
+    {
+      "name": "entryDate",
+      "type": "date",
+      "required": true,
+      "description": "Fecha contable del asiento (puede diferir de la fecha de captura)."
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "required": true,
+      "max_length": 255,
+      "description": "Concepto/glosa del asiento (ej. 'Venta #10234', 'Pago proveedor Gasolinera X')."
+    },
+    {
+      "name": "referenceType",
+      "type": "string",
+      "required": false,
+      "max_length": 30,
+      "description": "Origen del asiento. Valores permitidos: income, expense, manual, adjustment, opening_balance. Lookup values live in database hints, not a separate field table."
+    },
+    {
+      "name": "referenceId",
+      "type": "integer",
+      "required": false,
+      "description": "Id en la tabla de origen (dbo.income.incomeId, dbo.expenses.expenseId) cuando referenceType no es manual/adjustment. Junto con referenceType forma el enlace de auditoría — mismo patrón que walletTransactions.referenceType/referenceId."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 10,
+      "description": "Estado del asiento. Valores permitidos: POSTED, VOID. Los asientos generados automáticamente desde Ingresos/Egresos nacen POSTED. VOID es una anulación lógica (nunca DELETE); la reversión real de saldos se hace con un asiento de reversión nuevo, igual que WalletTransaction. Defaults to POSTED."
+    },
+    {
+      "name": "entryNumber",
+      "type": "integer",
+      "required": false,
+      "description": "Folio consecutivo del asiento por empresa, para mostrar en el Libro Diario (ej. Asiento #000123). Puede generarse a partir del entryId si no se requiere una secuencia independiente."
+    },
+    {
+      "name": "totalDebit",
+      "type": "decimal",
+      "required": false,
+      "description": "Caché denormalizado de SUM(lines.debit) al momento de insertar, para renderizar el Libro Diario sin hacer join a las líneas en cada fila. La fuente de verdad siempre es journalEntryLines. Stored as decimal(12,2)."
+    },
+    {
+      "name": "totalCredit",
+      "type": "decimal",
+      "required": false,
+      "description": "Caché denormalizado de SUM(lines.credit) al momento de insertar, análogo a totalDebit. Stored as decimal(12,2)."
+    },
+    {
+      "name": "createdByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Usuario que capturó el asiento manualmente (NULL en asientos generados automáticamente por el sistema desde Ingresos/Egresos)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "chartOfAccount",
+      "cardinality": "N:M",
+      "notes": "Cada línea de detalle (journalEntryLines) referencia una chartOfAccounts.accountId. La relación real N:M vive en la tabla hija journalEntryLines, ver database.hints."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "payment_methods": [],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/accounting/journal-entries",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Modal Form Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "JournalEntryListStep",
+        "description": "Libro Diario: IonList de asientos ordenados por entryDate/entryNumber descendente, mostrando entryNumber, entryDate, description, chip de referenceType (Ingreso/Egreso/Manual/Ajuste), totalDebit=totalCredit y badge POSTED/VOID."
+      },
+      {
+        "step": 2,
+        "name": "JournalEntryDetailStep",
+        "description": "Detalle del asiento: encabezado + tabla Debe/Haber por línea (cuenta, debit, credit, lineDescription) con footer de sumas y check visual '✓ Cuadrada' cuando SUM(debit)=SUM(credit). Punto de entrada para el drill-down Movimiento → Asiento → Libro Mayor."
+      },
+      {
+        "step": 3,
+        "name": "JournalEntryFormModal",
+        "description": "IonModal de captura manual (referenceType=manual): entryDate, description, y una lista dinámica de líneas (cuenta vía IonSelect sobre chartOfAccounts con isPostable=true, monto, D/C). Botón Guardar deshabilitado mientras SUM(debit)<>SUM(credit), con IonSpinner mientras se envía."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/journalEntries/ledger",
+        "method": "GET",
+        "description": "Proyección de Libro Mayor: SUM/CASE de journalEntryLines agrupado por accountId dentro de un rango de fechas, filtrado por companyId. No es una tabla — es un query de lectura sobre journalEntries+journalEntryLines+chartOfAccounts.",
+        "responseSchema": "LedgerAccountBalance[]"
+      },
+      {
+        "path": "/journalEntries/trial-balance",
+        "method": "GET",
+        "description": "Proyección de Balanza de Comprobación: Debe y Haber acumulados por cuenta a una fecha de corte, con el total general (debe validar que ambas columnas cuadren). Lectura, no tabla nueva.",
+        "responseSchema": "TrialBalanceRow[]"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.journalEntries",
+      "dbo.journalEntryLines"
+    ],
+    "storedProcedures": [
+      "dbo.sp_journalEntries",
+      "dbo.sp_journalEntries_all",
+      "dbo.sp_journalEntries_one"
+    ],
+    "hints": [
+      "journalEntryLines is a child detail table, same shape as expenses/expenseDetails: journalEntryLineId PK IDENTITY, journalEntryId FK -> journalEntries.entryId, accountId FK -> chartOfAccounts.accountId, debit DECIMAL(12,2) NOT NULL DEFAULT 0, credit DECIMAL(12,2) NOT NULL DEFAULT 0, lineDescription NVARCHAR(255) NULL. Exactly one of (debit>0, credit>0) per line — never both nonzero, never both zero.",
+      "action=1 (INSERT) must accept a nested 'lines' array inside @pjsonfile — same nested-array JSON pattern sp_expense already uses for products[] — insert the journalEntries header then MERGE/INSERT the lines against it inside the same transaction.",
+      "action=1 MUST validate SUM(lines.debit) = SUM(lines.credit) inside the transaction and RAISERROR('Asiento no balanceado: Debe <> Haber', 16, 1) + ROLLBACK if not. This is the single most important integrity rule in the whole accounting module — never allow an unbalanced asiento to commit.",
+      "action=1 must also validate every referenced accountId has isPostable=1 and belongs to the same companyId, and set the denormalized totalDebit/totalCredit on the header from the validated sums.",
+      "action=2 (UPDATE) is restricted to the status transition POSTED -> VOID only; entryDate/description/lines are immutable once posted — this is a ledger, not an editable form. Corrections are a brand-new reversing journalEntry (mirror debit/credit of the original), never an edit.",
+      "action=3 (DELETE) must be rejected — RAISERROR always. Never allow hard delete of a posted asiento; it breaks the audit trail and the Balanza.",
+      "UNIQUE constraint on (companyId, entryNumber).",
+      "Libro Mayor, Balanza de Comprobación, Estado de Resultados, Balance General and Flujo de Efectivo are NOT separate stored tables — they are read projections (SELECT/SUM/CASE, same philosophy as WalletTransaction.get_balance) over journalEntryLines JOIN chartOfAccounts, filtered by companyId + accountType + date range. This PRD only covers the write path (journalEntries/journalEntryLines) and two read endpoints (ledger, trial-balance); Estado de Resultados/Balance General/Flujo de Efectivo should be their own later reporting PRD once the ledger has real data.",
+      "Follow-up integration (separate change, not part of this PRD): every INSERT into dbo.income or dbo.expenses should, in the same request, also call sp_journalEntries action=1 to post the corresponding asiento — Ingreso: Debe Bancos / Haber Ingresos por ventas; Egreso: Debe Gastos de operación (o la cuenta según supplierId/expenseType) / Haber Bancos — with referenceType='income'|'expense' and referenceId=incomeId|expenseId linking back to the source row."
+    ]
+  }
+}

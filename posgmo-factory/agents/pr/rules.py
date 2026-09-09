@@ -497,7 +497,7 @@ def patch_role_ui(
     repo: str,
     branch: str,
     feature_code: str,
-    roles: list | None = None,
+    roles: list[str] | None = None,
     type_file_path: str = "src/config/rolePermissions.ts",
 ) -> dict:
     """
@@ -601,7 +601,7 @@ def patch_role_ui(
 def patch_user_context(
     repo: str,
     branch: str,
-    extra_fields: list,
+    extra_fields: list[dict],
 ) -> dict:
     """
     Patches UserContext.tsx and Login.tsx to expose additional user fields

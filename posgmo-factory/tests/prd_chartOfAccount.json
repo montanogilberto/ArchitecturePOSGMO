@@ -1,0 +1,102 @@
+{
+  "module": "chartOfAccount",
+  "description": "Catálogo de cuentas contables (plan de cuentas) de la empresa: la jerarquía de cuentas de Activo, Pasivo, Capital, Ingreso y Gasto contra la que se registran todos los asientos contables (Debe/Haber). Es la base de la que dependen journalEntry, Libro Mayor, Balanza de Comprobación y los Estados Financieros.",
+  "fields": [
+    {
+      "name": "code",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Código de la cuenta en el catálogo (ej. 1105 Bancos, 4105 Ingresos por ventas, 5105 Gastos de operación). Único por empresa."
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "max_length": 150,
+      "description": "Nombre descriptivo de la cuenta (ej. 'Bancos', 'Ingresos por ventas', 'Gastos de operación')."
+    },
+    {
+      "name": "accountType",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Tipo de cuenta contable. Valores permitidos: ASSET, LIABILITY, EQUITY, INCOME, EXPENSE. Lookup values live in database hints, not a separate field table."
+    },
+    {
+      "name": "normalBalance",
+      "type": "string",
+      "required": true,
+      "max_length": 1,
+      "description": "Naturaleza de la cuenta: D (deudora — Activo/Gasto) o C (acreedora — Pasivo/Capital/Ingreso). Determina el signo esperado en la Balanza de Comprobación; debe ser consistente con accountType."
+    },
+    {
+      "name": "parentAccountId",
+      "type": "integer",
+      "required": false,
+      "description": "Cuenta padre para la jerarquía (Clase > Grupo > Cuenta > Subcuenta). Auto-referencia a chartOfAccounts.accountId; NULL en cuentas de nivel superior."
+    },
+    {
+      "name": "level",
+      "type": "integer",
+      "required": false,
+      "description": "Nivel jerárquico dentro del catálogo: 1 Clase, 2 Grupo, 3 Cuenta, 4 Subcuenta (convención habitual de catálogos contables mexicanos)."
+    },
+    {
+      "name": "isPostable",
+      "type": "boolean",
+      "required": true,
+      "description": "Si es true, se pueden registrar líneas de asiento directamente contra esta cuenta (cuentas de detalle/subcuenta). Las cuentas de agrupación (Clase/Grupo) deben ser false — solo agregan sus cuentas hijas en los reportes."
+    },
+    {
+      "name": "isActive",
+      "type": "boolean",
+      "required": true,
+      "description": "Si la cuenta puede usarse en nuevos asientos. Defaults to true; se desactiva en vez de borrarse para no romper el historial de asientos ya registrados."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures. Cada empresa tiene su propio catálogo."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/accounting/chart-of-accounts",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Modal Form Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "ChartOfAccountListStep",
+        "description": "IonList jerárquico (indentado por level) de las cuentas de la empresa, mostrando code, name, chip de accountType, badge D/C de normalBalance y estado activa/inactiva. Agrupado visualmente por accountType (Activo, Pasivo, Capital, Ingreso, Gasto)."
+      },
+      {
+        "step": 2,
+        "name": "ChartOfAccountFormModal",
+        "description": "IonModal de alta/edición: code, name, accountType (IonSelect), normalBalance derivado automáticamente del accountType elegido (solo lectura), parentAccountId (IonSelect limitado a cuentas con isPostable=false), isPostable (IonCheckbox)."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.chartOfAccounts"
+    ],
+    "storedProcedures": [
+      "dbo.sp_chartOfAccounts",
+      "dbo.sp_chartOfAccounts_all",
+      "dbo.sp_chartOfAccounts_one"
+    ],
+    "hints": [
+      "accountType lookup: ASSET, LIABILITY, EQUITY, INCOME, EXPENSE.",
+      "normalBalance is derived from accountType (ASSET/EXPENSE=D, LIABILITY/EQUITY/INCOME=C) — the SP should validate consistency on INSERT/UPDATE, not trust the client blindly.",
+      "UNIQUE constraint on (companyId, code).",
+      "parentAccountId self-references chartOfAccounts.accountId (nullable). Do not enforce it as a hard FK if that blocks single-statement bulk-seeding of a new company's catalog — validate existence in the SP instead.",
+      "Seed a standard base catalog (top-level ASSET/LIABILITY/EQUITY/INCOME/EXPENSE classes, plus common postable leaves: Bancos, Ingresos por ventas, Gastos de operación, Comisiones bancarias) for every new company on creation — companies should never start with an empty catalog, since journalEntry cannot post without postable accounts to reference."
+    ]
+  }
+}

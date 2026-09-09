@@ -84,7 +84,7 @@ def test_root_agent_pipeline_importable():
     assert "generation_stage"     in agent_names
     assert "fixer_agent"          in agent_names
     assert "frontend_agent"       in agent_names
-    assert "reviewer_agent"       in agent_names
+    assert "review_fix_loop"      in agent_names
     assert "pr_agent"             in agent_names
 
 
@@ -95,6 +95,15 @@ def test_generation_stage_contains_parallel_agents():
     assert "database_agent"           in sub_names
     assert "backend_agent"            in sub_names
     assert "design_consistency_agent" in sub_names
+
+
+def test_review_fix_loop_contains_reviewer_agents():
+    from agents import root_agent
+    review_loop = next(a for a in root_agent.sub_agents if a.name == "review_fix_loop")
+    sub_names = [a.name for a in review_loop.sub_agents]
+    assert "reviewer_agent"      in sub_names
+    assert "loop_exit_agent"     in sub_names
+    assert "review_fixer_agent"  in sub_names
 
 
 def test_rules_have_no_adk_agent_imports():

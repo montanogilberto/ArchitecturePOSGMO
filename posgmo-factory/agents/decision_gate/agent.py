@@ -4,7 +4,7 @@ import json
 from typing import AsyncGenerator
 from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
-from google.adk.events import Event
+from google.adk.events import Event, EventActions
 
 
 class _DecisionGateAgent(BaseAgent):
@@ -23,7 +23,7 @@ class _DecisionGateAgent(BaseAgent):
 
         yield Event(
             author=self.name,
-            state={"gate_result": gate_json},
+            actions=EventActions(state_delta={"gate_result": gate_json}),
         )
 
 

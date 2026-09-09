@@ -1,0 +1,51 @@
+name: Factory Tests
+
+on:
+  push:
+    paths:
+      - "posgmo-factory/**"
+      - ".github/workflows/factory-tests.yml"
+  pull_request:
+    paths:
+      - "posgmo-factory/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: posgmo-factory
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ODBC driver headers (pyodbc build dependency)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unixodbc-dev
+
+      # Pinned to the versions verified locally, not pyproject.toml's ">="
+      # floors: mcp 2.x currently ships a breaking change (drops
+      # mcp.shared.session) that google-adk's latest release still imports,
+      # so an unpinned install here would fail agent-import tests that pass
+      # fine with this combination.
+      - name: Install dependencies
+        run: |
+          pip install \
+            "google-adk==2.2.0" \
+            "mcp[cli]==1.27.2" \
+            "fastmcp==3.4.2" \
+            "pydantic==2.13.4" \
+            "httpx==0.28.1" \
+            "python-dotenv==1.2.2" \
+            "pyodbc==5.3.0" \
+            "pytest==9.0.3" \
+            "pytest-asyncio>=0.23.0"
+
+      - name: Run tests
+        run: pytest tests/ -v

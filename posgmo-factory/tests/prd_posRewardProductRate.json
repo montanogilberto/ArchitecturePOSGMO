@@ -1,0 +1,37 @@
+{
+  "module": "posRewardProductRate",
+  "description": "Configurable POS loyalty points earned per unit sold, for a given product. Companion table to products — does not alter the existing products table, which stays fully owned by the products module. One active rate row per productId+companyId; companyId is auto-injected. Read server-side by sp_posRewardTransactions_earnFromTicket when a ticket is finalized — never trusted from the frontend.",
+  "fields": [
+    { "name": "productId", "type": "integer", "required": true, "fk_table": "products", "fk_column": "productId",
+      "description": "Product this point rate applies to." },
+    { "name": "pointsPerUnit", "type": "decimal", "required": true,
+      "description": "Loyalty points earned per 1 unit of quantity sold of this product." },
+    { "name": "isActive", "type": "boolean", "required": true,
+      "description": "When false, this product earns no points even if a rate row exists (kept for history instead of deleting)." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "products", "cardinality": "1:1", "notes": "One rate row per product; UNIQUE(companyId, productId)." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/pos-rewards",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PosRewardProductRateField",
+        "description": "Not a standalone page — this is a 'points per unit' number input + active toggle embedded inside the existing product create/edit form (ProductForm.tsx), saved as a second call right after the product itself is saved." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.posRewardProductRates"],
+    "storedProcedures": ["dbo.sp_posRewardProductRates", "dbo.sp_posRewardProductRates_all", "dbo.sp_posRewardProductRates_one"],
+    "hints": [
+      "UNIQUE constraint on (companyId, productId) — one active rate row per product per company.",
+      "action=1 must behave as an upsert: insert if no row exists yet for productId, otherwise update pointsPerUnit/isActive on the existing row (do not create duplicate rate history rows).",
+      "This table is read-only from the frontend's perspective for point calculation purposes — the actual points-earned math never happens client-side; see sp_posRewardTransactions_earnFromTicket in the posRewardTransaction PRD."
+    ]
+  }
+}

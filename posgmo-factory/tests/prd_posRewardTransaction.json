@@ -1,0 +1,56 @@
+{
+  "module": "posRewardTransaction",
+  "description": "Immutable POS loyalty points ledger — one INSERT-only row per points event (earn from a completed POS ticket, redemption against the reward catalog, manual admin adjustment). posRewardBalances is a materialized projection over this ledger, updated transactionally by the same SP that inserts a row here. Corrections are new ADJUSTMENT entries, never UPDATEs — a client's point history must always be traceable back to a specific ticket or redemption. Logically and structurally separate from the existing loan-behavior rewardTransactions table and from any arcade chip ledger: no FK, no shared endpoint, and no function anywhere converts between them.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Client this points event belongs to." },
+    { "name": "txType", "type": "string", "required": true, "max_length": 20,
+      "description": "Allowed values: EARN, REDEEM, ADJUSTMENT, EXPIRE. Lookup values live in database hints, not a separate field table." },
+    { "name": "direction", "type": "string", "required": true, "max_length": 1,
+      "description": "D = debit (balance down, e.g. REDEEM), C = credit (balance up, e.g. EARN), from the client's perspective." },
+    { "name": "points", "type": "decimal", "required": true,
+      "description": "Always positive; direction carries the sign/effect on balance." },
+    { "name": "referenceType", "type": "string", "required": true, "max_length": 20,
+      "description": "What produced this entry. Allowed values: ticket, redemption, manual." },
+    { "name": "referenceId", "type": "integer", "required": false,
+      "description": "incomeId for EARN rows (referenceType=ticket), redemptionId for REDEEM rows (referenceType=redemption). NULL for manual ADJUSTMENT." },
+    { "name": "balanceAfter", "type": "decimal", "required": true,
+      "description": "Denormalized running balance immediately after this entry — makes client statements O(1)." },
+    { "name": "description", "type": "string", "required": false, "max_length": 255,
+      "description": "Short human-readable memo shown in the client's points history." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "clients", "cardinality": "1:N", "notes": "clientId owns the ledger row." }
+  ],
+  "roles_allowed": ["Admin", "Manager", "Cashier"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/pos-rewards",
+    "allowedRoles": ["Admin", "Manager", "Cashier"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PosRewardLedgerListStep",
+        "description": "IonList of ledger rows newest-first, filtered by companyId + optional clientId, optional txType. Rows show txType chip (EARN/REDEEM/ADJUSTMENT/EXPIRE), signed points, description, created_At, running balanceAfter." }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/posRewardTransactions/earn-from-ticket", "method": "POST",
+        "description": "The ONLY path allowed to insert EARN rows. Takes { incomeId, companyId }. Server-side: reads the ticket's incomeDetails lines for incomeId, joins posRewardProductRates per productId (only isActive=true rows), computes SUM(pointsPerUnit * quantity) across all lines, inserts one EARN row (referenceType='ticket', referenceId=incomeId), and updates posRewardBalances in the same transaction. Idempotent per incomeId — mirror the idempotencyKey pattern used in prd_walletTransaction.json: calling this twice for the same ticket must not double-post points. Returns { pointsEarned, newBalance, transactionId }." },
+      { "path": "/posRewardTransactions/adjust", "method": "POST",
+        "description": "Manual admin points adjustment. Takes { companyId, clientId, points, description, createdByUserId }. points may be positive or negative; inserts one ADJUSTMENT row (referenceType='manual') and updates posRewardBalances transactionally. Returns { newBalance }." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.posRewardTransactions"],
+    "storedProcedures": ["dbo.sp_posRewardTransactions", "dbo.sp_posRewardTransactions_all", "dbo.sp_posRewardTransactions_one", "dbo.sp_posRewardTransactions_earnFromTicket", "dbo.sp_posRewardTransactions_adjust"],
+    "hints": [
+      "INSERT-only: the standard CRUD SP must implement action 1 (insert) and reads; action 2 (update) and action 3 (delete) must return an error — corrections are new ADJUSTMENT/REVERSAL inserts, never edits.",
+      "Indexes: (clientId, created_At DESC) for client statements; (referenceType, referenceId) for ticket/redemption reconciliation.",
+      "sp_posRewardTransactions_earnFromTicket must be idempotent per (companyId, incomeId) — add a UNIQUE constraint on (companyId, referenceType, referenceId) WHERE referenceType='ticket' so a retried call is a no-op, not a duplicate EARN row.",
+      "sp_posRewardTransactions_earnFromTicket and sp_posRewardTransactions_adjust must update posRewardBalances (balance, lifetimeEarned or lifetimeRedeemed, lastActivity) inside the same transaction as the ledger insert — never write the ledger and the balance in separate calls."
+    ]
+  }
+}

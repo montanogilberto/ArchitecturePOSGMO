@@ -1,0 +1,52 @@
+{
+  "module": "posRewardRedemption",
+  "description": "One row per redemption of a posRewardCatalogItems reward by a client. Always paired, in the same transaction, with a REDEEM row in posRewardTransactions and a decrement of posRewardBalances. This is the write side of spending POS loyalty points — it never touches the loan-rewards or arcade-chip systems.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Client redeeming the reward." },
+    { "name": "catalogItemId", "type": "integer", "required": true, "fk_table": "posRewardCatalogItems", "fk_column": "catalogItemId",
+      "description": "Catalog reward being redeemed." },
+    { "name": "pointsSpent", "type": "decimal", "required": true,
+      "description": "Denormalized copy of posRewardCatalogItems.requiredPoints at the moment of redemption — later catalog edits must not change past redemption history." },
+    { "name": "status", "type": "string", "required": true, "max_length": 20,
+      "description": "Allowed values: applied, cancelled." },
+    { "name": "incomeId", "type": "integer", "required": false,
+      "description": "Ticket the redemption's discount was applied to, when relevant. NULL for a standalone free-product redemption not tied to a specific ticket." },
+    { "name": "redeemedByUserId", "type": "integer", "required": true,
+      "description": "POS user/cashier who processed the redemption." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "clients", "cardinality": "1:N", "notes": "clientId owns the redemption." },
+    { "parentModule": "posRewardCatalogItem", "cardinality": "1:N", "notes": "catalogItemId references the reward that was redeemed." }
+  ],
+  "roles_allowed": ["Admin", "Manager", "Cashier"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/pos-rewards",
+    "allowedRoles": ["Admin", "Manager", "Cashier"],
+    "uiPattern": "List Layout + Modal Form",
+    "components": [
+      { "step": 1, "name": "PosRewardRedemptionListStep",
+        "description": "IonList of past redemptions newest-first: client, reward name, pointsSpent, status badge, created_At." },
+      { "step": 2, "name": "PosRewardRedeemModal",
+        "description": "Cashier-facing modal: pick an active catalog reward the selected client can afford (requiredPoints <= current balance), confirm, redeem." }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/posRewardRedemptions/redeem", "method": "POST",
+        "description": "Takes { companyId, clientId, catalogItemId, redeemedByUserId, incomeId? }. In one transaction: (1) reads the client's current balance from posRewardBalances and the reward's requiredPoints from posRewardCatalogItems, (2) if balance < requiredPoints, rolls back and returns { error: 'insufficient_points', balance } — never a partial redemption, (3) otherwise inserts this row (status='applied', pointsSpent=requiredPoints), (4) inserts a matching REDEEM row in posRewardTransactions (referenceType='redemption', referenceId=this row's id), (5) decrements posRewardBalances.balance and increments lifetimeRedeemed. Returns { status:'applied', redemptionId, pointsSpent, newBalance } on success." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.posRewardRedemptions"],
+    "storedProcedures": ["dbo.sp_posRewardRedemptions", "dbo.sp_posRewardRedemptions_all", "dbo.sp_posRewardRedemptions_one", "dbo.sp_posRewardRedemptions_redeem"],
+    "hints": [
+      "CHECK status IN ('applied','cancelled').",
+      "sp_posRewardRedemptions_redeem must be transactional as described in the endpoint above — insufficient balance rolls back everything, never a partial write.",
+      "Index (clientId, created_At DESC) for a client's redemption history."
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "module": "posRewardCatalogItem",
+  "description": "Admin-managed catalog of redeemable POS loyalty rewards (e.g. '$20 discount = 200 points', or a free product for a fixed point cost). Redemptions (posRewardRedemptions) reference a catalog row by id at redemption time and denormalize the point cost onto the redemption row, so a later catalog edit never rewrites past redemption history.",
+  "fields": [
+    { "name": "name", "type": "string", "required": true, "max_length": 120,
+      "description": "Display name of the reward, e.g. '$20 de descuento' or 'Lavado Básico gratis'." },
+    { "name": "rewardType", "type": "string", "required": true, "max_length": 20,
+      "description": "Allowed values: discount_fixed (fixed MXN amount off), discount_pct (percentage off), free_product (redeem for a specific product)." },
+    { "name": "requiredPoints", "type": "decimal", "required": true,
+      "description": "Points a client must have to redeem this reward." },
+    { "name": "discountValue", "type": "decimal", "required": false,
+      "description": "MXN amount (rewardType=discount_fixed) or percentage 0-100 (rewardType=discount_pct). NULL for free_product." },
+    { "name": "freeProductId", "type": "integer", "required": false, "fk_table": "products", "fk_column": "productId",
+      "description": "Product granted free of charge when rewardType=free_product. NULL otherwise." },
+    { "name": "isActive", "type": "boolean", "required": true,
+      "description": "Inactive rewards stay in the catalog for history but cannot be redeemed." },
+    { "name": "description", "type": "string", "required": false, "max_length": 255,
+      "description": "Optional longer explanation shown to the client before redeeming." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "products", "cardinality": "1:N", "notes": "Optional link when rewardType=free_product." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/pos-rewards",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout + Modal Form",
+    "components": [
+      { "step": 1, "name": "PosRewardCatalogListStep",
+        "description": "IonList of catalog rewards with name, requiredPoints, rewardType badge, isActive toggle." },
+      { "step": 2, "name": "PosRewardCatalogItemModal",
+        "description": "Create/edit modal: name, rewardType select, requiredPoints, discountValue or freeProductId depending on rewardType, isActive, description." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.posRewardCatalogItems"],
+    "storedProcedures": ["dbo.sp_posRewardCatalogItems", "dbo.sp_posRewardCatalogItems_all", "dbo.sp_posRewardCatalogItems_one"],
+    "hints": [
+      "Simple CRUD table — standard action 1/2/3 (insert/update/delete) is fine; no immutability constraint here (unlike posRewardTransactions).",
+      "CHECK rewardType IN ('discount_fixed','discount_pct','free_product').",
+      "CHECK: discountValue required when rewardType IN ('discount_fixed','discount_pct'); freeProductId required when rewardType='free_product'."
+    ]
+  }
+}

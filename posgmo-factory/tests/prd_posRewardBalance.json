@@ -1,0 +1,49 @@
+{
+  "module": "posRewardBalance",
+  "description": "Materialized current POS loyalty points balance per client — a projection over posRewardTransactions, kept in sync transactionally by the same stored procedures that insert ledger rows (sp_posRewardTransactions_earnFromTicket, sp_posRewardTransactions_adjust, sp_posRewardRedemptions_redeem). Never written directly by the frontend. Fully separate from the existing loan-behavior rewardBalances table — no shared key, no conversion.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Client this balance belongs to." },
+    { "name": "balance", "type": "decimal", "required": true,
+      "description": "Current spendable points balance." },
+    { "name": "lifetimeEarned", "type": "decimal", "required": true,
+      "description": "Running total of all EARN points ever posted for this client." },
+    { "name": "lifetimeRedeemed", "type": "decimal", "required": true,
+      "description": "Running total of all REDEEM points ever posted for this client." },
+    { "name": "lastActivity", "type": "datetime", "required": false,
+      "description": "Timestamp of the most recent ledger entry affecting this balance." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "clients", "cardinality": "1:1", "notes": "One balance row per client per company; UNIQUE(companyId, clientId)." }
+  ],
+  "roles_allowed": ["Admin", "Manager", "Cashier"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/pos-rewards",
+    "allowedRoles": ["Admin", "Manager", "Cashier"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PosRewardDashboardSummaryStep",
+        "description": "Admin dashboard: KPI cards (points issued, points redeemed, redemptions count), a points-activity time series, and a top-customers leaderboard sourced from this table + posRewardTransactions." },
+      { "step": 2, "name": "PosRewardCartBalanceStep",
+        "description": "Small balance readout shown in the POS cart once a client is selected at checkout, plus a 'points to next reward' progress bar against the cheapest active posRewardCatalogItems row." }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/posRewardBalances/dashboard-summary", "method": "POST",
+        "description": "Takes { companyId, startDate?, endDate? }. Aggregates across posRewardTransactions (points issued/redeemed in the period, activity time series) and posRewardRedemptions (redemptions count), plus this table (top customers by balance/lifetimeEarned). Returns { pointsIssued, pointsRedeemed, redemptionsCount, topCustomers: [{clientId, balance, lifetimeEarned}], activity: [{date, earned, redeemed}] }. Read-only, cross-table — does not write anything." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.posRewardBalances"],
+    "storedProcedures": ["dbo.sp_posRewardBalances", "dbo.sp_posRewardBalances_all", "dbo.sp_posRewardBalances_one", "dbo.sp_posRewardBalances_dashboardSummary"],
+    "hints": [
+      "UNIQUE constraint on (companyId, clientId).",
+      "This table is written ONLY inside the same transaction as a posRewardTransactions insert — the standard CRUD SP's action 1/2 (insert/update) should be restricted to internal callers (the earn/adjust/redeem SPs), not exposed as a general-purpose write the frontend can call directly.",
+      "sp_posRewardBalances_dashboardSummary is read-only and joins posRewardTransactions + posRewardRedemptions for the period aggregates described in the endpoint above."
+    ]
+  }
+}

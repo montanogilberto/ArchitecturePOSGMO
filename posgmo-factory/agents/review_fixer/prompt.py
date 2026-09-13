@@ -54,7 +54,9 @@ After applying all fixes, output a JSON summary:
   "skipped": ["list that could not be auto-fixed with reason"]
 }
 
-IMPORTANT: Always write the corrected artifact back to session state.
-Use the MCP tool save_state (or write directly via tool calls) to persist changes.
+IMPORTANT: Call the apply_review_fixes tool to apply and persist the fixes —
+it is the only tool available for this and it writes the corrected artifacts
+back to session state itself. Do not call any other tool to "save state";
+no such tool exists on this agent.
 The reviewer will re-run after you finish — make sure the fix is actually applied.
 """

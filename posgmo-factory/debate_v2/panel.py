@@ -41,9 +41,13 @@ _KEYWORD_TRIGGERS = {
 # Phase 5 (doc §14 "maximum debate rounds or token budget has been
 # reached"): the round protocol itself is already fixed-length (7 phases),
 # so the one open-ended cost knob is panel SIZE — cap it so a request that
-# happens to match many keyword triggers can't silently balloon into an
-# expensive all-11-experts panel.
-MAX_CHALLENGERS = 5
+# happens to match many keyword triggers can't silently balloon past this
+# repo's currently-registered roster. Set to the full size of
+# CHALLENGER_ROLE_BLURBS (7): this is a guard against future roster growth,
+# not a truncation of today's roster — a request that legitimately touches
+# every registered concern (as a cross-cutting AI-assistant feature does)
+# should be able to activate all of them.
+MAX_CHALLENGERS = 7
 
 
 def select_challengers(request: str, verified_fact_text: str = "") -> List[str]:

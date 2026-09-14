@@ -1,0 +1,53 @@
+{
+  "module": "agentCostLog",
+  "description": "Tracks Gemini token usage and computed USD cost per LoanAgents SmartLoans AI agent invocation, for an admin cost-monitoring dashboard.",
+  "fields": [
+    { "name": "agentName", "type": "string", "required": true, "max_length": 100,
+      "description": "ADK agent name, e.g. 'risk_agent', 'negotiation_agent'." },
+    { "name": "endpointName", "type": "string", "required": true, "max_length": 100,
+      "description": "LoanAgents FastAPI route that triggered the run, e.g. '/negotiate'." },
+    { "name": "model", "type": "string", "required": true, "max_length": 100,
+      "description": "Model id used for this call, e.g. 'gemini-2.5-flash'." },
+    { "name": "inputTokens", "type": "integer", "required": true,
+      "description": "Prompt token count for this agent's LLM call." },
+    { "name": "outputTokens", "type": "integer", "required": true,
+      "description": "Candidate/output token count for this agent's LLM call." },
+    { "name": "thoughtsTokens", "type": "integer", "required": false,
+      "description": "Thinking token count, when the model reports one." },
+    { "name": "totalTokens", "type": "integer", "required": true,
+      "description": "Sum of input + output + thoughts tokens." },
+    { "name": "costUsd", "type": "decimal", "required": true,
+      "description": "Computed USD cost for this call, based on the model's per-token pricing." },
+    { "name": "conversationRef", "type": "string", "required": false, "max_length": 100,
+      "description": "Free-form correlation id (e.g. conversationId or session id) for tracing a call back to its request." }
+  ],
+  "relationships": ["companies"],
+  "roles_allowed": ["Admin"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/agent-cost-dashboard",
+    "allowedRoles": ["Admin"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "AgentCostDashboardSummaryStep",
+        "description": "Admin dashboard: KPI cards (total cost, total tokens, total requests), a cost-by-agent bar chart, and a daily-cost time series line chart, sourced from the dashboard-summary endpoint." },
+      { "step": 2, "name": "AgentCostLogListStep",
+        "description": "Raw log list of individual agent calls with filters by agentName and date range, for drill-down auditing beneath the summary." }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/agentCostLogs/dashboard-summary", "method": "POST",
+        "description": "Takes { companyId, startDate?, endDate? }. Aggregates this table GROUP BY agentName (cost, tokens, request count) and GROUP BY day (daily cost time series) for the period. Returns { totalCostUsd, totalTokens, totalRequests, byAgent: [{agentName, costUsd, tokens, requests}], timeSeries: [{date, costUsd}] }. Read-only." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.agentCostLogs"],
+    "storedProcedures": ["dbo.sp_agentCostLogs", "dbo.sp_agentCostLogs_all", "dbo.sp_agentCostLogs_one", "dbo.sp_agentCostLogs_dashboardSummary"],
+    "hints": [
+      "This table is written server-side only, by the LoanAgents SmartLoans FastAPI service (a separate microservice) immediately after each ADK agent run completes — never written directly by the frontend.",
+      "sp_agentCostLogs_dashboardSummary aggregates GROUP BY agentName for the cost-by-agent breakdown and GROUP BY CAST(created_At AS DATE) for the time series."
+    ]
+  }
+}

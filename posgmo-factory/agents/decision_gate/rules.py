@@ -21,6 +21,8 @@ from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
 
+from decision_registry import get_decisions_for_module
+
 
 # ---------------------------------------------------------------------------
 # Constants — keyword sets used by all classifiers
@@ -364,6 +366,7 @@ def compute_gate_result(state: dict) -> dict:
             "mandatory_constraints": {"database": [], "backend": [], "frontend": []},
             "soft_delete_parents": [],
             "index_recommendations": [],
+            "applicable_decisions": [],
             "warnings": [],
             "reason": "specification key missing from session state.",
             "fix": "Ensure Architect Agent ran successfully before Decision Gate.",
@@ -372,6 +375,7 @@ def compute_gate_result(state: dict) -> dict:
 
     hard_block = _hard_block_check(spec, schema)
     if hard_block:
+        hard_block.setdefault("applicable_decisions", [])
         return hard_block
 
     tier, tier_reason = _classify_tier(spec, schema)
@@ -381,6 +385,18 @@ def compute_gate_result(state: dict) -> dict:
     soft_delete_parents = _detect_soft_delete_parents(spec, schema)
     index_recommendations = _build_index_recommendations(tier, columns)
 
+    # Prior architecture decisions for this module (decision_registry.py,
+    # populated by run_agentic_factory.py's debate-convergence gate). Pure
+    # lookup, no semantic judgment: this
+    # gate does not decide whether the spec CONTRADICTS a prior decision —
+    # that requires reading free text, which a zero-LLM gate can't do
+    # reliably. It only makes the decision visible to every downstream agent
+    # via gate_result, same as mandatory_constraints already is; the
+    # Architect (agents/architect/prompt.py) is the one instructed to
+    # actually reconcile against it, upstream of this gate.
+    module = spec.get("module", "")
+    applicable_decisions = get_decisions_for_module(module) if module else []
+
     warnings = []
     if schema.get("table_already_exists"):
         warnings.append("Table already exists — Database Agent will use CREATE OR ALTER. No action needed.")
@@ -389,6 +405,11 @@ def compute_gate_result(state: dict) -> dict:
     prd_hints = spec.get("prd_hints", {})
     if prd_hints.get("frontend_ui_pattern") == "Wizard Flow Layout":
         warnings.append("Wizard Flow Layout detected — Camera capture (Capacitor) must be wired manually after generation.")
+    for d in applicable_decisions:
+        warnings.append(
+            f"Prior decision {d['id']} recorded for module '{module}': {d['selectedClaim']} "
+            f"— honor this unless it conflicts with live schema_analysis, in which case the live schema wins."
+        )
 
     return {
         "status": "APPROVED",
@@ -399,6 +420,7 @@ def compute_gate_result(state: dict) -> dict:
         "mandatory_constraints": mandatory_constraints,
         "soft_delete_parents": soft_delete_parents,
         "index_recommendations": index_recommendations,
+        "applicable_decisions": applicable_decisions,
         "warnings": warnings,
         "summary": (
             f"Module classified as {tier} with {backend_pattern}. "

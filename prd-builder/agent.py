@@ -2,15 +2,15 @@
 PRD Builder — standalone entry point for `adk web`
 
 Usage:
-    cd /Users/apple12/Agent_POSGMO/ArchitecturePOSGMO/prd-builder
+    cd /Users/apple12/Agent_POSGMO/prd-builder
     adk web
 """
 
 import sys
-sys.path.insert(0, "/Users/apple12/Agent_POSGMO/ArchitecturePOSGMO/posgmo-factory")
+sys.path.insert(0, "/Users/apple12/Agent_POSGMO/posgmo-factory")
 
 from dotenv import load_dotenv
-load_dotenv("/Users/apple12/Agent_POSGMO/ArchitecturePOSGMO/posgmo-factory/.env")
+load_dotenv("/Users/apple12/Agent_POSGMO/posgmo-factory/.env")
 
 from agents.prd_builder_agent import prd_builder_agent
 

@@ -31,29 +31,58 @@ _KNOWLEDGE_ROOT = _FACTORY_ROOT.parent                        # repo root
 
 _STOPWORDS = {"create", "a", "an", "the", "new", "module", "for", "add", "build", "make", "implement"}
 
+# Real POS GMO domain vocabulary (CLAUDE.md's Business Domains table +
+# doc-adjacent terms). A request naming several of these — e.g. "Clients,
+# POS sales/tickets, Incomes, Expenses, Accounting, Payments..." — must be
+# evidence-checked against EACH domain it touches, not just the last word
+# in the sentence (that heuristic was fine for a single-module request but
+# silently drops everything except the last noun for a multi-domain one).
+_KNOWN_DOMAIN_TERMS = [
+    "client", "ticket", "income", "expense", "accounting", "payment",
+    "product", "reward", "notification", "cashregister", "chat",
+]
 
-def _extract_keyword(request: str) -> str:
-    """Small heuristic: last non-stopword token of a request like
-    'create a new module for rewards' -> 'rewards'."""
-    words = re.findall(r"[a-zA-Z]+", request.lower())
+
+def _extract_keywords(request: str) -> List[str]:
+    """Returns every known domain term the request mentions, in vocabulary
+    order. Falls back to the old single-last-word heuristic when nothing
+    from the known vocabulary matches, so an arbitrary/unlisted domain
+    (e.g. a genuinely new one) still gets checked instead of silently
+    producing zero evidence."""
+    text = request.lower()
+    matches = [term for term in _KNOWN_DOMAIN_TERMS if term in text]
+    if matches:
+        return matches
+    words = re.findall(r"[a-zA-Z]+", text)
     candidates = [w for w in words if w not in _STOPWORDS]
-    return candidates[-1] if candidates else (words[-1] if words else "")
+    fallback = candidates[-1] if candidates else (words[-1] if words else "")
+    return [fallback] if fallback else []
 
 
 def gather_context(request: str) -> Tuple[List[ContextItem], List[ContextItem]]:
-    """Returns (verified_facts, assumptions). Every verified_fact traces to
-    something actually read from disk in THIS call — nothing is asserted
-    without a `source` citation."""
-    keyword = _extract_keyword(request)
-    verified: List[ContextItem] = []
-    assumptions: List[ContextItem] = []
-
-    if not keyword:
-        assumptions.append(ContextItem(
+    """Returns (verified_facts, assumptions) merged across every domain
+    keyword the request touches. Every verified_fact traces to something
+    actually read from disk in THIS call — nothing is asserted without a
+    `source` citation."""
+    keywords = _extract_keywords(request)
+    if not keywords:
+        return [], [ContextItem(
             kind=ContextItemKind.assumption,
             claim="Could not extract a domain keyword from the request; nothing was verified.",
-        ))
-        return verified, assumptions
+        )]
+
+    verified: List[ContextItem] = []
+    assumptions: List[ContextItem] = []
+    for keyword in keywords:
+        v, a = _gather_for_keyword(keyword)
+        verified.extend(v)
+        assumptions.extend(a)
+    return verified, assumptions
+
+
+def _gather_for_keyword(keyword: str) -> Tuple[List[ContextItem], List[ContextItem]]:
+    verified: List[ContextItem] = []
+    assumptions: List[ContextItem] = []
 
     # 1) Draft PRDs already prepared for this keyword. Match case-insensitively
     # and against the singular stem too (filenames use camelCase singulars,

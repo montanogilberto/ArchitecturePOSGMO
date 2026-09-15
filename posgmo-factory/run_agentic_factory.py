@@ -42,6 +42,7 @@ from debate_schema import read_blackboard, read_status
 from debate_v2.run import run_debate
 from debate_v2.solution_package import render_solution_package
 from debate_v2.transcript import render_transcript
+from decision_registry import record_decision
 from prd_schema import PRDInput
 
 load_dotenv()
@@ -82,19 +83,29 @@ async def run_agentic_gate(request: str, prd_path: Optional[Path], execute: bool
     print(f"Decision: {decision.selected_claim}")
     print(f"Confidence: {decision.confidence:.2f}")
 
+    module = None
+    prd: Optional[PRDInput] = None
+    if prd_path is not None:
+        try:
+            prd = validate_prd(prd_path)
+        except (ValidationError, FileNotFoundError, json.JSONDecodeError) as exc:
+            print(f"\n=== GATE: PRD INVALID ===\n{exc}")
+            return 1
+        module = prd.module
+        print(f"\nPRD '{prd_path}' is valid against the existing PRDInput schema: "
+              f"module={prd.module!r}, {len(prd.fields)} field(s).")
+
+    # Persist the decision now, regardless of what happens next — a
+    # converged decision is worth keeping even on a dry run with no --prd
+    # yet, so "why did you decide X" stays answerable later.
+    record = record_decision(request=request, decision=decision, module=module)
+    print(f"\nRecorded as {record['id']} in the Decision Registry "
+          f"(decision_registry/{record['id']}.json)")
+
     if prd_path is None:
         print("\nNo --prd given — nothing to validate or execute. Pass a PRD file that "
               "implements this decision to continue.")
         return 0
-
-    try:
-        prd = validate_prd(prd_path)
-    except (ValidationError, FileNotFoundError, json.JSONDecodeError) as exc:
-        print(f"\n=== GATE: PRD INVALID ===\n{exc}")
-        return 1
-
-    print(f"\nPRD '{prd_path}' is valid against the existing PRDInput schema: "
-          f"module={prd.module!r}, {len(prd.fields)} field(s).")
 
     if not execute:
         print("\n--execute not passed: dry run only. The real factory "

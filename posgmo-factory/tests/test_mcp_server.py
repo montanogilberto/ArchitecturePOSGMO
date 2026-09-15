@@ -7,6 +7,8 @@ from pathlib import Path
 # Make the factory root importable when running from the tests/ directory
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import decision_registry
+from debate_schema import Decision
 from mcp_server.server import (
     get_frontend_patterns,
     get_api_contracts,
@@ -20,7 +22,17 @@ from mcp_server.server import (
     get_table_columns,
     get_relationships_for_table,
     get_generation_rules,
+    get_decisions,
+    get_decisions_for_module,
+    search_decisions,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolated_decision_registry(tmp_path, monkeypatch):
+    """These decision-tool tests write real ADRs — isolate from the real
+    decision_registry/ the same way tests/test_run_agentic_factory.py does."""
+    monkeypatch.setattr(decision_registry, "_REGISTRY_DIR", tmp_path / "decision_registry")
 
 
 def test_get_frontend_patterns_has_required_keys():
@@ -112,3 +124,39 @@ def test_get_generation_rules_has_all_sections():
     assert "frontend" in rules
     assert "reviewer_thresholds" in rules
     assert rules["reviewer_thresholds"]["min_score_to_pass"] == 90
+
+
+def _make_decision(claim="Reward events must reference incomeId", confidence=0.88):
+    return Decision(
+        round=2, selected_claim=claim, rationale="Prevents orphaned reward events",
+        evidence=["repo:modules/rewards.py"], confidence=confidence, decided_by="debate",
+    )
+
+
+def test_get_decisions_empty_registry_returns_empty_list():
+    assert get_decisions() == []
+
+
+def test_get_decisions_returns_recorded_decision():
+    decision_registry.record_decision(request="add rewards redemption", decision=_make_decision(), module="posRewardTransaction")
+    results = get_decisions()
+    assert len(results) == 1
+    assert results[0]["id"] == "ADR-001"
+    assert results[0]["module"] == "posRewardTransaction"
+
+
+def test_get_decisions_for_module_filters_case_insensitively():
+    decision_registry.record_decision(request="add rewards redemption", decision=_make_decision(), module="posRewardTransaction")
+    decision_registry.record_decision(request="add supplier payments", decision=_make_decision("Use DECIMAL(10,2) for money"), module="supplier")
+
+    matches = get_decisions_for_module("POSREWARDTRANSACTION")
+    assert len(matches) == 1
+    assert matches[0]["module"] == "posRewardTransaction"
+
+    assert get_decisions_for_module("nonexistentModule") == []
+
+
+def test_search_decisions_matches_keyword_in_claim():
+    decision_registry.record_decision(request="add rewards redemption", decision=_make_decision(), module="posRewardTransaction")
+    assert len(search_decisions("reward")) == 1
+    assert search_decisions("nonexistent-keyword-xyz") == []

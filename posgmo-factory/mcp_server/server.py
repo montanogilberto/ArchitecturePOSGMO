@@ -12,12 +12,24 @@ Run:
 import csv
 import json
 import os
+import sys
 from pathlib import Path
 
 from fastmcp import FastMCP
 
 # Root of the ArquitecturePOS repository (one level up from posgmo-factory/)
 KNOWLEDGE_ROOT = Path(__file__).parent.parent.parent
+
+# This file runs as a standalone script (spawned via StdioServerParameters in
+# agents/mcp_tools.py, not as `python -m mcp_server.server`), so posgmo-factory/
+# — where decision_registry.py lives — is NOT on sys.path by default. Add it
+# before importing decision_registry.
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from decision_registry import (  # noqa: E402
+    list_decisions,
+    get_decisions_for_module as _get_decisions_for_module,
+    search_decisions as _search_decisions,
+)
 
 mcp = FastMCP("posgmo-knowledge")
 
@@ -784,6 +796,60 @@ def get_domain_rules(module_name: str) -> dict:
     result["matched_module"] = canonical
     result["input_module"]   = module_name
     return result
+
+
+# ---------------------------------------------------------------------------
+# Decision Registry tools
+# ---------------------------------------------------------------------------
+# Wraps decision_registry.py (posgmo-factory root) — the durable record of
+# every debate_v2 Decision a run has converged on (see run_agentic_factory.py's
+# GATE: CONVERGED branch, which calls record_decision()). Exposed here so
+# generation agents can check "has this already been decided" instead of a
+# debate's conclusion only ever living in a person's memory of that run.
+
+@mcp.tool()
+def get_decisions() -> list[dict]:
+    """
+    Returns every approved architecture decision ever recorded, oldest first.
+
+    Each entry: {id, createdAt, request, module, selectedClaim, rationale,
+    evidence, confidence, decidedBy, round}. `id` is a stable "ADR-NNN" you
+    can cite back to the user (e.g. "per ADR-007, ...").
+    """
+    return list_decisions()
+
+
+@mcp.tool()
+def get_decisions_for_module(module_name: str) -> list[dict]:
+    """
+    Returns every recorded decision whose `module` matches module_name
+    (case-insensitive), oldest first.
+
+    Call this BEFORE designing a SpecificationJSON for a module that has
+    been debated before — an existing decision is a binding constraint
+    (e.g. "reward events must reference incomeId"), not a suggestion to
+    reconsider. If it conflicts with schema_analysis (the LIVE database),
+    the live schema wins — the decision may be stale — but note the
+    conflict in your reasoning rather than silently picking one.
+
+    Args:
+        module_name: The PRD's module name (e.g. "posRewardTransaction").
+    """
+    return _get_decisions_for_module(module_name)
+
+
+@mcp.tool()
+def search_decisions(keyword: str) -> list[dict]:
+    """
+    Lexical (substring, case-insensitive) search over every recorded
+    decision's request/selectedClaim/rationale. Use this when you don't
+    have an exact module name but want to check whether something like
+    "rewards" or "wallet balance" has already been decided.
+
+    Args:
+        keyword: A plain keyword or short phrase, e.g. "reward" or "wallet".
+    """
+    return _search_decisions(keyword)
 
 
 # ---------------------------------------------------------------------------

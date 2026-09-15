@@ -9,8 +9,17 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+import decision_registry
 from debate_schema import Decision, DebateStatus, seed_blackboard_state, write_status
 from run_agentic_factory import run_agentic_gate
+
+
+@pytest.fixture(autouse=True)
+def _isolated_decision_registry(tmp_path, monkeypatch):
+    """Every converged test below calls the real record_decision() — point
+    it at a throwaway directory so tests never write fake ADRs into the
+    real decision_registry/."""
+    monkeypatch.setattr(decision_registry, "_REGISTRY_DIR", tmp_path / "decision_registry")
 
 
 def _escalated_state(request="make it better"):

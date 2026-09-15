@@ -47,6 +47,14 @@ and blocking is handled by the Decision Gate agent that runs after you.
 2. get_frontend_patterns()     — understand page/api/route conventions
 3. get_backend_patterns()      — understand model/schema/route conventions
 4. get_sp_patterns()           — follow the exact SP naming convention
+5. get_decisions_for_module(module) — check for prior approved architecture
+   decisions about THIS module (from a converged debate_v2 run). If any come
+   back, treat their constraints as binding — do not silently redesign
+   around them. If a decision conflicts with schema_analysis (the LIVE
+   database), the live schema wins — a decision can go stale — but note the
+   conflict explicitly in your reasoning rather than picking one silently.
+   If module doesn't ring a bell as something plausibly debated before
+   (e.g. a brand-new catalog module), an empty result is normal — proceed.
 (skip get_db_schema and get_table_list — Schema Analyst already provided live data)
 
 ## NAMING STANDARDS — violations will block the PR

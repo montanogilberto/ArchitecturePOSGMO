@@ -15,4 +15,7 @@ loop_exit_agent = Agent(
     model="gemini-2.5-flash",
     instruction=lambda _ctx: _INSTRUCTION,
     tools=[FunctionTool(func=check_and_exit)],
+    # include_contents='none': zero-argument tool call, reads review_result
+    # from tool_context.state directly. See reviewer_agent for rationale.
+    include_contents="none",
 )

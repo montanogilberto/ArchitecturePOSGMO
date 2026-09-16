@@ -12,6 +12,7 @@ Pipeline stages:
   4.  architect           — design SpecificationJSON from enriched_prd + schema
   5.  decision_gate       — deterministic tier + constraint classification
   6.  generation_stage    — database + backend + design IN PARALLEL
+  6b. database_executor   — deterministic, zero-LLM: executes database_agent's SQL
   7.  fixer               — post-generation deterministic fixers (SQL, Python, TS)
   8.  frontend            — generate TSX / CSS / app patches
   9.  review_fix_loop     — reviewer → exit_check → review_fixer (up to 3×)
@@ -26,6 +27,7 @@ from agents.schema_analyst      import schema_analyst_agent
 from agents.architect           import architect_agent
 from agents.decision_gate       import decision_gate_agent
 from agents.database            import database_agent
+from agents.database_executor   import database_executor_agent
 from agents.backend             import backend_agent
 from agents.design_consistency  import design_consistency_agent
 from agents.fixer               import fixer_agent
@@ -64,16 +66,17 @@ root_agent = SequentialAgent(
     name="posgmo_factory",
     description="POS GMO Software Factory",
     sub_agents=[
-        host_architect_agent,  # 0
-        prd_parser_agent,      # 1
-        prd_enricher_agent,    # 2
-        schema_analyst_agent,  # 3
-        architect_agent,       # 4
-        decision_gate_agent,   # 5
-        generation_stage,      # 6
-        fixer_agent,           # 7
-        frontend_agent,        # 8
-        review_fix_loop,       # 9  ← iterative loop
-        pr_agent,              # 10
+        host_architect_agent,    # 0
+        prd_parser_agent,        # 1
+        prd_enricher_agent,      # 2
+        schema_analyst_agent,    # 3
+        architect_agent,         # 4
+        decision_gate_agent,     # 5
+        generation_stage,        # 6
+        database_executor_agent, # 6b — must run after generation_stage: reads database_agent's output
+        fixer_agent,             # 7
+        frontend_agent,          # 8
+        review_fix_loop,         # 9  ← iterative loop
+        pr_agent,                # 10
     ],
 )

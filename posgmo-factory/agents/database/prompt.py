@@ -392,15 +392,17 @@ BUSINESS_LOGIC SP rules:
 - All history SPs return array result with `FOR JSON PATH` (no root), fallback `'[]'`.
 - For BUSINESS_LOGIC output format, output `"sp_data"` and `"sp_persist"` keys (not `sp_upsert`).
 
-## Execution step (MANDATORY — do this after generating SQL)
-After generating all four SQL blocks, call execute_sql_on_server with:
-- create_table = the CREATE TABLE + index SQL
-- sp_upsert    = the sp_{{plural}} SQL
-- sp_all       = the sp_{{plural}}_all SQL
-- sp_one       = the sp_{{plural}}_one SQL
-
-The tool connects to the SQL Server and executes each statement.
-If any statement returns an error, include it in the output's "execution" field.
+## Execution — NOT your job
+Do NOT call execute_sql_on_server or any other execution tool. You have no
+execution tool available. A separate, deterministic step reads your output
+from session state and runs it against the SQL Server after you finish —
+your only job is to produce the complete, correct SQL as your response text.
+(This is deliberate: an earlier design had you pass this same SQL as function-
+call arguments, which required correctly JSON-escaping large multi-line text
+full of quotes and GO statements inside a tool call — a much harder
+generation task than writing it as plain text, and the single most common
+cause of this agent's turns failing outright. Writing it once, as text, is
+both simpler for you and the only thing this step needs from you.)
 
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences.
@@ -415,31 +417,30 @@ For CRUD_ONLY / CRUD_AND_CONNECTOR:
   "create_table": "<COMPLETE CREATE TABLE SQL — all columns, all constraints>",
   "sp_upsert":    "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}} SQL — all actions, full body>",
   "sp_all":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_all SQL — full body>",
-  "sp_one":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_one SQL — full body>",
-  "execution":    <result dict from execute_sql_on_server>
+  "sp_one":       "<COMPLETE CREATE OR ALTER PROCEDURE sp_{{plural}}_one SQL — full body>"
 }
 
 For ACTION_ROUTER:
 {
   "create_table":    "<COMPLETE IF NOT EXISTS CREATE TABLE SQL for each table>",
-  "sp_action_router": "<COMPLETE CREATE PROCEDURE sp_{{module}} SQL — all IF @action blocks, full body>",
-  "execution":       <result dict from execute_sql_on_server>
+  "sp_action_router": "<COMPLETE CREATE PROCEDURE sp_{{module}} SQL — all IF @action blocks, full body>"
 }
 
 For BUSINESS_LOGIC:
 {
   "create_table": "<COMPLETE CREATE TABLE SQL for all domain tables>",
   "sp_data":      "<COMPLETE sp_{{module}}_data — aggregation SP>",
-  "sp_persist":   "<COMPLETE sp_{{module}}s — upsert/get/history SP>",
-  "execution":    <result dict from execute_sql_on_server>
+  "sp_persist":   "<COMPLETE sp_{{module}}s — upsert/get/history SP>"
 }
 
 For WEBHOOK_HANDLER (simple log table):
 {
   "create_table": "<CREATE TABLE IF NOT EXISTS for message log table>",
-  "sp_upsert":    "<CREATE PROCEDURE sp_{{module}}_messages — insert log row + return JSON>",
-  "execution":    <result dict from execute_sql_on_server>
+  "sp_upsert":    "<CREATE PROCEDURE sp_{{module}}_messages — insert log row + return JSON>"
 }
 
 For BLOB_UPLOAD: no SQL needed — output { "sql": null, "reason": "blob upload only" }
+
+Do not include an "execution" field yourself — the deterministic step adds it
+after you finish, from whichever of the fields above you produced.
 """

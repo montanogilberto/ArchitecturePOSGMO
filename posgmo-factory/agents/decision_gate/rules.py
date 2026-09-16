@@ -21,7 +21,7 @@ from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
 
-from decision_registry import get_decisions_for_module
+from decision_registry import get_decisions_for_module, get_decision_for_topic, get_effective_constraints
 
 
 # ---------------------------------------------------------------------------
@@ -69,6 +69,79 @@ _CONNECTOR_TRIGGER_WORDS = {
 }
 
 _STANDARD_CRUD_PATHS = {"/{plural}", "/all_{plural}", "/one_{plural}"}
+
+# ---------------------------------------------------------------------------
+# Tenant model — replaces a blanket "companyId is always required" assumption.
+#
+# Experiment 1/2/3 (docs/experiment1-leadCapture-evaluation.md) traced a real
+# security defect back to this exact gate: _build_mandatory_constraints used
+# to assert "companyId INT NOT NULL must be present" unconditionally, with no
+# awareness of the PRD's own stated exception ("this lead has no existing
+# companyId relationship"). Database, Backend, and Frontend agents all
+# inherited that assumption independently, in three different runs, in three
+# different concrete implementations, all wrong. The fix isn't "add a special
+# case for leadCapture" -- it's making tenancy an explicit, checkable
+# classification with an UNKNOWN state that BLOCKS construction, instead of a
+# hardcoded rule that silently assumes the common case.
+# ---------------------------------------------------------------------------
+
+_TENANT_INDEPENDENT_SIGNALS = (
+    "no existing companyid relationship",
+    "not a pos gmo tenant",
+    "no tenant relationship",
+    "has no companyid",
+)
+
+
+def _classify_tenant_model(prd_raw: dict) -> tuple[str, str]:
+    """
+    Returns (tenant_model, reason). tenant_model is one of:
+      TENANT_SCOPED       -- default. This module's rows belong to an existing
+                             company, like the great majority of POS GMO modules.
+      TENANT_INDEPENDENT  -- PRD explicitly states no existing companyId
+                             relationship, and nothing else about the module
+                             creates ambiguity about how tenant identity would
+                             even be established.
+      UNKNOWN             -- PRD gives a tenant-independence signal AND also
+                             exposes an unauthenticated public write path --
+                             i.e. something other than "assume the normal
+                             tenant model" is clearly going on, but which
+                             specific alternative (derive companyId server-side?
+                             reject public writes entirely? something else?)
+                             has not been decided by anyone. Construction must
+                             not guess here; see get_decision_for_topic.
+    """
+    if not prd_raw:
+        return "TENANT_SCOPED", "prd_raw not available in session state -- defaulting to standard tenant model."
+
+    text_blobs = [prd_raw.get("description", "") or ""]
+    for f in (prd_raw.get("fields") or []):
+        text_blobs.append(f.get("description", "") or "")
+    full_text = " ".join(text_blobs).lower()
+
+    if not any(sig in full_text for sig in _TENANT_INDEPENDENT_SIGNALS):
+        return "TENANT_SCOPED", "No tenancy-exception language found in the PRD -- default POS GMO assumption applies."
+
+    endpoints = ((prd_raw.get("backend") or {}).get("endpoints")) or []
+    has_public_write = any(
+        "public" in ((ep.get("path", "") + " " + ep.get("description", "")).lower())
+        and "unauthenticated" in (ep.get("description", "") or "").lower()
+        for ep in endpoints
+    )
+    if has_public_write:
+        return (
+            "UNKNOWN",
+            "PRD states this module has no existing companyId relationship AND exposes "
+            "an unauthenticated public write path -- how tenant identity should be "
+            "established for those writes is an architecture decision, not something "
+            "to assume. Record a tenant_model decision via decision_registry.record_decision "
+            "(topic='tenant_model') before construction can proceed.",
+        )
+    return (
+        "TENANT_INDEPENDENT",
+        "PRD states this module has no existing companyId relationship and has no "
+        "unauthenticated public write path that would need one supplied externally.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -210,17 +283,31 @@ def _classify_backend_pattern(spec: dict) -> tuple[str, list[dict]]:
     return "CRUD_ONLY", []
 
 
-def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endpoints: list) -> dict:
+def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endpoints: list,
+                                  tenant_model: str = "TENANT_SCOPED",
+                                  tenant_constraints: list | None = None) -> dict:
     """Build mandatory_constraints dict deterministically from tier."""
-    db_rules = [
-        "companyId INT NOT NULL must be present in CREATE TABLE.",
-        "sp_all MUST accept @pjsonfile and filter WHERE companyId = @companyId.",
-        "Every nullable column in SELECT must be wrapped with ISNULL(col, default).",
-        "SP mutations must be wrapped in BEGIN TRY / BEGIN TRANSACTION / COMMIT / END TRY BEGIN CATCH ROLLBACK END CATCH.",
-    ]
+    db_rules = []
     backend_rules = [
         "all_{plural}_sp(json_file: dict) must pass json_file to sp_all via @pjsonfile (never zero-arg).",
         "Never use round() on any value returned from the database.",
+    ]
+
+    if tenant_model in ("TENANT_SCOPED", "TENANT_DERIVED"):
+        db_rules.append("companyId INT NOT NULL must be present in CREATE TABLE.")
+        db_rules.append("sp_all MUST accept @pjsonfile and filter WHERE companyId = @companyId.")
+    elif tenant_model == "TENANT_INDEPENDENT":
+        db_rules.append(
+            "companyId is NOT applicable to this module (explicit tenant_model decision) -- "
+            "do not add a NOT NULL companyId column or a foreign key to companies."
+        )
+        for c in (tenant_constraints or []):
+            db_rules.append(c)
+            backend_rules.append(c)
+
+    db_rules += [
+        "Every nullable column in SELECT must be wrapped with ISNULL(col, default).",
+        "SP mutations must be wrapped in BEGIN TRY / BEGIN TRANSACTION / COMMIT / END TRY BEGIN CATCH ROLLBACK END CATCH.",
     ]
     frontend_rules = [
         "UTC-7 offset (toHermosillo) must be applied to every date field displayed.",
@@ -254,8 +341,29 @@ def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endp
     return {"database": db_rules, "backend": backend_rules, "frontend": frontend_rules}
 
 
-def _build_index_recommendations(tier: str, columns: list) -> list[dict]:
-    indexes = [{"column": "companyId", "reason": "every query filters by company"}]
+def _apply_generic_decisions(mandatory_constraints: dict, applicable_decisions: list[dict]) -> None:
+    """Generic decision -> constraint propagation, in place.
+
+    tenant_model has its own dedicated classifier/block logic above (a
+    proven, tested special case -- not touched here). Every OTHER recorded
+    decision, regardless of topic, flows through this one small loop: no
+    future decision topic (duplicate_policy, consent, retention, ...) should
+    ever require decision_gate to grow a new bespoke classifier function.
+    The decision registry is the extensibility point; this gate is just
+    plumbing.
+    """
+    for d in applicable_decisions:
+        if d.get("topic") == "tenant_model":
+            continue  # already applied explicitly, above -- see module docstring note
+        for layer, items in get_effective_constraints(d).items():
+            if layer in mandatory_constraints:
+                mandatory_constraints[layer].extend(items)
+
+
+def _build_index_recommendations(tier: str, columns: list, tenant_model: str = "TENANT_SCOPED") -> list[dict]:
+    indexes = []
+    if tenant_model in ("TENANT_SCOPED", "TENANT_DERIVED"):
+        indexes.append({"column": "companyId", "reason": "every query filters by company"})
     if tier in ("TIER_2_FINANCIAL", "TIER_3_TRANSACTIONAL"):
         indexes.append({"column": "created_At", "reason": "financial reports sort by date"})
     # Add indexes for FK columns
@@ -378,12 +486,52 @@ def compute_gate_result(state: dict) -> dict:
         hard_block.setdefault("applicable_decisions", [])
         return hard_block
 
+    module = spec.get("module", "")
+
+    # Tenant model: an explicit, recorded decision always wins over the
+    # heuristic (a human/debate call is authoritative; the heuristic is only
+    # a fallback for when no one has decided yet). See _classify_tenant_model
+    # for why this replaced a blanket "companyId always required" rule.
+    tenant_decision = get_decision_for_topic(module, "tenant_model") if module else None
+    if tenant_decision:
+        tenant_model = tenant_decision["selectedClaim"]
+        tenant_model_reason = f"Explicit decision {tenant_decision['id']}: {tenant_decision['rationale']}"
+        tenant_constraints = tenant_decision.get("constraints", [])
+    else:
+        tenant_model, tenant_model_reason = _classify_tenant_model(_safe_load(state.get("prd_raw", "")))
+        tenant_constraints = []
+
+    if tenant_model == "UNKNOWN":
+        return {
+            "status": "BLOCKED",
+            "tier": "BLOCKED",
+            "tier_reason": "Hard block — tenant model undecided.",
+            "backend_pattern": "CRUD_ONLY",
+            "connector_endpoints": [],
+            "mandatory_constraints": {"database": [], "backend": [], "frontend": []},
+            "soft_delete_parents": [],
+            "index_recommendations": [],
+            "applicable_decisions": [],
+            "tenant_model": "UNKNOWN",
+            "tenant_model_reason": tenant_model_reason,
+            "warnings": [],
+            "reason": tenant_model_reason,
+            "fix": (
+                f"Record an explicit tenant_model decision for module '{module}' via "
+                f"decision_registry.record_decision(topic='tenant_model', module='{module}', ...) "
+                "before construction can proceed. Do not remove this block by guessing."
+            ),
+            "summary": f"Pipeline blocked: tenant model for '{module}' is undecided.",
+        }
+
     tier, tier_reason = _classify_tier(spec, schema)
     backend_pattern, connector_endpoints = _classify_backend_pattern(spec)
     columns = spec.get("db", {}).get("columns", [])
-    mandatory_constraints = _build_mandatory_constraints(tier, backend_pattern, connector_endpoints)
+    mandatory_constraints = _build_mandatory_constraints(
+        tier, backend_pattern, connector_endpoints, tenant_model, tenant_constraints
+    )
     soft_delete_parents = _detect_soft_delete_parents(spec, schema)
-    index_recommendations = _build_index_recommendations(tier, columns)
+    index_recommendations = _build_index_recommendations(tier, columns, tenant_model)
 
     # Prior architecture decisions for this module (decision_registry.py,
     # populated by run_agentic_factory.py's debate-convergence gate). Pure
@@ -394,8 +542,8 @@ def compute_gate_result(state: dict) -> dict:
     # via gate_result, same as mandatory_constraints already is; the
     # Architect (agents/architect/prompt.py) is the one instructed to
     # actually reconcile against it, upstream of this gate.
-    module = spec.get("module", "")
     applicable_decisions = get_decisions_for_module(module) if module else []
+    _apply_generic_decisions(mandatory_constraints, applicable_decisions)
 
     warnings = []
     if schema.get("table_already_exists"):
@@ -421,6 +569,8 @@ def compute_gate_result(state: dict) -> dict:
         "soft_delete_parents": soft_delete_parents,
         "index_recommendations": index_recommendations,
         "applicable_decisions": applicable_decisions,
+        "tenant_model": tenant_model,
+        "tenant_model_reason": tenant_model_reason,
         "warnings": warnings,
         "summary": (
             f"Module classified as {tier} with {backend_pattern}. "

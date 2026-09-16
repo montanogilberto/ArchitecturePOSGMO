@@ -1,0 +1,52 @@
+{
+  "module": "leadCapture",
+  "description": "Factory AI GMO's own Commercial Factory needs a way to capture inbound leads (demo requests, pricing inquiries, and marketing-site contact-form submissions) so the internal sales team can qualify, assign, and convert them. This is the first Commercial Factory module built by the Software Construction Factory itself — a deliberate test of whether the Architect, Database, Backend, Frontend, and Reviewer agents can reason correctly about tenancy, security, auditability, and lifecycle when those things are stated as requirements and constraints rather than handed to them as a finished design.\n\nBUSINESS REQUIREMENTS\n- Unauthenticated visitors on the public marketing website can submit a lead: name, email, optional company/phone/job title/message, a lead source, an interest area, and explicit privacy-policy consent.\n- Authorized internal users (Admin, Manager) can list, search, filter, and inspect leads; view a lead's full detail; change its pipeline status; and assign or reassign it to an employee.\n- The pipeline status (new, contacted, qualified, disqualified, converted) must reflect where a lead stands in the sales process at a glance.\n- 'converted' records that this lead became a paying commercial relationship. It does not require creating or linking to a customer/organization/subscription entity — none of those exist in this system yet, and this module must not invent them.\n\nCONSTRAINTS — already decided, satisfy them rather than re-deciding them\n- companyId isolation, audit columns, and stored-procedure conventions follow this repository's existing standards exactly as for every other module — anonymous public traffic as the data source is not an exception.\n- created_At and updated_at are server-controlled. The public submission endpoint must not accept created_At, updated_at, status, assignedTo, or any other internal-only field from the request body.\n- Personal/contact information (full name, email, phone, free-text message) must never appear in application or error logs in plaintext.\n- leadSource must be a controlled but extensible catalog: new sources (e.g. linkedin, google_ads, webinar, api) must be addable later without changing application code.\n- List views must follow whatever pagination contract this repository's existing list endpoints already use — discover and reuse it, do not invent a new one.\n\nOPEN DESIGN QUESTIONS — the Architect, Database, and Backend agents must make and justify an explicit decision for each one; do not resolve these silently or leave them undone\n1. Duplicate submissions: what happens when the same normalized email address submits more than once — reopen the existing lead, record a new linked submission, reject the second one, or something else? Pick one and justify it.\n2. Public-endpoint abuse protection: what specific combination of rate limiting, request payload-size limits, and spam/bot mitigation should protect an unauthenticated, internet-facing create endpoint, and which request origins should be allowed?\n3. Status lifecycle: which status transitions are valid (can 'converted' move back to 'new'? can 'disqualified' move back to 'contacted'?), who may make them, and does the current-status column need a separate transition-history record, or is that unnecessary for v1?\n4. Assignment history: is knowing only the current assignedTo sufficient, or does the business need to know who assigned or reassigned a lead, when, and why?\n5. Retention and anonymization: this module stores personal contact information collected from the public internet with no prior relationship to the person. Does it need a data retention or deletion/anonymization capability, even if that capability is not fully built in v1?\n\nKeep the actual answers to points 1-5 out of this PRD by design — deciding and justifying them is exactly what this experiment is meant to test.",
+  "fields": [
+    { "name": "fullName", "type": "string", "required": true, "max_length": 150 },
+    { "name": "email", "type": "string", "required": true, "max_length": 150,
+      "description": "Should be normalized (case/whitespace) consistently wherever it is compared, since duplicate-lead detection (see Open Design Questions) depends on that normalization being applied the same way everywhere." },
+    { "name": "companyName", "type": "string", "required": false, "max_length": 200,
+      "description": "Prospect's own company name. Not a POS GMO tenant — this lead has no existing companyId relationship." },
+    { "name": "phone", "type": "string", "required": false, "max_length": 20 },
+    { "name": "jobTitle", "type": "string", "required": false, "max_length": 100 },
+    { "name": "message", "type": "text", "required": false,
+      "description": "Free-text inquiry, demo-request context, or pricing question submitted by the prospect. Personal/free-text content — must never be written to application or error logs in plaintext." },
+    { "name": "leadSource", "type": "string", "required": true, "max_length": 50,
+      "description": "Where the lead originated, e.g. website_contact_form, demo_request, pricing_page, blog, referral. Must be a controlled but extensible catalog — new sources must be addable without changing application code." },
+    { "name": "interestArea", "type": "string", "required": false, "max_length": 50,
+      "description": "Which POS GMO business domain the prospect is asking about, e.g. pos, marketplace, lending, iot, erp." },
+    { "name": "status", "type": "string", "required": true, "max_length": 20,
+      "description": "Lead pipeline stage. Allowed values: new, contacted, qualified, disqualified, converted. Defaults to 'new' on create. The public submission endpoint must never be able to set this to anything other than the initial state. Which transitions between values are valid, and whether the current value alone is sufficient or a transition history is needed, is an open design question." },
+    { "name": "assignedTo", "type": "integer", "required": false,
+      "fk_table": "employees", "fk_column": "employeeId",
+      "description": "Internal employee currently assigned to follow up on this lead. Whether the system also needs to preserve who assigned/reassigned it and when is an open design question." },
+    { "name": "privacyConsentAccepted", "type": "boolean", "required": true,
+      "description": "True only if the visitor explicitly accepted the privacy policy at submission time. The public endpoint must reject submissions where this is not true. created_At doubles as the consent timestamp." }
+  ],
+  "relationships": [
+    { "parentModule": "employees", "cardinality": "1:N",
+      "notes": "assignedTo references the employee who works follow-up on the lead." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/leads",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List + Detail Layout",
+    "components": [
+      { "step": 1, "name": "LeadListStep",
+        "description": "IonList of captured leads, newest first: status badge (new=blue, contacted=yellow, qualified=purple, converted=green, disqualified=gray), leadSource chip, search + IonSelect filters by status and interestArea, paginated per this repository's existing list-view convention." },
+      { "step": 2, "name": "LeadDetailPage",
+        "description": "Full lead detail at /leads/:id — contact info, message, IonSelect to change status (respecting whatever transition rules the Architect/Backend agents define), IonSelect to assign/reassign an employee (assignedTo), created/updated timestamps." }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/leadCapture/public", "method": "POST",
+        "description": "Public, unauthenticated endpoint used by the marketing website's contact/demo-request forms to create a new lead. Must reject requests where privacyConsentAccepted is not true. Must not accept status, assignedTo, created_At, updated_at, or any other internal-only field from the request body. Must validate and normalize input (e.g. email format). Must apply a request payload-size limit. Must restrict which request origins are allowed (CORS) rather than allowing any origin. Must apply some form of abuse mitigation (rate limiting and/or spam/bot filtering) appropriate for an unauthenticated, internet-facing create endpoint — the specific technique is an open design question, not prescribed here. Error responses must not leak internal implementation details (stack traces, database errors). Must not write the submitted name, email, phone, or message to logs in plaintext." },
+      { "path": "/leadCapture/{id}/assign", "method": "POST",
+        "description": "Assigns or reassigns a lead to an internal employee (assignedTo), restricted to Admin/Manager. Must record that the change happened and who made it, in addition to the new assignee value — the exact mechanism (dedicated history record vs. this repository's existing audit logging) is an open design question." }
+    ]
+  }
+}

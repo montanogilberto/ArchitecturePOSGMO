@@ -15,4 +15,11 @@ review_fixer_agent = Agent(
         FunctionTool(func=apply_review_fixes),
     ],
     output_key="review_fixer_result",
+    # include_contents='none': apply_review_fixes takes no arguments and reads
+    # review_result/frontend_artifacts/backend_artifacts directly from
+    # tool_context.state, so this agent needs no conversation history to do
+    # its job. Experiment 2 caught this agent skipping its mandatory tool
+    # call and writing a prose summary instead once the accumulated context
+    # got long -- see agent_contracts.py, which now checks for exactly that.
+    include_contents="none",
 )

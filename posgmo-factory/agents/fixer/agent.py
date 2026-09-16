@@ -15,4 +15,8 @@ fixer_agent = Agent(
     tools=[FunctionTool(func=run_all_fixers)],
     # output_key omitted — run_all_fixers() writes corrected artifacts directly to
     # tool_context.state. Adding output_key would overwrite artifacts with LLM text.
+    # include_contents='none': zero-argument tool call, reads database_artifacts/
+    # backend_artifacts/gate_result from tool_context.state directly. See
+    # reviewer_agent for rationale.
+    include_contents="none",
 )

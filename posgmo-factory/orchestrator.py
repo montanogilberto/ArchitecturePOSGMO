@@ -25,6 +25,7 @@ from google.genai.types import Content, Part
 
 from agents import root_agent
 from prd_schema import PRDInput
+from pipeline_diagnostics import classify_event, summarize as summarize_diagnostics
 
 load_dotenv()
 
@@ -130,20 +131,32 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
         parts=[Part(text=json.dumps(prd.model_dump()))],
     )
 
+    diagnostics: list[dict] = []
     async for event in _runner.run_async(
         user_id=user_id,
         session_id=session.id,
         new_message=message,
     ):
+        flagged = classify_event(event)
+        if flagged:
+            diagnostics.append(flagged)
+            print(
+                f"[diagnostics] {flagged['kind']} in {flagged['agent']}: "
+                f"{flagged.get('error_message') or flagged.get('error_code')}",
+                flush=True,
+            )
         if event.is_final_response() and event.content:
-            pass  
+            pass
 
     updated = await _session_service.get_session(
         app_name="posgmo_factory",
         user_id=user_id,
         session_id=session.id,
     )
-    return dict(updated.state)
+    result = dict(updated.state)
+    result["pipeline_diagnostics"] = diagnostics
+    result["pipeline_diagnostics_summary"] = summarize_diagnostics(diagnostics)
+    return result
 
 
 # ---------------------------------------------------------------------------

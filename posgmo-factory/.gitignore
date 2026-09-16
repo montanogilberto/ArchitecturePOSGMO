@@ -21,4 +21,5 @@ agents/.adk/
 
 # Pipeline output — may contain secrets from session state
 last_state.json
+experiment1_state.json
 pr_export/

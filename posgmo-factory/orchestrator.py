@@ -26,6 +26,12 @@ from google.genai.types import Content, Part
 from agents import root_agent
 from prd_schema import PRDInput
 from pipeline_diagnostics import classify_event, summarize as summarize_diagnostics
+from agent_contracts import ContractTracker, summarize as summarize_contracts
+from artifact_contracts import (
+    check_backend_endpoint_completeness,
+    check_backend_duplicate_error_propagation,
+    check_frontend_duplicate_error_handling,
+)
 
 load_dotenv()
 
@@ -85,6 +91,13 @@ def _build_session_state(prd: PRDInput) -> dict[str, str]:
         # Llaves genéricas adicionales por si otros agentes las buscan en el prompt
         "description": getattr(prd, "description", "") or "",
 
+        # Raw PRD, guaranteed present regardless of whether prd_enricher_agent's
+        # LLM call succeeds (it fails on a sizable fraction of runs — see
+        # docs/experiment1-leadCapture-evaluation.md). decision_gate_agent reads
+        # this directly for checks (e.g. tenant-model classification) that must
+        # not depend on a flaky upstream agent to even see the PRD's own text.
+        "prd_raw": json.dumps(prd.model_dump()),
+
         # GitHub repo slugs (owner/repo) derived from env vars — used by PR Agent
         "GITHUB_FRONTEND_REPO": frontend_repo,
         "GITHUB_BACKEND_REPO":  backend_repo,
@@ -132,11 +145,13 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
     )
 
     diagnostics: list[dict] = []
+    contracts = ContractTracker()
     async for event in _runner.run_async(
         user_id=user_id,
         session_id=session.id,
         new_message=message,
     ):
+        contracts.observe(event)
         flagged = classify_event(event)
         if flagged:
             diagnostics.append(flagged)
@@ -156,6 +171,59 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
     result = dict(updated.state)
     result["pipeline_diagnostics"] = diagnostics
     result["pipeline_diagnostics_summary"] = summarize_diagnostics(diagnostics)
+
+    contract_report = contracts.finalize(result)
+    result["contract_report"] = contract_report
+    result["contract_report_summary"] = summarize_contracts(contract_report)
+    for entry in contract_report:
+        if entry["verdict"] != "SATISFIED":
+            print(f"[contract] {entry['verdict']} — {entry.get('detail', entry['agent'])}", flush=True)
+
+    # Artifact contract: did backend_artifacts actually implement every custom
+    # endpoint the PRD asked for? Separate question from "did backend_agent
+    # execute" (contract_report above) -- see artifact_contracts.py for why
+    # this needed its own check (Experiment 5: backend_agent succeeded and
+    # produced valid code, but silently omitted both custom endpoints).
+    be_artifact = None
+    raw_be = result.get("backend_artifacts", "")
+    if isinstance(raw_be, str) and raw_be.strip():
+        body = raw_be.strip()
+        if body.startswith("```"):
+            body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("```")).strip()
+        try:
+            be_artifact = json.loads(body)
+        except json.JSONDecodeError:
+            be_artifact = None
+    elif isinstance(raw_be, dict):
+        be_artifact = raw_be
+
+    endpoint_completeness = check_backend_endpoint_completeness(prd.model_dump(), be_artifact)
+    result["backend_endpoint_completeness"] = endpoint_completeness
+    if endpoint_completeness["status"] != "SATISFIED":
+        print(f"[artifact-contract] {endpoint_completeness['status']} — {endpoint_completeness['detail']}", flush=True)
+
+    # Observable ADR-002 (duplicate_policy) behavior -- see artifact_contracts.py.
+    fe_artifact = None
+    raw_fe = result.get("frontend_artifacts", "")
+    if isinstance(raw_fe, str) and raw_fe.strip():
+        body = raw_fe.strip()
+        if body.startswith("```"):
+            body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("```")).strip()
+        try:
+            fe_artifact = json.loads(body)
+        except json.JSONDecodeError:
+            fe_artifact = None
+    elif isinstance(raw_fe, dict):
+        fe_artifact = raw_fe
+
+    backend_dup = check_backend_duplicate_error_propagation(be_artifact)
+    frontend_dup = check_frontend_duplicate_error_handling(fe_artifact)
+    result["backend_duplicate_error_propagation"] = backend_dup
+    result["frontend_duplicate_error_handling"] = frontend_dup
+    for label, check in (("backend", backend_dup), ("frontend", frontend_dup)):
+        if check["status"] not in ("SATISFIED",):
+            print(f"[artifact-contract] {label} duplicate-handling {check['status']} — {check['detail']}", flush=True)
+
     return result
 
 

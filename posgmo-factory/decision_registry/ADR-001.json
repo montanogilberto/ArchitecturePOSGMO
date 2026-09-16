@@ -1,0 +1,28 @@
+{
+  "id": "ADR-001",
+  "createdAt": "2026-09-16T17:36:36Z",
+  "request": "leadCapture tenant model -- who supplies companyId for an anonymous public lead submission?",
+  "module": "leadCapture",
+  "topic": "tenant_model",
+  "selectedClaim": "TENANT_INDEPENDENT",
+  "rationale": "PRD explicitly states this lead has no existing companyId relationship: leads are captured from anonymous public visitors before any company relationship exists. Traced experimentally across three independent generation runs (docs/experiment1-leadCapture-evaluation.md) -- Database, Backend, and Frontend agents all independently assumed companyId was required and caller-suppliable, in three different concrete (and each vulnerable) ways, because decision_gate asserted it as a blanket rule with no per-module override.",
+  "evidence": [
+    "tests/prd_leadCapture.json fields[].companyName.description: \"This lead has no existing companyId relationship.\"",
+    "Experiment 1: public_lead_submission_connector allow-listed companyId from an anonymous request body.",
+    "Experiment 2: public_leadCapture_sp required companyId in the body, 400 if missing.",
+    "Experiment 3: public_leadCapture defaulted to companyId=1 if the anonymous caller omitted it."
+  ],
+  "constraints": [
+    "Public submission endpoint must not read, accept, default, or validate against a client-supplied companyId.",
+    "companyId must not be a NOT NULL column tied to a public write path, and must not have a foreign key to companies.",
+    "If leads are later attributed to a company (e.g. by marketing-site API key or admin assignment), that attribution must happen server-side, outside the public request body, and is a separate decision from this one."
+  ],
+  "appliesTo": [
+    "database",
+    "backend",
+    "frontend"
+  ],
+  "confidence": 0.9,
+  "decidedBy": "escalation",
+  "round": 0
+}

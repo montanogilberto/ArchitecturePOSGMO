@@ -26,13 +26,18 @@ def test_debate_v2_never_imports_the_production_factory():
 
 
 def test_root_agent_pipeline_is_unchanged_by_debate_v2():
-    """agents/agent.py's assembled pipeline still has exactly the 11
-    original stages — debate_v2 added nothing to it."""
+    """agents/agent.py's assembled pipeline still has exactly these stages —
+    debate_v2 added nothing to it. (database_executor_agent was added
+    2026-09-16 as a legitimate, deliberate factory change — a deterministic,
+    zero-LLM step that executes database_agent's SQL, replacing a tool call
+    that used to be database_agent's own responsibility. See
+    docs/experiment1-leadCapture-evaluation.md for why. Nothing here comes
+    from debate_v2 — see the import-boundary test above for that guarantee.)"""
     from agents.agent import root_agent
     stage_names = [a.name for a in root_agent.sub_agents]
     assert stage_names == [
         "host_architect_agent", "prd_parser_agent", "prd_enricher_agent",
         "schema_analyst_agent", "architect_agent", "decision_gate_agent",
-        "generation_stage", "fixer_agent", "frontend_agent",
+        "generation_stage", "database_executor_agent", "fixer_agent", "frontend_agent",
         "review_fix_loop", "pr_agent",
     ]

@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Optional
 
 from google.adk.tools.tool_context import ToolContext
 
@@ -453,7 +453,23 @@ def run_review(tool_context: ToolContext) -> dict:
     be       = _load("backend_artifacts")
     fe       = _load("frontend_artifacts")
 
+    # Artifact-presence invariant (added after Experiment 4 caught this):
+    # a missing/empty artifact must never silently score 100 by having its
+    # checks skipped. "No artifact" is not "no issues" -- it means the
+    # corresponding construction agent never ran, and the review has nothing
+    # to say about a layer it never actually looked at. Score None (not 90+,
+    # not 0) so it can never accidentally satisfy `passed`, and say so
+    # explicitly in `issues` so it's visible without reading raw state.
+    presence = {"database": bool(db), "backend": bool(be), "frontend": bool(fe)}
+
     all_issues: list[Issue] = []
+    for artifact_name, present in presence.items():
+        if not present:
+            all_issues.append(Issue(
+                artifact_name, "(missing)", "auto_error",
+                f"{artifact_name}_artifacts is missing or empty -- the construction agent for this "
+                f"layer never produced output. This layer was NOT reviewed, not reviewed-and-passed.",
+            ))
 
     if db:
         all_issues.extend(_check_database(db, spec, gate))
@@ -462,14 +478,26 @@ def run_review(tool_context: ToolContext) -> dict:
     if fe:
         all_issues.extend(_check_frontend(fe, spec, gate))
 
-    db_score = _score(all_issues, "database")
-    be_score = _score(all_issues, "backend")
-    fe_score = _score(all_issues, "frontend")
-    passed   = db_score >= 90 and be_score >= 90 and fe_score >= 90
+    def _score_or_none(name: str) -> Optional[int]:
+        if not presence[name]:
+            return None
+        return _score(all_issues, name)
+
+    db_score = _score_or_none("database")
+    be_score = _score_or_none("backend")
+    fe_score = _score_or_none("frontend")
+    scores = {"database": db_score, "backend": be_score, "frontend": fe_score}
+    passed = all(s is not None and s >= 90 for s in scores.values())
+
+    missing = [name for name, present in presence.items() if not present]
+
+    def _fmt(s: Optional[int]) -> str:
+        return "N/A (missing)" if s is None else str(s)
 
     result = {
-        "scores":  {"database": db_score, "backend": be_score, "frontend": fe_score},
+        "scores":  scores,
         "passed":  passed,
+        "missing_artifacts": missing,
         "issues":  [
             {
                 "artifact": i.artifact,
@@ -481,8 +509,9 @@ def run_review(tool_context: ToolContext) -> dict:
         ],
         "summary": (
             f"{'PASSED' if passed else 'FAILED'} — "
-            f"database: {db_score}, backend: {be_score}, frontend: {fe_score}. "
+            f"database: {_fmt(db_score)}, backend: {_fmt(be_score)}, frontend: {_fmt(fe_score)}. "
             f"{len([i for i in all_issues if i.severity != 'warning'])} error(s) found."
+            + (f" MISSING ARTIFACTS: {', '.join(missing)}." if missing else "")
         ),
     }
 

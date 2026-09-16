@@ -1,0 +1,38 @@
+{
+  "id": "ADR-002",
+  "createdAt": "2026-09-16T18:52:16Z",
+  "request": "leadCapture duplicate policy -- what happens when the same normalized email submits more than once?",
+  "module": "leadCapture",
+  "topic": "duplicate_policy",
+  "selectedClaim": "REJECT_NORMALIZED_EMAIL",
+  "rationale": "A lead with the same normalized email must be rejected rather than silently accepted as a duplicate.",
+  "evidence": [
+    "tests/prd_leadCapture.json description: duplicate handling raised as an explicit open design question.",
+    "Experiments 1/2: Database Agent independently invented a real duplicate policy (unique index or GROUP BY/HAVING check) every time, unprompted.",
+    "Experiments 1/2: Backend never inspected the SP embedded error field -- leadCaptures_sp always returns HTTP 200 regardless.",
+    "Experiments 1/2: Frontend only checks res.ok -- a duplicate rejection (200 + embedded error) reads as success."
+  ],
+  "constraints": [],
+  "layer_constraints": {
+    "database": [
+      "Normalize email (lower/trim) before storage or comparison.",
+      "Enforce rejection via a persistent UNIQUE constraint, not only application-logic GROUP BY/HAVING."
+    ],
+    "backend": [
+      "The create/upsert wrapper must inspect the SP's embedded result.error field and return a non-2xx status for a duplicate rejection.",
+      "Never pass through the SP raw 200 response unconditionally when the embedded result indicates an error."
+    ],
+    "frontend": [
+      "Treat a response with an embedded error or duplicate indication as a failure even when HTTP status is 200.",
+      "res.ok alone must not be the only failure signal for this module's create call."
+    ]
+  },
+  "appliesTo": [
+    "database",
+    "backend",
+    "frontend"
+  ],
+  "confidence": 0.85,
+  "decidedBy": "escalation",
+  "round": 0
+}

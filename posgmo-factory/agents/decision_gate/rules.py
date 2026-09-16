@@ -90,6 +90,9 @@ _TENANT_INDEPENDENT_SIGNALS = (
     "not a pos gmo tenant",
     "no tenant relationship",
     "has no companyid",
+    "must never be given a companyid",
+    "must not be given a companyid",
+    "represents a pos gmo retail tenant",
 )
 
 

@@ -8,7 +8,10 @@ frontend_agent = Agent(
     name="frontend_agent",
     description=(
         "Generates the Ionic React API client, page component, CSS, and App.tsx patches "
-        "for a POS GMO module, applying all existing UI patterns (UTC-7, IVA=0, infinite scroll)."
+        "for this module, applying all existing UI patterns (UTC-7, IVA=0, infinite scroll). "
+        "This platform is multi-product (POS, SmartLoans, Rewards, Arcade, Factory GMO's own "
+        "commercial app, and others) -- the module being built is not necessarily POS-specific; "
+        "read gate_result/specification for what this run actually needs, not an assumed product line."
     ),
     model="gemini-2.5-flash",
     # Targeted context: frontend/prompt.py names exactly four required inputs

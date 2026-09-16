@@ -8,7 +8,11 @@ backend_agent = Agent(
     name="backend_agent",
     description=(
         "Generates modules/{plural}.py (SP business logic) and routes_/{module}.py "
-        "(FastAPI router) for a POS GMO module, following the existing pyodbc + JSONResponse pattern."
+        "(FastAPI router) for this module, following the existing pyodbc + JSONResponse "
+        "pattern. This platform is multi-product (POS, SmartLoans, Rewards, Arcade, "
+        "Factory GMO's own commercial app, and others) -- the module being built is not "
+        "necessarily POS-specific; read gate_result/specification for what this run "
+        "actually needs, not an assumed product line."
     ),
     model="gemini-2.5-flash",
     # Targeted context: backend/prompt.py declares "gate_result" and

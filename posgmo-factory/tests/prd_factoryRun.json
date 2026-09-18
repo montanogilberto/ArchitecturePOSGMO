@@ -1,0 +1,43 @@
+{
+  "module": "factoryRun",
+  "description": "Factory AI GMO's commercial platform needs a durable record of each invocation of the Software Construction Factory against a Project — a Factory Run. This is the fourth module on the authenticated dependency chain (Account -> Organization -> Projects -> Factory Runs -> Artifacts -> Usage -> Billing) and is the bridge between 'customer workspace' and 'generated software': later modules will attach Artifacts, validation scores, usage meters, and billing events to a Run, but this PRD only creates the Run ledger itself. Built by the same Software Construction Factory that customers will eventually invoke through this record.\n\nBUSINESS REQUIREMENTS\n- An authenticated member of an Organization can create a Factory Run under a Project within that Organization, representing a single factory pipeline execution (typically driven by a PRD JSON payload).\n- A Run has a human-readable title, the target module name from the PRD, a lifecycle status (queued, running, succeeded, failed, canceled), and optional summary fields for outcomes (review pass/fail, scores, error summary, git branch name) without storing full generated artifact bodies here.\n- Authorized members can list and inspect Runs for a Project, filter by status, and update status when orchestration completes or fails.\n- This module does NOT execute the factory pipeline, store SQL/Python/TS artifact blobs, open GitHub PRs, or bill the customer — those are separate systems/modules and must not be invented as side effects of this PRD.\n\nCONSTRAINTS — already decided, satisfy them rather than re-deciding them\n- A Factory Run is not a POS GMO retail-platform concept and must never be given a companyId — it belongs to Factory AI GMO's commercial-platform tenancy model, not POS GMO's retail tenancy model. It has no existing companyId relationship to POS GMO's own `companies` table.\n- A Run belongs to exactly one Project (and thus one Organization). Tables `projects` / `organizations` are validated designs but not confirmed live yet — model ownership with plain reference fields (`projectSlug`, `organizationSlug`), not foreign keys, using the same pattern as `project.organizationSlug` (tests/prd_projects.json).\n- The PRD payload submitted for the run may be large; store a bounded snapshot or reference — do not assume unlimited nvarchar(MAX) blob storage without the Architect justifying the shape.\n- created_At/updated_at remain server-controlled. Clients must not set internal lifecycle fields on create except what the Architect explicitly exposes.\n- Run records may contain customer PRD text — treat prdSnapshot and errorSummary as sensitive in logs (no plaintext in application/error logs).\n\nOPEN ARCHITECTURAL QUESTIONS — deliberately unresolved; do not silently pick an answer and hide the ambiguity\n1. Formal FK to `projects`: deferred until `projects` exists live; converting `projectSlug` into a real relationship is a follow-up, not something to force here.\n2. Membership/permission model: which Organization members may create or cancel Runs is not decided (same carried-forward role-model mismatch as organization/project PRDs).\n3. Idempotency: if a customer double-clicks 'Run factory', should the platform dedupe by (projectSlug, prdHash) or always insert a new Run row? Decide and justify.\n4. prdSnapshot shape: full JSON text vs. hash + object-storage pointer vs. truncated preview — not prescribed here.\n5. Integration hook: whether creating a Run row should enqueue work (message bus, worker) or only record intent for a separate orchestrator service to poll — not specified; do not invent a worker implementation in this module.\n\nThis PRD intentionally leaves schema shape, relationships, and endpoints beyond standard CRUD to the Architect/Database/Backend agents, consistent with the commercialization plan's instruction that the exact modules and schema should be discovered and designed by the Software Factory from the commercial requirements rather than assumed in advance.",
+  "fields": [
+    { "name": "title", "type": "string", "required": true, "max_length": 200,
+      "description": "Human-readable label for this run, e.g. 'Build suppliers module from PRD'." },
+    { "name": "projectSlug", "type": "string", "required": true, "max_length": 100,
+      "description": "Slug of the owning Project (tests/prd_projects.json). Plain field, not an FK — projects table is not live yet." },
+    { "name": "organizationSlug", "type": "string", "required": true, "max_length": 100,
+      "description": "Slug of the owning Organization (tests/prd_organization.json). Plain field, not an FK." },
+    { "name": "prdModuleName", "type": "string", "required": true, "max_length": 80,
+      "description": "Target module name from the submitted PRD (singular camelCase), e.g. 'supplier'." },
+    { "name": "prdSnapshot", "type": "text", "required": true,
+      "description": "Bounded copy of the PRD JSON (or a justified subset/hash strategy). Sensitive — must not appear in logs in plaintext." },
+    { "name": "status", "type": "string", "required": true, "max_length": 20,
+      "description": "Run lifecycle: queued, running, succeeded, failed, canceled. Defaults to queued on create. Valid transitions are an open design question." },
+    { "name": "triggeredByEmail", "type": "string", "required": true, "max_length": 200,
+      "description": "Email of the factoryAccount that started the run (see tests/prd_factoryAccount.json). Plain reference until factoryAccounts is live." },
+    { "name": "reviewPassed", "type": "boolean", "required": false,
+      "description": "Null until the run completes; then whether the factory reviewer passed (if applicable)." },
+    { "name": "reviewScoreSummary", "type": "string", "required": false, "max_length": 200,
+      "description": "Compact summary of reviewer scores, e.g. 'db:100,be:100,fe:90' — optional." },
+    { "name": "gitBranchName", "type": "string", "required": false, "max_length": 120,
+      "description": "Feature branch name if a PR was opened for this run — optional, no Git integration required in v1." },
+    { "name": "errorSummary", "type": "text", "required": false,
+      "description": "Short failure reason when status=failed. Must not leak stack traces to clients; must not log prdSnapshot alongside this in plaintext." }
+  ],
+  "relationships": [],
+  "roles_allowed": ["Admin"],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/factory-runs",
+    "allowedRoles": ["Admin"],
+    "uiPattern": "List + Detail Layout",
+    "components": [
+      { "step": 1, "name": "FactoryRunListStep",
+        "description": "IonList of runs for the current Organization/Project context: status badge (queued=medium, running=warning, succeeded=success, failed=danger, canceled=light), prdModuleName chip, title, triggeredByEmail, created_At newest-first. IonSearchbar + IonSelect filters by status and projectSlug; paginated per existing list convention; useIonViewWillEnter refetch." },
+      { "step": 2, "name": "FactoryRunDetailPage",
+        "description": "Detail at /factory-runs/:id — full run fields, read-only prdSnapshot with expand/collapse, reviewPassed/reviewScoreSummary, gitBranchName, errorSummary when failed. IonSelect to update status where transitions allow; IonButton actions disabled with IonSpinner while saving." }
+    ]
+  }
+}

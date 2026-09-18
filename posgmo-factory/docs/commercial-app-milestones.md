@@ -308,19 +308,38 @@ repository (`pr_agent` excluded from both runs, same hard-removal pattern as
 every prior milestone). Fixing reviewer's `tenant_model` blindness — scoped
 as its own decision, not bundled into this milestone's two narrow bug fixes.
 
+## Milestone 5 — factoryRun: first dependency-chain run after Projects
+
+**Input:** `tests/prd_factoryRun.json` — Factory Run ledger (Project → Run record;
+does not execute the pipeline or store artifact blobs).
+
+**Reviewer fix (Milestone 4 follow-up):** `agents/reviewer/rules.py` now honors
+`gate_result.tenant_model == TENANT_INDEPENDENT` — requires `companyId` absence
+in CREATE TABLE and forbids `sp_all` `WHERE companyId` filters (see
+`tests/test_reviewer_tenant_model.py`).
+
+**Real run (local export + full orchestrator, `pr_agent` not applied on failure):**
+
+| Layer | Result |
+|---|---|
+| Decision gate | ✅ `APPROVED`, `TENANT_INDEPENDENT`, `TIER_1_CATALOG` |
+| Backend | ✅ 100 |
+| Frontend | ❌ 80 — bare `CustomEvent` typing |
+| Database | ❌ 60 — live SQL execution error on SP batch; snake_case PK (`factory_run_id` vs `factoryRunId`); `sp_all` still declares `@companyId` despite tenant-independent gate constraints |
+
+**Artifacts:** `last_state.json`, `local_export/factoryRun/artifacts.json`,
+`run_factoryRun.log`.
+
+**Conclusion:** Commercial PRD is in the factory; decision layer classifies
+correctly. Construction layer still mixes POS `companyId` patterns into
+tenant-independent SQL and column naming — same reliability/theme as Milestones
+1–4, now on the Factory Run module.
+
 ## Next
 
-Two threads now open, independent of each other:
-
-1. **Reviewer's `tenant_model` blindness** (Milestone 4) — needs a real design
-   decision before a fix: skip `companyId` checks for `TENANT_INDEPENDENT`
-   modules, or flip them to assert absence? Affects `factoryAccount`,
-   `organization`, `projects`, and `pricingPlan` alike, not just the module
-   that surfaced it.
-2. **`Factory Runs`** is still the next candidate per the original dependency
-   chain (Account → Organization → Projects → Factory Runs → Artifacts →
-   Usage → Billing) — not yet drafted. Open questions carried forward,
-   unresolved: `organization`'s role-model mismatch with `AllowedRole`'s
-   POS-specific enum and slug generation/uniqueness policy (also open for
-   `project` and now `pricingPlan`'s own staff-role question); `project`'s
-   own membership/permission model and its relationship to Factory Runs.
+1. **Database agent + tenant-independent SQL** — generated `sp_all` must not
+   read/filter `companyId` when `gate_result.tenant_model` is
+   `TENANT_INDEPENDENT`; column names must match spec camelCase (`factoryRunId`).
+2. **Artifacts / Usage / Billing** — next modules on the chain after Factory
+   Runs. Carried-forward open questions: commercial-platform role model vs
+   `AllowedRole`; slug/uniqueness policies on organization/project.

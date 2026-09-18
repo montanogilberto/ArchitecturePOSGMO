@@ -19,17 +19,11 @@ agents/.adk/
 # macOS
 .DS_Store
 
-# Pipeline output — may contain secrets from session state
-last_state.json
-experiment1_state.json
-experiment2_state.json
-experiment3_state.json
+# Pipeline output — may contain secrets from session state (GITHUB_TOKEN,
+# LOCAL_DB_PASSWORD, etc. are written into session state and can end up in
+# any state dump or shell-redirected run log — wildcard, not an enumerated
+# per-experiment list, so a new experiment/module can't slip through the way
+# run_factoryRun.log did).
+*_state.json
+*.log
 pr_export/
-experiment4_state.json
-experiment5_state.json
-experiment6_state.json
-experiment6b_state.json
-experiment7_state.json
-factoryAccount_state.json
-organization_state.json
-projects_state.json

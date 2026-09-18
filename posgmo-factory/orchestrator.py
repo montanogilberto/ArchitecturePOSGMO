@@ -216,12 +216,39 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
     elif isinstance(raw_fe, dict):
         fe_artifact = raw_fe
 
-    backend_dup = check_backend_duplicate_error_propagation(be_artifact)
-    frontend_dup = check_frontend_duplicate_error_handling(fe_artifact)
+    # These two checks only mean something for a module that actually has a
+    # duplicate_policy decision recorded (leadCapture/ADR-002's shape) --
+    # running them unconditionally on every module reported a false
+    # ARTIFACT_FAILURE on organization, which was never asked to implement
+    # this behavior at all and has no such decision. Gate on
+    # gate_result.applicable_decisions rather than assume relevance.
+    has_duplicate_policy_decision = False
+    raw_gate = result.get("gate_result", "")
+    gate_dict = raw_gate if isinstance(raw_gate, dict) else None
+    if gate_dict is None and isinstance(raw_gate, str) and raw_gate.strip():
+        body = raw_gate.strip()
+        if body.startswith("```"):
+            body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("```")).strip()
+        try:
+            gate_dict = json.loads(body)
+        except json.JSONDecodeError:
+            gate_dict = None
+    if gate_dict:
+        has_duplicate_policy_decision = any(
+            (d.get("topic") or "").lower() == "duplicate_policy"
+            for d in (gate_dict.get("applicable_decisions") or [])
+        )
+
+    if has_duplicate_policy_decision:
+        backend_dup = check_backend_duplicate_error_propagation(be_artifact)
+        frontend_dup = check_frontend_duplicate_error_handling(fe_artifact)
+    else:
+        backend_dup = {"status": "N/A", "detail": "No duplicate_policy decision recorded for this module -- nothing to check."}
+        frontend_dup = {"status": "N/A", "detail": "No duplicate_policy decision recorded for this module -- nothing to check."}
     result["backend_duplicate_error_propagation"] = backend_dup
     result["frontend_duplicate_error_handling"] = frontend_dup
     for label, check in (("backend", backend_dup), ("frontend", frontend_dup)):
-        if check["status"] not in ("SATISFIED",):
+        if check["status"] not in ("SATISFIED", "N/A"):
             print(f"[artifact-contract] {label} duplicate-handling {check['status']} — {check['detail']}", flush=True)
 
     return result

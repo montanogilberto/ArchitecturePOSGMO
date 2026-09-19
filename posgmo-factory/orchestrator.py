@@ -48,6 +48,22 @@ _runner = Runner(
 )
 
 
+# Which env vars supply the PR Agent's target repo pair, keyed by deployment
+# target. "pos" (default) preserves existing behavior exactly — POSVending /
+# smartloans_backend. "commercial" routes commercial-platform modules
+# (organization, projects, pricingPlan, factoryRun, factoryAccount, ...) to
+# their own repos instead, so pr_agent never pushes commercial-platform code
+# into the POS retail codebase. Single source of truth for this file — see
+# the matching dict in agents/prd_parser/rules.py, which MUST agree with this
+# one (store_prd_context runs after this and re-derives the same keys; if the
+# two disagree, prd_parser_agent silently overwrites whatever target this
+# function picked).
+_REPO_ENV_VARS = {
+    "pos": ("GITHUB_REPO_NAME", "GITHUB_BACKEND_REPO_NAME"),
+    "commercial": ("GITHUB_COMMERCIAL_FRONTEND_REPO", "GITHUB_COMMERCIAL_BACKEND_REPO"),
+}
+
+
 def _gh_repo_slug(env_var: str) -> str:
     """Extract 'owner/repo' from a full GitHub URL or a bare slug stored in an env var."""
     raw = os.getenv(env_var, "")
@@ -58,9 +74,12 @@ def _gh_repo_slug(env_var: str) -> str:
     return raw
 
 
-def _build_session_state(prd: PRDInput) -> dict[str, str]:
+def _build_session_state(prd: PRDInput, target: str = "pos") -> dict[str, str]:
     """
     Build required ADK template context for agent instruction placeholders.
+
+    target: "pos" (default) or "commercial" — selects which repo-pair env
+    vars PR Agent targets. See _REPO_ENV_VARS.
     """
     module = prd.module or ""
     module_capitalized = module[:1].upper() + module[1:] if module else ""
@@ -70,8 +89,9 @@ def _build_session_state(prd: PRDInput) -> dict[str, str]:
     parent_val = getattr(prd, "parent", "") or ""
     parent_capitalized = parent_val[:1].upper() + parent_val[1:] if parent_val else ""
 
-    frontend_repo = _gh_repo_slug("GITHUB_REPO_NAME")
-    backend_repo  = _gh_repo_slug("GITHUB_BACKEND_REPO_NAME")
+    frontend_env, backend_env = _REPO_ENV_VARS.get(target, _REPO_ENV_VARS["pos"])
+    frontend_repo = _gh_repo_slug(frontend_env)
+    backend_repo  = _gh_repo_slug(backend_env)
 
     return {
         # Mapeos estándar del módulo
@@ -97,6 +117,11 @@ def _build_session_state(prd: PRDInput) -> dict[str, str]:
         # this directly for checks (e.g. tenant-model classification) that must
         # not depend on a flaky upstream agent to even see the PRD's own text.
         "prd_raw": json.dumps(prd.model_dump()),
+
+        # Deployment target ("pos" | "commercial") — the single source of
+        # truth downstream agents (store_prd_context) must read rather than
+        # re-deriving from hardcoded env var names, or the two can drift.
+        "target_repo": target,
 
         # GitHub repo slugs (owner/repo) derived from env vars — used by PR Agent
         "GITHUB_FRONTEND_REPO": frontend_repo,
@@ -127,16 +152,18 @@ def _build_session_state(prd: PRDInput) -> dict[str, str]:
     }
 
 
-async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
+async def run_factory(prd_dict: dict, user_id: str = "factory", target: str = "pos") -> dict:
     """
     Runs the full generation pipeline for a PRD using the pre-built root_agent.
+
+    target: "pos" (default) or "commercial" — see _build_session_state.
     """
     prd = PRDInput.model_validate(prd_dict)
 
     session = await _session_service.create_session(
         app_name="posgmo_factory",
         user_id=user_id,
-        state=_build_session_state(prd),
+        state=_build_session_state(prd, target=target),
     )
 
     message = Content(
@@ -259,16 +286,16 @@ async def run_factory(prd_dict: dict, user_id: str = "factory") -> dict:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    if len(sys.argv) < 2:
-        print("Usage: python orchestrator.py <path/to/prd.json>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("prd_path", type=Path)
+    parser.add_argument("--target", choices=sorted(_REPO_ENV_VARS), default="pos")
+    parsed = parser.parse_args()
 
-    prd_path = Path(sys.argv[1])
-    prd_data = json.loads(prd_path.read_text(encoding="utf-8"))
+    prd_data = json.loads(parsed.prd_path.read_text(encoding="utf-8"))
 
-    result = asyncio.run(run_factory(prd_data))
+    result = asyncio.run(run_factory(prd_data, target=parsed.target))
 
     # Save state for partial re-runs: python run_partial.py --from database --state last_state.json
     state_path = Path("last_state.json")

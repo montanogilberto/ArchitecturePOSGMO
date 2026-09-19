@@ -9,12 +9,12 @@ the user opens the PRs themselves.
 
 Usage:
     python run_local_export.py tests/prd_notificationDispatch.json
+    python run_local_export.py tests/prd_pricingPlan.json --target commercial
 """
 from __future__ import annotations
 
 import asyncio
 import json
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -25,7 +25,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
-from orchestrator import _build_session_state
+from orchestrator import _build_session_state, _REPO_ENV_VARS
 from prd_schema import PRDInput
 from agents import root_agent
 from agents.agent import generation_stage
@@ -49,12 +49,12 @@ _session_service = InMemorySessionService()
 _runner = Runner(agent=root_agent, app_name="posgmo_factory_local", session_service=_session_service)
 
 
-async def run_local(prd_dict: dict, user_id: str = "factory") -> dict:
+async def run_local(prd_dict: dict, user_id: str = "factory", target: str = "pos") -> dict:
     prd = PRDInput.model_validate(prd_dict)
     session = await _session_service.create_session(
         app_name="posgmo_factory_local",
         user_id=user_id,
-        state=_build_session_state(prd),
+        state=_build_session_state(prd, target=target),
     )
     message = Content(role="user", parts=[Part(text=json.dumps(prd.model_dump()))])
 
@@ -68,15 +68,17 @@ async def run_local(prd_dict: dict, user_id: str = "factory") -> dict:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python run_local_export.py <path/to/prd.json>")
-        sys.exit(1)
+    import argparse
 
-    prd_path = Path(sys.argv[1])
-    prd_data = json.loads(prd_path.read_text(encoding="utf-8"))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("prd_path", type=Path)
+    parser.add_argument("--target", choices=sorted(_REPO_ENV_VARS), default="pos")
+    parsed = parser.parse_args()
+
+    prd_data = json.loads(parsed.prd_path.read_text(encoding="utf-8"))
     module = prd_data["module"]
 
-    state = asyncio.run(run_local(prd_data))
+    state = asyncio.run(run_local(prd_data, target=parsed.target))
 
     out_dir = Path(__file__).parent / "local_export" / module
     out_dir.mkdir(parents=True, exist_ok=True)

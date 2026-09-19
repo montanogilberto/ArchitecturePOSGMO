@@ -1,0 +1,34 @@
+{
+  "id": "ADR-003",
+  "createdAt": "2026-09-16T21:30:38Z",
+  "request": "factoryAccount tenant model -- who supplies companyId for an anonymous public signup?",
+  "module": "factoryAccount",
+  "topic": "tenant_model",
+  "selectedClaim": "TENANT_INDEPENDENT",
+  "rationale": "A Factory GMO account represents a person signing up for Factory AI GMOs own commercial platform, not a POS GMO retail tenant. The signup endpoint is necessarily public and unauthenticated (there is no account to authenticate as yet), so an anonymous caller must not be trusted to supply or influence any POS GMO companyId. This mirrors ADR-001 (leadCapture) exactly, on identity instead of lead capture.",
+  "evidence": [
+    "tests/prd_factoryAccount.json description: this module has no existing companyId relationship.",
+    "ADR-001 (leadCapture): the same class of question, same resolution, for a different public-facing module.",
+    "Live schema check: users/userCompanies already exist and are shared multi-product infrastructure (appProfile/enabledModules), not POS-specific -- but they still key tenancy through companyId for POS/loans use, which does not apply to a prospective Factory GMO customer who has no POS GMO company relationship."
+  ],
+  "constraints": [],
+  "layer_constraints": {
+    "database": [
+      "factoryAccount must not have a NOT NULL companyId column or a foreign key to companies."
+    ],
+    "backend": [
+      "The public signup endpoint must not read, accept, default, or validate against a client-supplied companyId."
+    ],
+    "frontend": [
+      "The signup form/payload must not include companyId as a caller-supplied field."
+    ]
+  },
+  "appliesTo": [
+    "database",
+    "backend",
+    "frontend"
+  ],
+  "confidence": 0.85,
+  "decidedBy": "escalation",
+  "round": 0
+}

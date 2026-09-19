@@ -90,6 +90,9 @@ _TENANT_INDEPENDENT_SIGNALS = (
     "not a pos gmo tenant",
     "no tenant relationship",
     "has no companyid",
+    "must never be given a companyid",
+    "must not be given a companyid",
+    "represents a pos gmo retail tenant",
 )
 
 
@@ -122,9 +125,11 @@ def _classify_tenant_model(prd_raw: dict) -> tuple[str, str]:
     if not any(sig in full_text for sig in _TENANT_INDEPENDENT_SIGNALS):
         return "TENANT_SCOPED", "No tenancy-exception language found in the PRD -- default POS GMO assumption applies."
 
+    _WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
     endpoints = ((prd_raw.get("backend") or {}).get("endpoints")) or []
     has_public_write = any(
-        "public" in ((ep.get("path", "") + " " + ep.get("description", "")).lower())
+        (ep.get("method") or "POST").upper() in _WRITE_METHODS
+        and "public" in ((ep.get("path", "") + " " + ep.get("description", "")).lower())
         and "unauthenticated" in (ep.get("description", "") or "").lower()
         for ep in endpoints
     )
@@ -157,6 +162,19 @@ def _has_any(text: str, keywords: set) -> bool:
     return any(kw in t for kw in keywords)
 
 
+def _has_any_whole_word(text: str, keywords: set) -> bool:
+    """Same as _has_any but requires a word-boundary match, not bare substring
+    containment. Short/fragile signal words like "led" or "iot" otherwise
+    false-positive inside ordinary English words ("billed", "controlled",
+    "decoupled" all contain "led"; "idiot" contains "iot") — found live when
+    pricingPlan's own PRD prose triggered TIER_4_IOT despite having nothing
+    to do with hardware. Use this for signal sets where any keyword is short
+    enough to appear as a substring of unrelated words."""
+    import re
+    t = _words(text)
+    return any(re.search(rf"\b{re.escape(kw)}\b", t) for kw in keywords)
+
+
 def _is_ratio_column(col_name: str, sql_type: str) -> bool:
     """Return True if this decimal column is clearly a ratio/score, NOT money."""
     name_lower = col_name.lower().replace("_", "")
@@ -187,9 +205,9 @@ def _classify_tier(spec: dict, schema_analysis: dict) -> tuple[str, str]:
     prd_hints = spec.get("prd_hints", {})
 
     # ── TIER_4: physical hardware only ──────────────────────────────────────
-    if _has_any(desc, _TIER4_SIGNALS):
+    if _has_any_whole_word(desc, _TIER4_SIGNALS):
         # Make sure it's not just "Azure API" language misread as hardware
-        azure_only = _has_any(desc, {"azure", "aws", "api", "blob"}) and not _has_any(
+        azure_only = _has_any(desc, {"azure", "aws", "api", "blob"}) and not _has_any_whole_word(
             desc, {"sensor", "hardware", "device", "telemetry", "iot"}
         )
         if not azure_only:
@@ -285,8 +303,20 @@ def _classify_backend_pattern(spec: dict) -> tuple[str, list[dict]]:
 
 def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endpoints: list,
                                   tenant_model: str = "TENANT_SCOPED",
-                                  tenant_constraints: list | None = None) -> dict:
-    """Build mandatory_constraints dict deterministically from tier."""
+                                  tenant_constraints: dict | None = None) -> dict:
+    """Build mandatory_constraints dict deterministically from tier.
+
+    tenant_constraints is always the {layer: [constraint, ...]} shape
+    decision_registry.get_effective_constraints() produces -- callers must
+    normalize before calling this (see compute_gate_result), not pass a
+    decision's raw `constraints`/`layer_constraints` fields directly. This
+    was a real bug once: an earlier version only read the flat `constraints`
+    field, so a tenant_model decision authored with `layer_constraints`
+    (ADR-003) silently lost its constraints -- caught before construction
+    ran, by checking mandatory_constraints against the decision zero-LLM,
+    same discipline as every other decision-gate change this session.
+    """
+    tenant_constraints = tenant_constraints or {}
     db_rules = []
     backend_rules = [
         "all_{plural}_sp(json_file: dict) must pass json_file to sp_all via @pjsonfile (never zero-arg).",
@@ -301,8 +331,9 @@ def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endp
             "companyId is NOT applicable to this module (explicit tenant_model decision) -- "
             "do not add a NOT NULL companyId column or a foreign key to companies."
         )
-        for c in (tenant_constraints or []):
+        for c in tenant_constraints.get("database", []):
             db_rules.append(c)
+        for c in tenant_constraints.get("backend", []):
             backend_rules.append(c)
 
     db_rules += [
@@ -315,6 +346,9 @@ def _build_mandatory_constraints(tier: str, backend_pattern: str, connector_endp
         "Use catch (err) with (err as Error).message — never catch (err: any).",
         "All event handlers must use specific CustomEvent generic types — never bare CustomEvent or CustomEvent<any>.",
     ]
+    if tenant_model == "TENANT_INDEPENDENT":
+        for c in tenant_constraints.get("frontend", []):
+            frontend_rules.append(c)
 
     if tier == "TIER_2_FINANCIAL":
         db_rules.append("All monetary DECIMAL columns (amounts, totals, prices) must be DECIMAL(10,2).")
@@ -496,10 +530,14 @@ def compute_gate_result(state: dict) -> dict:
     if tenant_decision:
         tenant_model = tenant_decision["selectedClaim"]
         tenant_model_reason = f"Explicit decision {tenant_decision['id']}: {tenant_decision['rationale']}"
-        tenant_constraints = tenant_decision.get("constraints", [])
+        # Normalize whichever way this decision was authored (flat `constraints`
+        # applying to every layer in appliesTo, or per-layer `layer_constraints`)
+        # into one {layer: [...]} shape -- _build_mandatory_constraints only
+        # understands that shape now. See its docstring for why this matters.
+        tenant_constraints = get_effective_constraints(tenant_decision)
     else:
         tenant_model, tenant_model_reason = _classify_tenant_model(_safe_load(state.get("prd_raw", "")))
-        tenant_constraints = []
+        tenant_constraints = {}
 
     if tenant_model == "UNKNOWN":
         return {

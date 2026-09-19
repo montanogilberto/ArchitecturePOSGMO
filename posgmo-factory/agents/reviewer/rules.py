@@ -53,13 +53,21 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
     def W(msg: str):
         issues.append(Issue("database", "create_table/SPs", "warning", msg))
 
+    tenant_independent = gate.get("tenant_model") == "TENANT_INDEPENDENT"
+
     # ── Execution errors ──────────────────────────────────────────────────
     for detail in execution.get("details", []):
         if detail.get("status") == "error":
             E(f"SQL execution error: {detail.get('message','')[:120]}")
 
     # ── CREATE TABLE checks ───────────────────────────────────────────────
-    if not re.search(r'\bcompanyId\b', create, re.IGNORECASE):
+    if tenant_independent:
+        if re.search(r'\bcompanyId\b', create, re.IGNORECASE):
+            E(
+                "companyId must not appear in CREATE TABLE for TENANT_INDEPENDENT modules",
+                auto=True,
+            )
+    elif not re.search(r'\bcompanyId\b', create, re.IGNORECASE):
         E("companyId column missing from CREATE TABLE", auto=True)
 
     pk_pattern = rf'\b{module}Id\b.*\bIDENTITY\(1,1\)'
@@ -111,7 +119,13 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
     # ── sp_all: companyId filter ──────────────────────────────────────────
     if not re.search(r'@pjsonfile', sp_all, re.IGNORECASE):
         E("sp_all missing @pjsonfile parameter (multi-tenancy broken)", auto=True)
-    if not re.search(r'WHERE\s+\[?companyId\]?\s*=\s*@companyId', sp_all, re.IGNORECASE):
+    if tenant_independent:
+        if re.search(r'WHERE\s+\[?companyId\]?\s*=\s*@companyId', sp_all, re.IGNORECASE):
+            E(
+                "sp_all must not filter by companyId for TENANT_INDEPENDENT modules",
+                auto=True,
+            )
+    elif not re.search(r'WHERE\s+\[?companyId\]?\s*=\s*@companyId', sp_all, re.IGNORECASE):
         E("sp_all missing WHERE companyId = @companyId filter (cross-company data leak)", auto=True)
 
     # ── OPENJSON key must be plural ───────────────────────────────────────

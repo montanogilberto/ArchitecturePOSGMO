@@ -1,0 +1,61 @@
+{
+  "module": "promotionRedemption",
+  "description": "One-time-use enforcement ledger for per-client-limited promotion codes (starting with the '2X1' welcome coupon granted on a client's first purchase). A filtered UNIQUE index on (companyId, clientId, promotionCode) makes a second redemption of the same code by the same client impossible at the database level. This closes a real gap: the POS Cart UI only offers the coupon when the client's posRewardBalances.lifetimeEarned is zero (a client-side heuristic), but nothing stops a direct call to /income/apply-promo from reusing the code for a client who already spent it. Distinct from posRewardTransactions/posRewardRedemptions (points-based loyalty currency, spent against a rewards catalog) — this ledger tracks one-time promo-code usage, not points, and never converts between the two.",
+  "fields": [
+    { "name": "clientId", "type": "integer", "required": true, "fk_table": "clients", "fk_column": "clientId",
+      "description": "Client who redeemed the promotion code." },
+    { "name": "promotionCode", "type": "string", "required": true, "max_length": 40,
+      "description": "Code redeemed, stored uppercase (e.g. '2X1'). Matches income.promotionCode and the code param already sent to sp_income_apply_promo. This module does not define or validate which codes exist/are active — an existing promotions table already does that server-side (outside this repo/PRD); this module only guards how many times each client may use a given code." },
+    { "name": "incomeId", "type": "integer", "required": false,
+      "description": "Ticket the code's discount was applied to. Always set on a normal redemption; only NULL for a redemption attempted and immediately reversed before an income row existed." },
+    { "name": "status", "type": "string", "required": true, "max_length": 20,
+      "description": "Allowed values: applied, reversed. A reversed row (from voiding/cancelling the paired income) does not count against the one-time limit — the client can redeem the code again." },
+    { "name": "redeemedByUserId", "type": "integer", "required": true,
+      "description": "POS user/cashier who processed the sale that redeemed the code." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "clients", "cardinality": "1:N", "notes": "clientId owns the redemption; the one-time limit is scoped per (companyId, clientId, promotionCode)." }
+  ],
+  "roles_allowed": ["Admin", "Manager", "Cashier"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/promotion-redemptions",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "List Layout",
+    "components": [
+      { "step": 1, "name": "PromotionRedemptionListStep",
+        "description": "IonList of redemptions newest-first, filtered by companyId + optional clientId/promotionCode. Rows show client name, promotionCode chip, incomeId (linkable to the ticket), status badge (applied green / reversed grey), redeemedByUserId, created_At. Read-only audit view — Admin/Manager only; cashiers never browse this list, they only trigger a redemption implicitly through checkout." }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/promotionRedemptions/check-eligibility", "method": "POST",
+        "description": "Read-only pre-check the Cart UI calls before offering the coupon chip. Takes { companyId, clientId, promotionCode }. Returns { eligible: boolean } — eligible=true only if no row with status='applied' exists yet for (companyId, clientId, promotionCode). Decides eligibility only, never a discount amount or price — that stays entirely in sp_income_apply_promo." },
+      { "path": "/promotionRedemptions/redeem", "method": "POST",
+        "description": "The only path allowed to insert a row. Takes { companyId, clientId, promotionCode, incomeId, redeemedByUserId }. Transactionally: (1) checks for an existing status='applied' row for (companyId, clientId, promotionCode) — if found, rolls back and returns { error: 'already_redeemed' }, never a partial write; (2) otherwise inserts this row with status='applied'. This must be called from inside the same transaction as sp_income_apply_promo (see database hints below) so the one-time limit is enforced atomically in the database, not just by call ordering from the client — two concurrent checkout requests for the same client+code must not both succeed." },
+      { "path": "/promotionRedemptions/reverse", "method": "POST",
+        "description": "Takes { companyId, redemptionId, reversedByUserId }. Sets status='reversed'. Called from the existing income-cancel path (POST /income action=2) when the paired ticket is voided, so cancelling a sale returns the one-time coupon to the client. Never physically deletes the row — same audit-trail requirement as posRewardRedemptions." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.promotionRedemptions"],
+    "storedProcedures": [
+      "dbo.sp_promotionRedemptions",
+      "dbo.sp_promotionRedemptions_all",
+      "dbo.sp_promotionRedemptions_one",
+      "dbo.sp_promotionRedemptions_checkEligibility",
+      "dbo.sp_promotionRedemptions_redeem",
+      "dbo.sp_promotionRedemptions_reverse"
+    ],
+    "hints": [
+      "CHECK status IN ('applied','reversed').",
+      "Filtered UNIQUE index on (companyId, clientId, promotionCode) WHERE status='applied' — this is the actual one-time-use guarantee; a reversed row must not block a later redemption of the same code by the same client.",
+      "sp_promotionRedemptions_redeem must be transactional exactly like sp_posRewardRedemptions_redeem: check-then-insert inside one transaction, never two separate round trips, so a race between two concurrent checkout requests for the same client+code cannot both succeed.",
+      "MANUAL INTEGRATION REQUIRED, outside this PRD's auto-generated scope: sp_income_apply_promo (the existing SP behind POST /income/apply-promo, defined in the income module, not this one) must be edited to call sp_promotionRedemptions_redeem inside its own transaction before discounting income.total, and must roll back the whole promo application if that call returns already_redeemed. Until sp_income_apply_promo is edited to do this, this module only provides an advisory /check-eligibility the frontend can call — it does not by itself close the gap, because nothing stops a caller from skipping straight to /income/apply-promo.",
+      "Similarly, wiring sp_promotionRedemptions_reverse into the income-cancel path (existing action=2 handling in the income module) needs a manual pass in that module, not this one.",
+      "Index (clientId, promotionCode) for the eligibility check; index (companyId, created_At DESC) for the admin audit list."
+    ]
+  }
+}

@@ -1,18 +1,27 @@
 """
-Factory Knowledge & Experience -- Phase 1: the Experience collection.
+Factory Knowledge & Experience -- Phases 1-2.
 
-Semantic memory over what the Factory has already learned by actually
-RUNNING: milestone findings (docs/commercial-app-milestones.md) and recorded
-architecture decisions (decision_registry/ADR-*.json). Deliberately NOT a
-replacement for mcp_server's structured getters (schema, SP patterns,
-routes) -- those stay exact-match lookups because exact lookup is superior
-for facts (see mcp_server/server.py). This is for the opposite case: "has
-something like this been tried before," where the wording won't match a
-keyword search. _classify_tenant_model's brittle substring signal matching
-and the TIER_4 "led"-inside-"controlled" false positive (both found and
-fixed in this same session, agents/decision_gate/rules.py) are exactly the
-failure mode semantic retrieval is meant to fix -- a differently-worded PRD
-describing the same tenancy exception wouldn't match either bug's fixed
+Semantic memory over what the Factory has already learned:
+- Phase 1 (Experience): milestone findings (docs/commercial-app-milestones.md)
+  and recorded architecture decisions (decision_registry/ADR-*.json) --
+  what happened when a module was actually RUN.
+- Phase 2 (Architecture): every PRD's own narrative (tests/prd_*.json's
+  `description` field -- business requirements, constraints, and especially
+  OPEN ARCHITECTURAL QUESTIONS) -- the design REASONING behind a module,
+  captured before it was ever run. Different corpus, same retrieval
+  mechanism and the same MCP tool (search_factory_experience) -- an agent
+  doesn't need to know which phase indexed a given result, only that its
+  `type` field says "experience", "decision", or "architecture".
+
+Deliberately NOT a replacement for mcp_server's structured getters (schema,
+SP patterns, routes) -- those stay exact-match lookups because exact lookup
+is superior for facts (see mcp_server/server.py). This is for the opposite
+case: "has something like this been tried before," where the wording won't
+match a keyword search. _classify_tenant_model's brittle substring signal
+matching and the TIER_4 "led"-inside-"controlled" false positive (both found
+and fixed in this same session, agents/decision_gate/rules.py) are exactly
+the failure mode semantic retrieval is meant to fix -- a differently-worded
+PRD describing the same tenancy exception wouldn't match either bug's fixed
 keyword list, but should surface the same precedent semantically.
 
 Design principle this module must never violate (stated explicitly by the
@@ -20,9 +29,9 @@ user when this was scoped): RAG retrieves evidence, agents reason over it,
 MCP/Graph stays the authoritative source of facts, the reviewer verifies the
 resulting implementation. This module is not a source of truth -- every
 result it returns is a verbatim, sourced excerpt of something already
-written to disk (a milestone finding or a recorded ADR); nothing here is
-generated or synthesized, so there is no fabrication surface in the
-retrieval path itself.
+written to disk (a milestone finding, a recorded ADR, or a PRD's own text);
+nothing here is generated or synthesized, so there is no fabrication surface
+in the retrieval path itself.
 
 Usage:
     python factory_experience.py --rebuild            # (re)compute the index
@@ -38,11 +47,15 @@ from pathlib import Path
 _ROOT = Path(__file__).parent
 _MILESTONES_PATH = _ROOT / "docs" / "commercial-app-milestones.md"
 _ADR_DIR = _ROOT / "decision_registry"
+_PRD_DIR = _ROOT / "tests"
 _INDEX_PATH = _ROOT / "factory_experience_index.json"
 _EMBEDDING_MODEL = "gemini-embedding-001"
 
 _MIN_CHUNK_CHARS = 40  # skip stray short lines / table row fragments
 _BOLD_LEAD_RE = re.compile(r"^\*\*([^*]+)\*\*:?\s*")
+_OPEN_QUESTIONS_HEADER_RE = re.compile(r"^OPEN ARCHITECTURAL QUESTIONS\b.*$", re.IGNORECASE | re.MULTILINE)
+_NUMBERED_ITEM_SPLIT_RE = re.compile(r"\n(?=\d+\.\s)")
+_SECTION_HEADER_RE = re.compile(r"^([A-Z][A-Z /]{6,})(?:\s*[-—].*)?$")
 
 
 def _split_finding_context(text: str) -> tuple[str, str]:
@@ -123,11 +136,90 @@ def _chunk_adrs() -> list[dict]:
     return chunks
 
 
+def _prd_finding_label(text: str, module: str, section: str | None) -> str:
+    if section:
+        return f"{module} — {section}"
+    first_line = text.split("\n", 1)[0].strip()
+    return f"{module}: {first_line[:120]}"
+
+
+def _chunk_prds() -> list[dict]:
+    """
+    Chunk every tests/prd_*.json's `description` narrative: each blank-line
+    paragraph is one chunk, EXCEPT the OPEN ARCHITECTURAL QUESTIONS section,
+    which is further split into one chunk per numbered question -- these are
+    the highest-value, most distinctly reusable architectural precedent
+    (e.g. "how does a module reference a parent table that isn't live yet"
+    recurs, worded differently, across organization/projects/factoryRun/
+    factoryArtifact -- merging them into one big chunk per PRD would dilute
+    each individual question's own signal).
+    """
+    chunks: list[dict] = []
+    if not _PRD_DIR.exists():
+        return chunks
+    for path in sorted(_PRD_DIR.glob("prd_*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        module = data.get("module") or path.stem.removeprefix("prd_")
+        description = (data.get("description") or "").strip()
+        if not description:
+            continue
+        for para in re.split(r"\n\s*\n", description):
+            para = para.strip()
+            if not para:
+                continue
+            header_match = _SECTION_HEADER_RE.match(para.split("\n", 1)[0])
+            section_name = header_match.group(1).strip() if header_match else None
+
+            if section_name and section_name.upper().startswith("OPEN ARCHITECTURAL"):
+                body = para.split("\n", 1)[1] if "\n" in para else ""
+                for item in _NUMBERED_ITEM_SPLIT_RE.split(body):
+                    item = item.strip()
+                    if len(item) < _MIN_CHUNK_CHARS:
+                        continue
+                    item_label = item.split("\n", 1)[0][:100].rstrip(".")
+                    chunks.append({
+                        "source": path.name,
+                        "milestone": None,
+                        "module": module,
+                        "type": "architecture",
+                        "finding": f"{module} — open question: {item_label}",
+                        "context": item,
+                    })
+                continue
+
+            if len(para) < _MIN_CHUNK_CHARS:
+                continue
+            chunks.append({
+                "source": path.name,
+                "milestone": None,
+                "module": module,
+                "type": "architecture",
+                "finding": _prd_finding_label(para, module, section_name),
+                "context": para,
+            })
+    return chunks
+
+
+_MAX_EMBED_BATCH = 90  # API hard limit is 100 requests/batch; leave headroom
+
+
 def _embed(texts: list[str]) -> list[list[float]]:
+    """Batches internally — Phase 2 pushed the corpus past the API's 100-
+    items-per-request limit for the first time (146 chunks vs. Phase 1's
+    59), confirmed live: a single call over the full corpus raised
+    'at most 100 requests can be in one batch'. Callers never need to know
+    the corpus is big enough to require this."""
     from google import genai
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-    result = client.models.embed_content(model=_EMBEDDING_MODEL, contents=texts)
-    return [e.values for e in result.embeddings]
+    vectors: list[list[float]] = []
+    for i in range(0, len(texts), _MAX_EMBED_BATCH):
+        batch = texts[i:i + _MAX_EMBED_BATCH]
+        result = client.models.embed_content(model=_EMBEDDING_MODEL, contents=batch)
+        vectors.extend(e.values for e in result.embeddings)
+    return vectors
 
 
 def _embed_text_for_chunk(chunk: dict) -> str:
@@ -140,7 +232,11 @@ def build_index() -> dict:
     """Recomputes the full index from the current corpus and writes it to
     disk. Costs one embedding API call batch — not run on every query, only
     when the corpus changes (a new milestone or ADR is recorded)."""
-    chunks = _chunk_milestones(_MILESTONES_PATH.read_text(encoding="utf-8")) + _chunk_adrs()
+    chunks = (
+        _chunk_milestones(_MILESTONES_PATH.read_text(encoding="utf-8"))
+        + _chunk_adrs()
+        + _chunk_prds()
+    )
     if not chunks:
         return {"chunks": 0}
     vectors = _embed([_embed_text_for_chunk(c) for c in chunks])

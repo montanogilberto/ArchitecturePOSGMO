@@ -47,15 +47,51 @@ def _fix_sp_all_signature(sp_all: str, plural: str) -> tuple[str, list[str]]:
     return sp_all, fixes
 
 
-def _fix_sp_all_company_filter(sp_all: str, plural: str) -> tuple[str, list[str]]:
+def _fix_sp_all_company_filter(
+    sp_all: str, plural: str, tenant_independent: bool = False
+) -> tuple[str, list[str]]:
     """
-    Ensure sp_all extracts @companyId from @pjsonfile and filters by it.
-    Safe to inject only when both pieces are missing.
+    Ensure sp_all extracts @companyId from @pjsonfile and filters by it —
+    UNLESS the module is TENANT_INDEPENDENT, in which case do the opposite
+    and remove it. Mirrors agents/reviewer/rules.py's _check_database flip
+    for the same reason: a TENANT_INDEPENDENT module (factoryAccount,
+    organization, projects, pricingPlan, factoryRun, factoryArtifact, ...)
+    must never reference companyId at all. Before this fix, this function
+    was tenant_model-blind and would silently re-inject a companyId filter
+    into a correctly-generated tenant-independent sp_all — it never actually
+    fired that way in practice only because every TENANT_INDEPENDENT sp_all
+    observed so far already had the filter for the OPPOSITE reason
+    (database_agent's own generation bug, not this fixer), so the "both
+    already present, nothing to do" early-return masked the latent bug.
     """
     fixes = []
 
     has_declare = '@companyId' in sp_all
     has_where = re.search(r'WHERE\s+\[?companyId\]?\s*=\s*@companyId', sp_all, re.IGNORECASE)
+
+    if tenant_independent:
+        if has_where:
+            new = re.sub(
+                r'\n?[ \t]*WHERE\s+\[?companyId\]?\s*=\s*@companyId',
+                '',
+                sp_all,
+                flags=re.IGNORECASE,
+            )
+            if new != sp_all:
+                fixes.append("Removed WHERE companyId = @companyId filter (TENANT_INDEPENDENT module)")
+                sp_all = new
+        if has_declare:
+            new = re.sub(
+                r'\n?[ \t]*DECLARE\s+@companyId\s+INT;\s*'
+                r'SET\s+@companyId\s*=\s*TRY_CONVERT\(INT,.*?\);\s*',
+                '\n',
+                sp_all,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
+            if new != sp_all:
+                fixes.append("Removed @companyId extraction (TENANT_INDEPENDENT module)")
+                sp_all = new
+        return sp_all, fixes
 
     if has_declare and has_where:
         return sp_all, fixes
@@ -142,6 +178,7 @@ def fix_database(db_artifacts: dict, gate_result: dict) -> tuple[dict, list[str]
     tier = gate_result.get("tier", "TIER_1_CATALOG")
     module = gate_result.get("_module", "")
     plural = f"{module}s" if module else ""
+    tenant_independent = gate_result.get("tenant_model") == "TENANT_INDEPENDENT"
     all_fixes: list[str] = []
 
     sp_all  = db_artifacts.get("sp_all", "")
@@ -160,7 +197,7 @@ def fix_database(db_artifacts: dict, gate_result: dict) -> tuple[dict, list[str]
     # 2. sp_all: param + companyId filter
     if plural:
         sp_all, f1 = _fix_sp_all_signature(sp_all, plural)
-        sp_all, f2 = _fix_sp_all_company_filter(sp_all, plural)
+        sp_all, f2 = _fix_sp_all_company_filter(sp_all, plural, tenant_independent=tenant_independent)
         db_artifacts["sp_all"] = sp_all
         all_fixes.extend(f1 + f2)
 
@@ -236,6 +273,42 @@ def _fix_route_get_to_post(code: str, plural: str) -> tuple[str, list[str]]:
     return new, fixes
 
 
+def _fix_one_route_plural(code: str, module: str, plural: str) -> tuple[str, list[str]]:
+    """
+    /one_{module} (natural-English singular) → /one_{plural}. Confirmed
+    TWICE independently now — Milestone 3's `project` ('/one_project') and
+    factoryArtifact's own real run ('/one_factoryArtifact') — the model gets
+    the plural-based SP call (one_{plural}_sp) and every sibling endpoint
+    right, but naturalizes JUST this one route path + handler name to
+    singular English. Two independent occurrences of the identical mistake
+    on the identical endpoint makes this a real, fixable pattern rather than
+    one-off noise (contrast: the WHERE/ORDER BY clause-ordering defect seen
+    only once, deliberately left unfixed as construction-layer noise). Only
+    touches the route declaration and its def — never the SP call inside,
+    which was already correct in both observed cases.
+    """
+    fixes = []
+    if not module or module == plural:
+        return code, fixes
+
+    route_pattern = re.compile(
+        rf'(@router\.post\s*\(\s*["\']\/?)one_{re.escape(module)}\b',
+        re.IGNORECASE,
+    )
+    new = route_pattern.sub(rf'\g<1>one_{plural}', code)
+    if new != code:
+        fixes.append(f"Fixed route path /one_{module} → /one_{plural}")
+        code = new
+
+    def_pattern = re.compile(rf'\bdef\s+one_{re.escape(module)}\s*\(', re.IGNORECASE)
+    new = def_pattern.sub(f'def one_{plural}(', code)
+    if new != code:
+        fixes.append(f"Renamed handler one_{module}() → one_{plural}()")
+        code = new
+
+    return code, fixes
+
+
 def fix_backend(backend_artifacts: dict, gate_result: dict) -> tuple[dict, list[str]]:
     module = gate_result.get("_module", "")
     plural = f"{module}s" if module else ""
@@ -253,7 +326,8 @@ def fix_backend(backend_artifacts: dict, gate_result: dict) -> tuple[dict, list[
     if plural:
         module_content, f2 = _fix_all_sp_signature(module_content, plural)
         route_content,  f3 = _fix_route_get_to_post(route_content, plural)
-        all_fixes.extend(f2 + f3)
+        route_content,  f4 = _fix_one_route_plural(route_content, module, plural)
+        all_fixes.extend(f2 + f3 + f4)
 
     backend_artifacts["module_file"]["content"] = module_content
     backend_artifacts["route_file"]["content"]  = route_content

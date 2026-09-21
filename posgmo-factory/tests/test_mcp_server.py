@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import decision_registry
 from debate_schema import Decision
+import mcp_server.server as mcp_server_module
 from mcp_server.server import (
     get_frontend_patterns,
     get_api_contracts,
@@ -25,6 +26,7 @@ from mcp_server.server import (
     get_decisions,
     get_decisions_for_module,
     search_decisions,
+    search_factory_experience,
 )
 
 
@@ -160,3 +162,40 @@ def test_search_decisions_matches_keyword_in_claim():
     decision_registry.record_decision(request="add rewards redemption", decision=_make_decision(), module="posRewardTransaction")
     assert len(search_decisions("reward")) == 1
     assert search_decisions("nonexistent-keyword-xyz") == []
+
+
+# ---------------------------------------------------------------------------
+# search_factory_experience — MCP wrapping only (mocked). Actual semantic
+# retrieval quality is proven separately in tests/test_factory_experience.py
+# and by the two live proof queries in factory_experience.py's own docstring
+# (SQL batching -> factoryArtifact Milestone 6; tenancy paraphrase ->
+# organization Milestone 2), not re-verified here — this file's job is
+# confirming the MCP tool wraps _search_factory_experience's result in the
+# {"query", "results"} shape an agent actually receives, and passes top_k
+# through, not re-testing the retrieval logic itself.
+# ---------------------------------------------------------------------------
+
+def test_search_factory_experience_wraps_query_and_results(monkeypatch):
+    fake_results = [
+        {"source": "commercial-app-milestones.md", "milestone": "Milestone 6",
+         "module": None, "type": "experience", "score": 0.91,
+         "finding": "Bug #2 — database batching", "context": "full text here"},
+    ]
+    monkeypatch.setattr(mcp_server_module, "_search_factory_experience", lambda q, top_k=3: fake_results)
+
+    response = search_factory_experience("sql batching")
+    assert response["query"] == "sql batching"
+    assert response["results"] == fake_results
+
+
+def test_search_factory_experience_passes_top_k_through(monkeypatch):
+    captured = {}
+
+    def fake_search(query, top_k=3):
+        captured["query"] = query
+        captured["top_k"] = top_k
+        return []
+
+    monkeypatch.setattr(mcp_server_module, "_search_factory_experience", fake_search)
+    search_factory_experience("anything", top_k=5)
+    assert captured == {"query": "anything", "top_k": 5}

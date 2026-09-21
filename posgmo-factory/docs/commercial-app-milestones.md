@@ -335,11 +335,154 @@ correctly. Construction layer still mixes POS `companyId` patterns into
 tenant-independent SQL and column naming — same reliability/theme as Milestones
 1–4, now on the Factory Run module.
 
+## Milestone 6 — factoryArtifact: two real construction-mechanism bugs fixed, backend + frontend validated, database still not — honestly incomplete, not declared done
+
+**Input:** `tests/prd_factoryArtifact.json` — the gap `factoryRun` (Milestone 5)
+deliberately left: `factoryRun` stores only summary fields and explicitly does
+NOT store the full generated artifact bodies. `factoryArtifact` is that
+persistence layer, one row per generation layer per `review_fix_loop`
+iteration.
+
+**Real run #1 (before any fix this milestone):** gate `APPROVED`,
+`TENANT_INDEPENDENT`, `TIER_1_CATALOG` (correct — the Milestone 4 tier-4
+substring fix held). `database_agent` succeeded for once — real SQL, not a
+stochastic failure — and it surfaced two genuine, previously-undiscovered
+defects, found by reading the actual generated SQL, not by trusting the
+score:
+
+| Layer | Score | Real finding |
+|---|---|---|
+| Database | 70 | Live SQL execution error: `'CREATE/ALTER PROCEDURE' must be the first statement in a query batch` |
+| Backend | 80 | `/one_factoryArtifact` generated singular — same defect class as Milestone 3's `project` |
+| Frontend | 60 | `setting_patch` came back JSON `null` and **crashed the whole pipeline** — `agents/reviewer/rules.py`'s `_check_frontend` did `fe.get("setting_patch", {}).get(...)`, and `.get(key, {})`'s default only fires when the key is *absent*, not when it's present as `null` |
+
+**Bug #1 — reviewer crash, fixed and generalized:** grepped the whole file
+for the same `.get(key, {})` pattern and found **8 sites** sharing the exact
+vulnerability, not just the one that happened to crash — `execution`,
+`soft_delete_parents`, `connector_endpoints`, `module_file`/`route_file`,
+`docs_files`, `frontend`/`prd_hints` off `spec`, `page_file`/`api_file`/
+`css_file`, `app_patches`, `setting_patch`. Fixed all 8 (`or {}` / `or []`
+instead of the second positional default). Re-ran: the exact same `null`
+setting_patch now surfaces as a normal graceful finding instead of an
+`AttributeError`. 136/136 (then 144/144 after the fixes below).
+
+**Bug #2 — database batching, root-caused, not patched:**
+`agents/database/rules.py`'s `execute_sql_on_server` did
+`combined = "\n".join([create_table, sp_upsert, sp_all, sp_one])` *before*
+splitting on `GO` — so whenever `database_agent` omitted a `GO` separator
+between `CREATE TABLE` and the first `CREATE OR ALTER PROC` (every run
+observed), all of it landed in one batch, which SQL Server rejects for
+`CREATE/ALTER PROCEDURE`. Fixed by splitting each of the 4 already-distinct
+params independently before joining — the boundary between blocks is now
+structural, not dependent on the LLM remembering `GO`. Verified with a
+mocked-`pyodbc` test proving 4 blocks with no `GO` anywhere become 4 separate
+`cursor.execute()` calls, plus a second test confirming an internal `GO`
+within one block still splits correctly.
+
+**Bug #3 — fixer's own `tenant_model` blindness, a latent landmine:** while
+fixing #2, found `fix_database`'s `_fix_sp_all_company_filter` (the
+deterministic post-generation fixer, not the reviewer) was completely
+`tenant_model`-blind — it unconditionally **injects** a `companyId` filter
+into `sp_all` whenever missing, with no `TENANT_INDEPENDENT` exception. It
+never actually corrupted a real run only because every `TENANT_INDEPENDENT`
+`sp_all` observed so far already had the filter for the *unrelated* reason of
+database_agent's own generation bug (Milestone 5's `factoryRun`, and this
+milestone's `factoryArtifact` run #1) — the "both already present, nothing to
+do" early-return masked the latent bug. Fixed to mirror the reviewer's own
+flip: for `TENANT_INDEPENDENT` modules, remove rather than ensure. Regression
+test proves `TENANT_SCOPED` behavior is byte-for-byte unchanged.
+
+**Bug #4 — backend `/one_{module}` singular naturalization, confirmed
+*twice* now:** `project` (Milestone 3) and `factoryArtifact`'s own run #1
+hit the identical defect independently — the model gets the plural-based SP
+call and every sibling endpoint right, but naturalizes just the `/one_`
+route path and handler name to singular English. Two independent hits on the
+identical endpoint crosses the line from "one-off noise" (Milestone 3's
+verdict, correctly, at the time) to "real, fixable pattern." Added
+`_fix_one_route_plural`, verified directly against `factoryArtifact` run #1's
+actual captured route file before writing a test for it.
+
+**A fifth finding — not a code bug, a PRD-design gap:** frontend's 60 wasn't
+only the crash. `app_patches.menu_item`/`menu_section`/`icon_name`/
+`canAccess_key` and `setting_patch` were ALL null. Read `agents/frontend/
+prompt.py`: App.tsx/Setting.tsx menu registration is stated as unconditionally
+"MANDATORY, always include all 3 patches," with no way to express "this page
+is a menu-less drill-down sub-page." This PRD's own Open Question #6
+("nested, not standalone") asked for exactly that unsupported shape — the
+null result is what a genuinely unresolved, unsupported requirement *should*
+produce, not a bug to patch. Resolved by reverting Open Question #6 to this
+repository's established standalone-page pattern (every other module in this
+series uses it) rather than teaching the frontend prompt a new pattern it
+has never needed before.
+
+**Real run #2 (all 4 fixes + revised PRD):** `tier=TIER_1_CATALOG`,
+confirmed correct again. **Backend 100** — confirmed by
+direct inspection: `@router.post("/one_factoryArtifacts", ...)`, correctly
+plural. **Frontend 100** — confirmed by direct inspection:
+`app_patches.menu_item`/`menu_section`/`icon_name`/`canAccess_key` all
+populated, `setting_patch` populated, `IonInfiniteScroll` present in the
+generated TSX. Both are genuine passes, not score artifacts. **Database:
+`N/A (missing)`** — `database_agent` produced no output this run.
+
+**Database fixes remain unvalidated end-to-end, honestly:** three further
+attempts today (excluding one `httpx.ReadError` network fault, not a real
+attempt) — one all-three-layers-`N/A` (`database_agent`/`backend_agent`/
+`frontend_agent` all failed, Milestone 1's exact failure shape), and one
+`architect_agent`-stage failure (empty spec → correctly `BLOCKED`, garbage
+downstream). Stopped retrying at that point, per this thread's own standing
+principle: repeated retries chasing a lucky pass "measure API-call
+stochasticity, not learn anything new about the architecture." The two
+database-layer fixes (batching, fixer tenant-awareness) are proven correct
+in isolation — targeted unit tests built directly from the real captured
+defect, not synthetic guesses — but have not yet been exercised end-to-end in
+a real passing run.
+
+**A process lesson, recorded because it happened twice in one session:**
+`run_local_export.py` overwrites `local_export/{module}/artifacts.json` in
+place on every run — it does not version by run. Run #2's good
+backend=100/frontend=100 result was clobbered by run #4's all-`N/A` result
+before it could be committed as the milestone's evidence file. The evidence
+itself isn't lost (quoted directly above, captured before the file was
+overwritten), but the committed `local_export/factoryArtifact/artifacts.json`
+on disk right now reflects the LAST run (the failed `BLOCKED` one), not the
+best one. Worth copying a good result aside before re-running a module whose
+result is worth keeping, rather than re-running and hoping nothing better is
+sitting there.
+
+**Conclusion — three separate layers, not one verdict:**
+
+- **Decision/architecture layer: VALIDATED.** Correct across every attempt
+  that produced a spec (`TENANT_INDEPENDENT`, `TIER_1_CATALOG`, both right,
+  repeatedly).
+- **Construction layer, backend + frontend: VALIDATED for factoryArtifact.**
+  Both genuine passes, confirmed by direct artifact inspection, not merely a
+  passing score.
+- **Construction layer, database: NOT YET VALIDATED.** Two real bugs found
+  and fixed at the right layer (a reusable execution mechanism, a reusable
+  fixer function) rather than patched by hand — but not proven end-to-end
+  because `database_agent`/`architect_agent`'s own reliability (the same
+  limitation documented since Milestone 1) prevented a clean run today. This
+  milestone is deliberately NOT declared complete.
+
+**Decisions recorded this milestone:** none — `TENANT_INDEPENDENT` resolved
+directly via the existing mechanism, no ADR needed.
+
+**Not yet done, by design:** applying any generated artifact to a real
+repository (`pr_agent` excluded from every run this milestone, same pattern
+as every prior one). A clean, all-three-layers-passing real run for
+`factoryArtifact` — still outstanding, not faked.
+
 ## Next
 
-1. **Database agent + tenant-independent SQL** — generated `sp_all` must not
-   read/filter `companyId` when `gate_result.tenant_model` is
-   `TENANT_INDEPENDENT`; column names must match spec camelCase (`factoryRunId`).
-2. **Artifacts / Usage / Billing** — next modules on the chain after Factory
-   Runs. Carried-forward open questions: commercial-platform role model vs
-   `AllowedRole`; slug/uniqueness policies on organization/project.
+1. **factoryArtifact database validation** — re-run when convenient; the two
+   fixes are unit-tested but not yet proven against a real passing
+   `database_agent` output. Don't retry indefinitely chasing this — treat it
+   the same as every other `database_agent` reliability data point.
+2. **Artifacts / Usage / Billing** — `factoryArtifact` closes the Artifacts
+   link. `Usage` is next per the dependency chain (`factoryRun` = execution
+   metadata, `factoryArtifact` = generated output, `Usage` = consumption of
+   Factory resources, `Billing` = monetization of that consumption) — not yet
+   drafted, per this thread's own rule: don't draft the next module while the
+   current one's construction layer is still demonstrably unresolved.
+3. Carried-forward open questions, unchanged: commercial-platform role model
+   vs. `AllowedRole`; slug/uniqueness policies on organization/project.

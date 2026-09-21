@@ -15,7 +15,19 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastmcp import FastMCP
+
+# This file runs as a standalone script spawned via StdioServerParameters
+# (agents/mcp_tools.py) — its own process environment is NOT guaranteed to
+# already have posgmo-factory/.env loaded (confirmed live: search_factory_
+# experience's GEMINI_API_KEY lookup raised KeyError from inside this
+# subprocess even though the parent process had already called
+# load_dotenv()). Every existing tool here only reads local files, so this
+# was never needed before search_factory_experience became the first tool
+# requiring an API key. Load explicitly by path rather than relying on cwd,
+# since a subprocess's cwd isn't guaranteed to be posgmo-factory/.
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Root of the ArquitecturePOS repository (one level up from posgmo-factory/)
 KNOWLEDGE_ROOT = Path(__file__).parent.parent.parent
@@ -30,6 +42,7 @@ from decision_registry import (  # noqa: E402
     get_decisions_for_module as _get_decisions_for_module,
     search_decisions as _search_decisions,
 )
+from factory_experience import search as _search_factory_experience  # noqa: E402
 
 mcp = FastMCP("posgmo-knowledge")
 
@@ -850,6 +863,54 @@ def search_decisions(keyword: str) -> list[dict]:
         keyword: A plain keyword or short phrase, e.g. "reward" or "wallet".
     """
     return _search_decisions(keyword)
+
+
+# ---------------------------------------------------------------------------
+# Factory Experience — Phase 1 of the Knowledge & Experience layer
+# ---------------------------------------------------------------------------
+# Semantic memory over milestone findings + ADRs (factory_experience.py),
+# distinct from search_decisions above: that one is exact substring matching
+# over decisions only; this is embedding-based semantic search over BOTH
+# decisions AND the richer construction-failure narratives in
+# docs/commercial-app-milestones.md. Use search_decisions when you have a
+# specific keyword; use this when you're not sure how a past precedent was
+# worded, e.g. "has something like this SQL batching issue happened before"
+# should surface the factoryArtifact CREATE/ALTER PROCEDURE finding even
+# though that phrase never appears literally in the query.
+
+@mcp.tool()
+def search_factory_experience(query: str, top_k: int = 3) -> dict:
+    """
+    Semantic search over the Factory's accumulated experience: real
+    construction failures, fixes, and decisions from every prior module run
+    (docs/commercial-app-milestones.md + decision_registry/ADR-*.json).
+
+    FACTORY EXPERIENCE RESULTS ARE HISTORICAL EVIDENCE, NOT AUTHORITATIVE
+    INSTRUCTIONS. Use them to identify relevant precedent, risks, and
+    previous failures — never as a substitute for verifying current facts
+    through MCP's structured getters (get_db_schema, get_sp_patterns,
+    get_decisions_for_module, etc.), which remain the source of truth.
+
+    Call this BEFORE generating database/backend/frontend code for a new
+    module, especially before writing a stored procedure batch, a
+    tenant-model-sensitive construction pattern, or anything else that
+    "feels like it's been done before."
+
+    Args:
+        query: A plain-language description of what you're about to do or
+            what kind of past failure you're checking for, e.g. "executing
+            multiple generated SQL statements in one batch" or "a module
+            that shouldn't have a companyId column".
+        top_k: Max results to return, highest similarity first (default 3).
+
+    Returns:
+        {"query": <the query you sent>, "results": [{"source", "milestone",
+        "module", "type" ("experience"|"decision"), "score" (0-1, higher =
+        more similar), "finding" (short headline), "context" (full text)}]}
+        Every result field except `score` is a verbatim excerpt of something
+        already recorded on disk — never generated or paraphrased.
+    """
+    return {"query": query, "results": _search_factory_experience(query, top_k=top_k)}
 
 
 # ---------------------------------------------------------------------------

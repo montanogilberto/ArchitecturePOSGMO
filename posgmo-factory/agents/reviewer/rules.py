@@ -45,7 +45,12 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
     sp_ups = db.get("sp_upsert", "")
     sp_all = db.get("sp_all", "")
     sp_one = db.get("sp_one", "")
-    execution = db.get("execution", {})
+    # `.get(key, {})`'s default only fires when the key is ABSENT — an LLM
+    # emitting JSON `null` for a key that IS present crashes the chained
+    # .get() below with AttributeError (found live: factoryArtifact's
+    # setting_patch came back null, not {}, and took down the whole run).
+    # `or {}` catches both "missing" and "present but falsy/None".
+    execution = db.get("execution") or {}
 
     def E(msg: str, auto=False):
         issues.append(Issue("database", "create_table/SPs", "auto_error" if auto else "error", msg))
@@ -166,7 +171,7 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
         E("sp_one: updated_at must use ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '')")
 
     # ── soft_delete_parents ───────────────────────────────────────────────
-    for sdp in gate.get("soft_delete_parents", []):
+    for sdp in gate.get("soft_delete_parents") or []:
         fk_table = sdp.get("fk_table", "")
         if fk_table and not re.search(rf"{re.escape(fk_table)}.*active.*=.*'1'", sp_all, re.IGNORECASE):
             E(f"sp_all: missing active='1' filter for soft-delete parent '{fk_table}'")
@@ -183,13 +188,15 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
     module  = spec.get("module", "")
     plural  = f"{module}s"
     pattern = gate.get("backend_pattern", "CRUD_ONLY")
-    connectors = gate.get("connector_endpoints", [])
+    connectors = gate.get("connector_endpoints") or []
 
-    mod_path    = be.get("module_file", {}).get("path", "")
-    mod_content = be.get("module_file", {}).get("content", "")
-    rt_path     = be.get("route_file", {}).get("path", "")
-    rt_content  = be.get("route_file", {}).get("content", "")
-    docs        = be.get("docs_files", [])
+    module_file = be.get("module_file") or {}
+    route_file  = be.get("route_file") or {}
+    mod_path    = module_file.get("path", "")
+    mod_content = module_file.get("content", "")
+    rt_path     = route_file.get("path", "")
+    rt_content  = route_file.get("content", "")
+    docs        = be.get("docs_files") or []
 
     def E(file: str, msg: str, auto=False):
         issues.append(Issue("backend", file, "auto_error" if auto else "error", msg))
@@ -318,12 +325,12 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
     issues: list[Issue] = []
     module    = spec.get("module", "")
     Module    = module[0].upper() + module[1:] if module else ""
-    has_list  = spec.get("frontend", {}).get("has_list_view", True)
-    ui_pattern = spec.get("prd_hints", {}).get("frontend_ui_pattern", "")
+    has_list  = (spec.get("frontend") or {}).get("has_list_view", True)
+    ui_pattern = (spec.get("prd_hints") or {}).get("frontend_ui_pattern", "")
 
-    page_content = fe.get("page_file", {}).get("content", "")
-    api_content  = fe.get("api_file",  {}).get("content", "")
-    css_content  = fe.get("css_file",  {}).get("content", "")
+    page_content = (fe.get("page_file") or {}).get("content", "")
+    api_content  = (fe.get("api_file")  or {}).get("content", "")
+    css_content  = (fe.get("css_file")  or {}).get("content", "")
 
     def E(file: str, msg: str, auto=False):
         issues.append(Issue("frontend", file, "auto_error" if auto else "error", msg))
@@ -392,7 +399,7 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
         E(page_file, "IonToast missing — required for error display")
 
     # ── IonInfiniteScroll when has_list_view and NOT wizard ──────────────
-    if has_list_view := spec.get("frontend", {}).get("has_list_view", True):
+    if has_list_view := (spec.get("frontend") or {}).get("has_list_view", True):
         if ui_pattern != "Wizard Flow Layout" and "IonInfiniteScroll" not in page_content:
             E(page_file, "IonInfiniteScroll missing — required when has_list_view is true", auto=True)
 
@@ -412,13 +419,13 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
             W(f"src/pages/{Module}Page.css", f"CSS class names should use '{module_dashed}-' prefix")
 
     # ── app_patches present ───────────────────────────────────────────────
-    patches = fe.get("app_patches", {})
+    patches = fe.get("app_patches") or {}
     for key in ("import_line", "private_route", "menu_item"):
         if not patches.get(key):
             E(page_file, f"app_patches.{key} missing")
 
     # ── setting_patch present ─────────────────────────────────────────────
-    setting = fe.get("setting_patch", {})
+    setting = fe.get("setting_patch") or {}
     if not setting.get("section") or not setting.get("code"):
         E(page_file, "setting_patch missing section or code")
 

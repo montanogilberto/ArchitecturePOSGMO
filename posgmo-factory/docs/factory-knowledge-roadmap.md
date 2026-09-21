@@ -108,20 +108,53 @@ needing `.env` only worked by accident, via whichever other test file's
 import chain happened to trigger `orchestrator.py`'s own `load_dotenv()`
 first. Both fixed.
 
-## Phase 2 — Architecture RAG — not started
+## Phase 2 — Architecture RAG — DONE (2026-09-21)
 
-Semantic retrieval over PRDs, ADRs, architecture rationale, module
-decisions, design conventions — so `architect_agent` can ask *"have we
-solved something architecturally similar before?"* while MCP/Graph stays
-authoritative for facts. Natural extension of Phase 1's chunking approach
-to a second corpus (the PRD narratives themselves, not just milestone
-findings about them).
+**Status: proven, committed (`3705f9c`).** ADRs were already covered by
+Phase 1 — the genuinely new corpus here is every `tests/prd_*.json`'s own
+`description` narrative (business requirements, constraints, and especially
+OPEN ARCHITECTURAL QUESTIONS): design *reasoning*, captured before a module
+was ever run, as opposed to Phase 1's "what happened when it was run."
 
-**Open question carried in from Phase 1, not yet resolved:** more mandatory
-tool calls before generation is good for decision quality but is also more
-surface area for the `MALFORMED_FUNCTION_CALL`-class failures that have
-been this project's dominant reliability problem since Milestone 1. Worth
-watching per phase — not a reason to stop, but not to ignore either.
+**Implementation choice, deliberately minimal:** no new MCP tool, no new
+prompt wiring. `search_factory_experience` and its index already existed
+from Phase 1, and both `architect_agent` and `database_agent` already
+called it — Phase 2 just added a third `type: "architecture"` to the same
+corpus. An existing call got richer; nothing new had to be wired in.
+
+**Chunking detail that mattered:** OPEN ARCHITECTURAL QUESTIONS sections
+are one blob of several numbered items in the raw PRD text (confirmed
+`organization`'s: 2751 chars, 4 questions merged together). Splitting each
+numbered item into its own chunk — rather than embedding the whole section
+as one vector — was the difference between a recurring pattern retrieving
+as itself versus being diluted into a generic "this PRD has open questions"
+match.
+
+**The concrete proof**, run against the real corpus (146 chunks, 32 PRDs):
+*"how should a module reference a parent table that hasn't been created in
+the live database yet"* — no module named, no PRD's specific phrasing used
+("plain reference field, not a foreign key", "table isn't live yet") —
+surfaced real open-question precedent from at least 2 of
+`organization`/`projects`/`factoryRun`/`factoryArtifact`, each of whom
+independently hit this exact same architectural pattern with different
+wording. Now a live automated test
+(`test_live_cross_prd_not_live_yet_reference_pattern_surfaces_multiple_modules`),
+not just a manual run.
+
+**A real API limit found and fixed:** Gemini's batch embed endpoint caps at
+100 requests/call. Phase 1's 59 chunks never hit it; Phase 2's 146 did,
+confirmed live via a `400 INVALID_ARGUMENT`. `_embed()` now batches
+internally (groups of 90) — transparent to every caller, including Phase 1's
+existing code.
+
+**Open question carried in from Phase 1, still not resolved by choice:**
+more mandatory tool calls before generation is good for decision quality
+but is also more surface area for the `MALFORMED_FUNCTION_CALL`-class
+failures that have been this project's dominant reliability problem since
+Milestone 1. Phase 2 didn't add a new tool call (see above), so it didn't
+make this worse — but Phase 3 (a genuinely new retrieval target,
+implementations) will need to answer this question directly rather than
+sidestepping it the way Phase 2 could.
 
 ## Phase 3 — Implementation RAG — not started
 

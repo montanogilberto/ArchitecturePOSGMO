@@ -156,13 +156,56 @@ make this worse — but Phase 3 (a genuinely new retrieval target,
 implementations) will need to answer this question directly rather than
 sidestepping it the way Phase 2 could.
 
-## Phase 3 — Implementation RAG — not started
+## Phase 3 — Implementation RAG — DONE (2026-09-21)
 
-Retrieve actual previous implementations (SQL, stored procedures, FastAPI
-routes, Pydantic schemas, React/Ionic components, tests) — *"show me how we
-implemented a similar module."* Retrieved code stays reference material,
-never blindly copied — the reviewer still verifies whatever gets generated,
-same as every other layer.
+**Status: proven, committed (`10fe021`).** Fourth collection on the same
+`search_factory_experience` tool/index: real generated code from
+`local_export/*/artifacts.json` (SQL, FastAPI routes/modules, React/Ionic
+pages+APIs+CSS). One chunk per generated file — "show me how we implemented
+a similar module" is a whole-file browsing case, not a line-search case.
+
+**The filter that had to be per-layer, not per-module, proven on real
+data:** each layer indexed only if that layer's own reviewer score is
+`>= 80`. `notificationDispatch` scored `backend: 20` (broken) but
+`database: 100, frontend: 100` (genuinely good) in the *same run* — a
+per-module filter would have gotten one of those two judgments wrong,
+either offering broken backend code as a pattern to copy or discarding two
+genuinely good implementations.
+
+**The concrete proof:** *"a React page component with infinite scroll
+pagination for a list of records"* — no module named — retrieves actual
+generated React/Ionic page code containing real `IonInfiniteScroll`/
+`IonList` markup, across multiple modules' real implementations. Not
+findings about the code; the code itself.
+
+**Reported honestly, not swept under the rug — two real things found
+while proving this, not just the clean result:**
+1. `notificationDispatch`'s `frontend_artifacts` is stored as raw
+   `` ```typescript `` code, not JSON — an older, incompatible pipeline
+   schema shape (pre-dating even this session). `_parse_artifact_json`
+   degrades gracefully (returns `{}`) rather than crashing or indexing
+   garbage from it.
+2. A first proof-query attempt — *"a FastAPI backend module with a public
+   endpoint that doesn't require authentication"* — did NOT retrieve
+   `pricingPlan`'s backend as expected. Traced it: not a retrieval bug.
+   `pricingPlan`'s actual generated `route_file` genuinely never contains
+   the custom public endpoint its own PRD asked for — `backend_agent`
+   silently omitted it. Worse: `run_local_export.py` (used for *every*
+   real run this entire session) never wires in
+   `check_backend_endpoint_completeness` at all — only `orchestrator.py`'s
+   full `run_factory()` does. This gap existed the whole time and was only
+   surfaced as a side effect of Phase 3's retrieval work. **Flagged as a
+   follow-up, not fixed** — out of Phase 3's own scope.
+
+**Also observed, not yet acted on:** semantic retrieval measurably performs
+better on frontend/UI code (React/Ionic import structure correlates
+reasonably with natural-language UI descriptions) than it would likely
+perform on backend/database code for *behavioral* queries — each
+implementation chunk's `finding` label is currently just a generic file
+descriptor (`module — layer — path — score`), with no description of what
+the code actually *does*. Enriching that label (e.g. from the PRD's own
+endpoint descriptions) would likely improve backend/database retrieval
+quality. A real quality gap for a future pass, not pretended away.
 
 ## Phase 4 — Agentic PRD Builder — not started
 

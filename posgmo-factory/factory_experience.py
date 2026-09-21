@@ -1,5 +1,5 @@
 """
-Factory Knowledge & Experience -- Phases 1-2.
+Factory Knowledge & Experience -- Phases 1-3.
 
 Semantic memory over what the Factory has already learned:
 - Phase 1 (Experience): milestone findings (docs/commercial-app-milestones.md)
@@ -8,10 +8,21 @@ Semantic memory over what the Factory has already learned:
 - Phase 2 (Architecture): every PRD's own narrative (tests/prd_*.json's
   `description` field -- business requirements, constraints, and especially
   OPEN ARCHITECTURAL QUESTIONS) -- the design REASONING behind a module,
-  captured before it was ever run. Different corpus, same retrieval
-  mechanism and the same MCP tool (search_factory_experience) -- an agent
-  doesn't need to know which phase indexed a given result, only that its
-  `type` field says "experience", "decision", or "architecture".
+  captured before it was ever run.
+- Phase 3 (Implementation): actual generated code from local_export/*/
+  artifacts.json -- real SQL/backend/frontend files the Factory previously
+  produced. Filtered per LAYER by that layer's own reviewer score (>= 80),
+  not per module -- a module that failed overall can still have one
+  genuinely good layer (confirmed on real data: notificationDispatch's
+  backend scored 20 and must never be offered as "how we did it", but its
+  database and frontend both scored 100 and are legitimately reusable
+  reference). Never blindly copied truth -- the reviewer still verifies
+  whatever gets generated next, same as every other layer.
+
+All three phases share one corpus, one retrieval mechanism, one MCP tool
+(search_factory_experience) -- an agent doesn't need to know which phase
+indexed a given result, only that its `type` field says "experience",
+"decision", "architecture", or "implementation".
 
 Deliberately NOT a replacement for mcp_server's structured getters (schema,
 SP patterns, routes) -- those stay exact-match lookups because exact lookup
@@ -29,9 +40,10 @@ user when this was scoped): RAG retrieves evidence, agents reason over it,
 MCP/Graph stays the authoritative source of facts, the reviewer verifies the
 resulting implementation. This module is not a source of truth -- every
 result it returns is a verbatim, sourced excerpt of something already
-written to disk (a milestone finding, a recorded ADR, or a PRD's own text);
-nothing here is generated or synthesized, so there is no fabrication surface
-in the retrieval path itself.
+written to disk (a milestone finding, a recorded ADR, a PRD's own text, or
+a previously generated implementation file); nothing here is generated or
+synthesized, so there is no fabrication surface in the retrieval path
+itself.
 
 Usage:
     python factory_experience.py --rebuild            # (re)compute the index
@@ -48,6 +60,8 @@ _ROOT = Path(__file__).parent
 _MILESTONES_PATH = _ROOT / "docs" / "commercial-app-milestones.md"
 _ADR_DIR = _ROOT / "decision_registry"
 _PRD_DIR = _ROOT / "tests"
+_LOCAL_EXPORT_DIR = _ROOT / "local_export"
+_MIN_LAYER_SCORE = 80  # a layer must score at least this to be "proven" reference material
 _INDEX_PATH = _ROOT / "factory_experience_index.json"
 _EMBEDDING_MODEL = "gemini-embedding-001"
 
@@ -203,6 +217,85 @@ def _chunk_prds() -> list[dict]:
     return chunks
 
 
+def _parse_artifact_json(raw) -> dict:
+    """database_artifacts/backend_artifacts/frontend_artifacts are stored as
+    JSON strings, sometimes wrapped in ```json markdown fences the LLM adds
+    despite being told not to (same shape every other consumer in this repo
+    already has to handle -- see agents/reviewer/rules.py, agents/fixer/
+    rules.py). Returns {} on anything unparseable rather than raising, since
+    this is best-effort reference indexing, not a correctness-critical path."""
+    if isinstance(raw, dict):
+        return raw
+    if not isinstance(raw, str) or not raw.strip():
+        return {}
+    body = raw.strip()
+    if body.startswith("```"):
+        body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("```")).strip()
+    try:
+        parsed = json.loads(body)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+# layer -> (session-state key, {file key: is this a {"path","content"} object, or a plain SQL string?})
+_LAYER_FILE_KEYS = {
+    "database": ["create_table", "sp_upsert", "sp_all", "sp_one"],       # plain strings
+    "backend": ["module_file", "route_file"],                            # {"path","content"} objects
+    "frontend": ["api_file", "page_file", "css_file"],                   # {"path","content"} objects
+}
+
+
+def _chunk_implementations() -> list[dict]:
+    """
+    One chunk per generated FILE (not sub-split like prose -- "show me how
+    we implemented a similar module" is a whole-file browsing use case),
+    filtered per LAYER by that layer's own reviewer score, not per module --
+    a module that failed overall can still have one genuinely proven layer.
+    See _MIN_LAYER_SCORE and the module docstring for why this filter is not
+    optional: unfiltered, this would offer the Factory's own known-broken
+    code as if it were a good pattern to copy.
+    """
+    chunks: list[dict] = []
+    if not _LOCAL_EXPORT_DIR.exists():
+        return chunks
+    for module_dir in sorted(_LOCAL_EXPORT_DIR.iterdir()):
+        artifacts_path = module_dir / "artifacts.json"
+        if not module_dir.is_dir() or not artifacts_path.exists():
+            continue
+        try:
+            data = json.loads(artifacts_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        module = module_dir.name
+        review = _parse_artifact_json(data.get("review_result", "{}"))
+        scores = review.get("scores") or {}
+
+        for layer, file_keys in _LAYER_FILE_KEYS.items():
+            score = scores.get(layer)
+            if not isinstance(score, (int, float)) or score < _MIN_LAYER_SCORE:
+                continue  # not proven -- missing, None, or below the bar
+            layer_data = _parse_artifact_json(data.get(f"{layer}_artifacts", "{}"))
+            for key in file_keys:
+                raw_field = layer_data.get(key)
+                if layer == "database":
+                    content, path = raw_field, key
+                else:
+                    content = raw_field.get("content", "") if isinstance(raw_field, dict) else ""
+                    path = raw_field.get("path", key) if isinstance(raw_field, dict) else key
+                if not content or not isinstance(content, str) or len(content) < _MIN_CHUNK_CHARS:
+                    continue
+                chunks.append({
+                    "source": f"local_export/{module}/artifacts.json",
+                    "milestone": None,
+                    "module": module,
+                    "type": "implementation",
+                    "finding": f"{module} — {layer} — {path} (reviewer score {score})",
+                    "context": content,
+                })
+    return chunks
+
+
 _MAX_EMBED_BATCH = 90  # API hard limit is 100 requests/batch; leave headroom
 
 
@@ -236,6 +329,7 @@ def build_index() -> dict:
         _chunk_milestones(_MILESTONES_PATH.read_text(encoding="utf-8"))
         + _chunk_adrs()
         + _chunk_prds()
+        + _chunk_implementations()
     )
     if not chunks:
         return {"chunks": 0}

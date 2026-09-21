@@ -1,5 +1,6 @@
 """
-Factory Knowledge & Experience — Phases 1-2 (Experience + Architecture).
+Factory Knowledge & Experience — Phases 1-3 (Experience + Architecture +
+Implementation).
 
 Chunking, headline-splitting, and ranking logic are tested with mocked
 embeddings so most of this file never depends on live API calls. The
@@ -26,16 +27,40 @@ relevant precedent, not just plausible-looking chunks:
            any PRD's exact phrasing ("plain reference field, not a
            foreign key", "table isn't live yet", etc.).
 
+    "a React page component with infinite scroll pagination for a     (Phase 3)
+     list of records"
+        -> must surface real generated frontend implementation code
+           (IonPage/IonList/IonInfiniteScroll TSX), not just findings
+           ABOUT that code.
+
 None of these queries use the literal wording of the finding they're
 expected to surface — that's the whole point (contrast with
 search_decisions' plain substring matching, and with
 _classify_tenant_model's brittle keyword signals, agents/decision_gate/
 rules.py, found fragile in this same session).
+
+Phase 3 honesty note, found while proving it, not swept under the rug: an
+earlier proof-query attempt ("a FastAPI backend module with a public
+endpoint that doesn't require authentication") did NOT retrieve
+pricingPlan's backend as expected -- not a retrieval bug, but because
+pricingPlan's actual generated route_file genuinely never contains the
+custom public endpoint the PRD asked for (backend_agent silently omitted
+it, the same class of gap check_backend_endpoint_completeness exists to
+catch -- except run_local_export.py, used for every real run this whole
+session, never wires that check in at all, only orchestrator.py's
+run_factory() does). Retrieval correctly reflected what's actually in the
+corpus. Left as a flagged follow-up, not fixed here -- out of Phase 3's
+scope. Semantic retrieval also measurably works better on frontend/UI code
+(React/Ionic import structure correlates with natural-language UI
+descriptions) than on backend/database code, where each chunk's `finding`
+label is currently just a generic file descriptor with no behavioral
+description -- a real quality gap for later, not pretended away.
 """
 import json
 
 from factory_experience import (
     _chunk_adrs,
+    _chunk_implementations,
     _chunk_milestones,
     _chunk_prds,
     _cosine,
@@ -155,6 +180,79 @@ def test_chunk_prds_skips_missing_or_empty_description(tmp_path, monkeypatch):
     (prd_dir / "prd_empty.json").write_text(json.dumps({"module": "empty", "fields": []}))
     monkeypatch.setattr("factory_experience._PRD_DIR", prd_dir)
     assert _chunk_prds() == []
+
+
+def _write_artifacts(local_export_dir, module, scores, database_artifacts=None,
+                      backend_artifacts=None, frontend_artifacts=None):
+    module_dir = local_export_dir / module
+    module_dir.mkdir()
+    (module_dir / "artifacts.json").write_text(json.dumps({
+        "database_artifacts": json.dumps(database_artifacts) if database_artifacts else "{}",
+        "backend_artifacts": json.dumps(backend_artifacts) if backend_artifacts else "{}",
+        "frontend_artifacts": json.dumps(frontend_artifacts) if frontend_artifacts else "{}",
+        "review_result": json.dumps({"scores": scores}),
+    }))
+
+
+def test_chunk_implementations_filters_per_layer_not_per_module(tmp_path, monkeypatch):
+    """The real finding this filter exists for: notificationDispatch scored
+    backend=20 (broken) but database=100/frontend=100 (genuinely good) in
+    the same run. A per-MODULE filter would either wrongly include the
+    broken backend or wrongly exclude the good database/frontend."""
+    local_export_dir = tmp_path / "local_export"
+    local_export_dir.mkdir()
+    long_sql = "CREATE TABLE dbo.Widgets (widgetId INT);" + " " * 40
+    long_py = "from fastapi import APIRouter\nrouter = APIRouter()" + " " * 40
+    _write_artifacts(
+        local_export_dir, "mixedQuality",
+        scores={"database": 100, "backend": 20, "frontend": 100},
+        database_artifacts={"create_table": long_sql, "sp_upsert": "", "sp_all": "", "sp_one": ""},
+        backend_artifacts={"module_file": {"path": "modules/x.py", "content": long_py}},
+        frontend_artifacts={"page_file": {"path": "src/pages/X.tsx", "content": long_py}},
+    )
+    monkeypatch.setattr("factory_experience._LOCAL_EXPORT_DIR", local_export_dir)
+
+    chunks = _chunk_implementations()
+    layers_indexed = {c["finding"].split(" — ")[1] for c in chunks}
+    assert "database" in layers_indexed
+    assert "frontend" in layers_indexed
+    assert "backend" not in layers_indexed  # score 20 < _MIN_LAYER_SCORE, must be excluded
+
+
+def test_chunk_implementations_skips_missing_or_none_score(tmp_path, monkeypatch):
+    local_export_dir = tmp_path / "local_export"
+    local_export_dir.mkdir()
+    long_sql = "CREATE TABLE dbo.Widgets (widgetId INT);" + " " * 40
+    _write_artifacts(
+        local_export_dir, "noScore",
+        scores={"database": None, "backend": 100},  # database never reviewed, backend has no frontend key at all
+        database_artifacts={"create_table": long_sql, "sp_upsert": "", "sp_all": "", "sp_one": ""},
+        backend_artifacts={"module_file": {"path": "modules/x.py", "content": "x" * 50}},
+    )
+    monkeypatch.setattr("factory_experience._LOCAL_EXPORT_DIR", local_export_dir)
+
+    chunks = _chunk_implementations()
+    assert not any(c["finding"].split(" — ")[1] == "database" for c in chunks)
+
+
+def test_chunk_implementations_skips_malformed_legacy_artifacts(tmp_path, monkeypatch):
+    """The real notificationDispatch case: frontend_artifacts stored as raw
+    ```typescript code, not JSON -- an older pipeline schema shape. Must
+    degrade gracefully (skip it) rather than crash or index garbage."""
+    local_export_dir = tmp_path / "local_export"
+    local_export_dir.mkdir()
+    module_dir = local_export_dir / "legacyModule"
+    module_dir.mkdir()
+    (module_dir / "artifacts.json").write_text(json.dumps({
+        "database_artifacts": "{}",
+        "backend_artifacts": "{}",
+        "frontend_artifacts": "```typescript\n// not actually JSON\nconst x = 1;\n```",
+        "review_result": json.dumps({"scores": {"database": 100, "backend": 100, "frontend": 100}}),
+    }))
+    monkeypatch.setattr("factory_experience._LOCAL_EXPORT_DIR", local_export_dir)
+
+    chunks = _chunk_implementations()  # must not raise
+    assert chunks == []
 
 
 # ---------------------------------------------------------------------------
@@ -281,4 +379,23 @@ def test_live_cross_prd_not_live_yet_reference_pattern_surfaces_multiple_modules
     assert len(architecture_hits) >= 2, (
         f"expected precedent from at least 2 different PRDs, got modules: "
         f"{[(r['module'], r['finding']) for r in results]}"
+    )
+
+
+def test_live_ui_pattern_query_surfaces_real_implementation_code():
+    """Phase 3's proof: retrieves actual generated frontend CODE (not a
+    finding or PRD paragraph ABOUT that code) for a plain-language UI
+    pattern description, across multiple modules' real implementations."""
+    results = search(
+        "a React page component with infinite scroll pagination for a list of records",
+        top_k=5,
+    )
+    implementation_hits = [r for r in results if r["type"] == "implementation"]
+    assert implementation_hits, (
+        f"expected at least one real implementation chunk in top 5, got types: "
+        f"{[r['type'] for r in results]}"
+    )
+    assert any("IonInfiniteScroll" in r["context"] or "IonList" in r["context"] for r in implementation_hits), (
+        "expected the retrieved implementation chunk to actually contain "
+        "list/scroll UI code, not just a plausible-looking file"
     )

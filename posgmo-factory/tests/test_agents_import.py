@@ -73,6 +73,15 @@ def test_design_consistency_agent_importable():
     assert design_consistency_agent.output_key == "design_brief"
 
 
+def test_prd_builder_agent_importable():
+    """prd_builder_agent (Phase 4) is a standalone entry point, like the
+    version it replaces -- run via its own `adk web` (prd-builder/agent.py),
+    not part of root_agent's SequentialAgent pipeline."""
+    from agents.prd_builder import prd_builder_agent
+    assert prd_builder_agent.name == "prd_builder_agent"
+    assert prd_builder_agent.output_key == "prd_builder_output"
+
+
 def test_root_agent_pipeline_importable():
     from agents import root_agent
     assert root_agent.name == "posgmo_factory"
@@ -145,6 +154,7 @@ def test_prompt_files_export_instruction():
         ("agents.frontend.prompt",           "INSTRUCTION"),
         ("agents.reviewer.prompt",           "_INSTRUCTION"),
         ("agents.pr.prompt",                 "INSTRUCTION"),
+        ("agents.prd_builder.prompt",        "INSTRUCTION"),
     ]
     for pkg, attr in packages:
         mod = importlib.import_module(pkg)

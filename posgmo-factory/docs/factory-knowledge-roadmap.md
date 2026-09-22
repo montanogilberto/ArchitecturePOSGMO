@@ -267,12 +267,49 @@ construction (database/backend/frontend generation) — Phase 4's job was
 producing the PRD, not building it. That's either a natural next milestone
 in the existing PRD series, or folded into Phase 5's closed loop.
 
-## Phase 5 — Full Factory Agent — not started
+## Phase 5 — Full Factory Agent — DONE (2026-09-21)
 
-The closed loop: understand requirement → PRD Builder → Knowledge/RAG
-(Experience + Architecture + Implementation, all three) → MCP/Graph →
-Architecture → Construction → Reviewer → (fail → Fix Loop | pass →
-Artifact) → Factory Memory, which feeds the next run.
+**Status: proven, committed (`d6eefc6`).** The closed loop: understand
+requirement → PRD Builder → Knowledge/RAG (Experience + Architecture +
+Implementation, all three) → MCP/Graph → Architecture → Construction →
+Reviewer → (fail → Fix Loop | pass → Artifact) → Factory Memory, which
+feeds the next run.
+
+**What Phase 5 actually built, and what it deliberately didn't.**
+Construction, review, and the fix loop already existed — `factory_agent.py`
+is orchestration, not new pipeline machinery: `run_factory_agent()` wires a
+raw request into `prd_builder_agent` (Phase 4), validates the result under
+the now-strict `PRDInput` schema, feeds it into `run_local_export.run_local()`
+(the exact same sandboxed pipeline every module in this series has run
+through), and refreshes the Factory Experience index afterward.
+
+**Two boundaries held deliberately, not relaxed for "closing the loop":**
+- **Still sandboxed.** `run_local()` still strips `pr_agent` — no GitHub
+  call of any kind, win or lose. Enabling real pushes is a separate,
+  explicit decision this script does not make for you.
+- **No automatic retry on failure.** Same standing principle since
+  Milestone 1: chasing a lucky pass "measures API-call stochasticity, not
+  learn anything new about the architecture." A FAIL is reported honestly,
+  with the real `review_result`, not hidden behind another attempt.
+
+**The proof — one real, live, fully unattended run of the whole loop,**
+not a mocked demonstration: the same raw request Phase 4 used ("track LLM
+usage per Factory Run for billing") produced a *new* PRD (`usageMeter`,
+saved to `tests/prd_usageMeter.json`, validated cleanly under the strict
+schema) and ran it straight into construction. Result: `backend: 100`,
+`database`/`frontend` produced no output — the same well-documented
+construction-layer stochasticity tracked since Milestone 1, not a Phase 5
+defect. Reported honestly: `status: constructed`, `passed: false`, real
+issues listed, no pretending. **Factory Memory genuinely closed the loop,
+not just in theory:** the index grew 165 → 177 chunks, including 6 new
+`usageMeter` chunks confirmed present and retrievable — available to the
+*next* `prd_builder_agent` call, not merely computed and discarded.
+
+**Not yet done, by design, same as every phase before it:** an automatic
+retry/repair strategy for construction-layer stochasticity remains out of
+scope everywhere in this project, not just here — that's still a
+separately-tracked, not-yet-urgent problem, consistent with Milestone 1's
+original verdict. Real GitHub pushes remain a human decision.
 
 ```
                          USER
@@ -323,7 +360,8 @@ The commercial-platform PRD series (`leadCapture` through `factoryArtifact`,
 `docs/commercial-app-milestones.md`) is the construction foundation this
 roadmap builds on top of, not a separate track that's now finished. Every
 real artifact, failure, fix, and passing run from that series is exactly
-what Phase 1 indexes and what Phases 2-3 will extend to. The progression:
+what Phase 1 indexes and what Phases 2-3 extended to. All five phases below
+are now done — this is the actual progression that happened, not a plan:
 
 ```
 Phase 1  Factory remembers

@@ -373,9 +373,22 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
             E(fname, "catch (err: any) forbidden — use catch (err) with (err as Error).message", auto=True)
 
     # ── CustomEvent<any> and bare CustomEvent ─────────────────────────────
+    # The bare-CustomEvent check must only look at TYPE-ANNOTATION usage
+    # (e.g. `e: CustomEvent` or `e: CustomEvent<Foo>`), not the import line
+    # -- `import { ..., CustomEvent } from 'react'` is the established,
+    # correct convention (agents/frontend/prompt.py's own examples import
+    # CustomEvent bare, then use it WITH a generic at each call site).
+    # `\bCustomEvent\b(?!\s*<)` matched that import occurrence first (never
+    # followed by `<`, since imports don't carry generic parameters) and
+    # re.search only needs one match -- so a page with every single usage
+    # correctly typed still failed review on the import line alone.
+    # Confirmed live: factoryRunUsage's real generated page had 4
+    # occurrences, all 3 real usages correctly typed
+    # (CustomEvent<void>/<InputInputEventDetail>/<DatetimeChangeEventDetail>),
+    # and it still failed on this check every iteration.
     if re.search(r'CustomEvent<any>', page_content):
         E(page_file, "CustomEvent<any> forbidden — use specific generic (CheckboxChangeEventDetail, etc.)", auto=True)
-    if re.search(r'\bCustomEvent\b(?!\s*<)', page_content):
+    if re.search(r':\s*CustomEvent\b(?!\s*<)', page_content):
         E(page_file, "Bare CustomEvent without generic forbidden — add specific type parameter", auto=True)
 
     # ── JSON.parse double-parse ───────────────────────────────────────────

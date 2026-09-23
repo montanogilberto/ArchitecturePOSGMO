@@ -262,10 +262,15 @@ one almost slipped through:**
 Run 3, with both fixes in place, produced fully clean, strict-schema-valid
 output. That's the version saved as `tests/prd_factoryRunUsage.json`.
 
-**Not yet done, by design:** running `factoryRunUsage` through actual
-construction (database/backend/frontend generation) — Phase 4's job was
-producing the PRD, not building it. That's either a natural next milestone
-in the existing PRD series, or folded into Phase 5's closed loop.
+**Update (2026-09-22): done.** `factoryRunUsage` was taken through real
+construction — see `docs/commercial-app-milestones.md` Milestone 7. Took 32
+attempts (construction-layer stochasticity, same character documented since
+Milestone 1 — not a Phase 4 defect), surfaced a real reviewer bug along the
+way (a bare-`CustomEvent` false positive, fixed), and landed a genuine
+simultaneous pass on all three layers: `database: 90, backend: 100,
+frontend: 100`. The real `FactoryRunUsages` table + SPs that resulted are
+being kept in the live database as the actual `Usage` module, not treated
+as sandboxed test residue — an explicit decision, not a default.
 
 ## Phase 5 — Full Factory Agent — DONE (2026-09-21)
 

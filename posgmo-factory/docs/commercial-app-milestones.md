@@ -472,17 +472,98 @@ repository (`pr_agent` excluded from every run this milestone, same pattern
 as every prior one). A clean, all-three-layers-passing real run for
 `factoryArtifact` — still outstanding, not faked.
 
+## Milestone 7 — factoryRunUsage: first module authored by an agent (Phase 4), first genuine simultaneous pass on all three layers, and a real bug found along the way
+
+**Input:** `tests/prd_factoryRunUsage.json` — not hand-written. Produced by
+`agents/prd_builder/` (Factory Knowledge & Experience roadmap, Phase 4) from
+a raw request ("track LLM usage per Factory Run so we can eventually bill
+for it"), researched via `search_factory_experience` +
+`get_decisions_for_module` before writing anything. First PRD in this whole
+series where a person didn't do the research and drafting by hand. Closes
+the `Usage` link in the dependency chain (`factoryRun` → `factoryArtifact` →
+`Usage` → `Billing`).
+
+**A real bug found while getting this through construction, not a
+hypothetical one:** `agents/reviewer/rules.py`'s bare-`CustomEvent` check
+(`re.search(r'\bCustomEvent\b(?!\s*<)', page_content)`) matched the FIRST
+occurrence of the word "CustomEvent" in the file — always the import line
+(`import { ..., CustomEvent } from 'react'`, the established, correct
+convention every page follows: import the bare type name, use it WITH a
+generic at each call site). Since an import never carries a following `<`,
+that occurrence always looked "bare," and `re.search` only needs one match
+— so a page where every real usage was correctly typed still failed review
+on the import line alone. `factoryRunUsage`'s real generated page had 4
+occurrences: 1 import + 3 correctly-typed usages, and it failed every
+iteration until fixed. `review_fixer`'s own regex is narrower and correctly
+found nothing to fix, confirming the bug was in detection, not review_fixer
+failing to act. Fixed by requiring a preceding `:` (type-annotation
+position) before the bare-usage check — verified both directions:
+correctly silent on properly-typed code, still correctly catches genuine
+bare usage (confirmed on a *later* run in this same campaign, which had a
+real bare `e: CustomEvent` in a generic `handleInputChange` handler — a
+true positive, not a regression of the fix). 4 new tests, one against the
+real captured content, not just a synthetic fixture.
+
+**The campaign:** 32 attempts to land all three layers simultaneously.
+Every individual layer proved itself capable of a clean pass early on;
+every *pairwise* combination (backend+frontend, database+frontend,
+database+backend) succeeded together multiple times before all three
+finally landed in the same run. Investigated whether `factoryRunUsage`'s
+PRD was unusually complex for `database_agent` specifically (it has
+consistently the lowest per-attempt success rate of the three layers) —
+ruled out: 7 fields, fewer than `factoryRun` (11), `factoryArtifact` (9),
+or `pricingPlan` (12), all of which succeeded at database generation
+earlier in this series. No PRD-shape explanation found; genuine model-level
+stochasticity (`MALFORMED_FUNCTION_CALL`, confirmed via isolated
+diagnostics), consistent with every prior milestone's construction-layer
+findings since Milestone 1. Two infrastructure blips along the way (a real
+`503 UNAVAILABLE` from the Gemini API, and once an ADK-level
+`LlmCallsLimitExceededError` — 500 LLM calls in one unusually expensive
+single invocation) — neither counted as a real data point.
+
+**Attempt 32 — genuine pass:** `database: 90, backend: 100, frontend: 100`,
+`passed: true`. The one remaining issue (non-blocking, database still
+scored 90): `sp_all: OPENJSON key must be '$.factoryRunUsages' (plural),
+not singular` — the same *class* of singular/plural naming drift already
+documented for `project` (Milestone 3) and `factoryArtifact`'s backend
+route (Milestone 6), this time on the database side's OPENJSON key.
+Recorded, not fixed here — one more data point for that pattern, not yet
+enough independent occurrences on this specific shape to justify a new
+deterministic fixer the way `/one_{module}` route pluralization was.
+
+**Real live-database consequence, decided explicitly, not defaulted:**
+`database_executor` succeeded on this run (and several earlier ones in the
+same campaign) — a real `FactoryRunUsages` table + 3 SPs exist in the live
+database. Unlike every prior sandboxed-test cleanup this session
+(`factoryArtifact`, an accidental `pricingPlan` write), this one was kept
+deliberately: asked directly, given the object came from a run that
+genuinely passed review, and the answer was to treat it as the real
+`Usage` table going forward, not test residue to discard.
+
+**Conclusion:**
+
+- **Decision/architecture layer: VALIDATED**, and for the first time by an
+  agent's own research rather than a person's, still correct (`TIER_2_FINANCIAL`,
+  `TENANT_INDEPENDENT`, the established plain-reference pattern for
+  `factoryRun`, all reached without a human writing the PRD).
+- **Construction layer: a genuine, real full pass achieved.** Took 32
+  attempts and surfaced one real reviewer bug along the way, but the
+  outcome is unambiguous: `factoryRunUsage` passed review at all three
+  layers in the same run, with real, kept artifacts in the live database.
+- **Not yet done:** the `sp_all` OPENJSON singular/plural naming issue
+  remains a one-off, un-fixed finding. `Billing`, the last link in the
+  original dependency chain, is not yet drafted.
+
 ## Next
 
-1. **factoryArtifact database validation** — re-run when convenient; the two
-   fixes are unit-tested but not yet proven against a real passing
-   `database_agent` output. Don't retry indefinitely chasing this — treat it
-   the same as every other `database_agent` reliability data point.
-2. **Artifacts / Usage / Billing** — `factoryArtifact` closes the Artifacts
-   link. `Usage` is next per the dependency chain (`factoryRun` = execution
-   metadata, `factoryArtifact` = generated output, `Usage` = consumption of
-   Factory resources, `Billing` = monetization of that consumption) — not yet
-   drafted, per this thread's own rule: don't draft the next module while the
-   current one's construction layer is still demonstrably unresolved.
+1. **Billing** — the last link in the dependency chain
+   (`factoryRun → factoryArtifact → Usage → Billing`). Candidate for the
+   next PRD, agent-authored via `agents/prd_builder/` again now that it's
+   proven, per Milestone 7.
+2. **OPENJSON singular/plural naming** — one occurrence so far
+   (`factoryRunUsage`'s `sp_all`). Watch for a second independent
+   occurrence before deciding whether it deserves its own deterministic
+   fixer, the same threshold `/one_{module}` route pluralization crossed
+   (Milestone 6) after appearing twice.
 3. Carried-forward open questions, unchanged: commercial-platform role model
    vs. `AllowedRole`; slug/uniqueness policies on organization/project.

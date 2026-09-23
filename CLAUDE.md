@@ -13,6 +13,16 @@ pip install -e ".[dev]"
 # Run the full factory pipeline against a PRD file
 python orchestrator.py tests/prd_supplier.json
 
+# One-time per clone/machine: create the underscore symlinks `adk web` needs
+# (ADK requires app directory names to be valid Python identifiers; this
+# repo's posgmo-factory/ and prd-builder/ have hyphens, so a plain
+# `adk web` from the repo root will not find them without this step)
+posgmo-factory/scripts/setup_dev_ui.sh
+
+# Launch the ADK dev UI, then select "posgmo_factory" or "prd_builder" from
+# the app dropdown (NOT the hyphenated names, which cannot load)
+adk web
+
 # Start the MCP knowledge server (stdio transport)
 python -m mcp_server.server
 

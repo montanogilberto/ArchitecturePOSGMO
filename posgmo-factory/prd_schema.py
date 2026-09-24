@@ -12,7 +12,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -116,6 +116,18 @@ class PRDBackendHints(BaseModel):
 
 
 class PRDInput(BaseModel):
+    # extra="forbid": a PRD carrying an unrecognized top-level key (e.g. a
+    # richer CONSTRAINTS/OPEN ARCHITECTURAL QUESTIONS array pulled OUT of
+    # `description` into their own keys) must fail loudly at validation,
+    # not silently succeed with that content dropped. Found live: Phase 4's
+    # PRD Builder Agent did exactly this on one real run -- "PRDInput VALID"
+    # printed true while the richest content (the exact material Phase 2's
+    # RAG indexes) would have been silently discarded downstream by every
+    # consumer that reads `description`, including _classify_tenant_model
+    # itself. Verified this doesn't break any of the 32 existing PRDs
+    # already in tests/prd_*.json before enabling it.
+    model_config = ConfigDict(extra="forbid")
+
     module: str = Field(
         description="Singular camelCase module name, e.g. 'supplier'",
         pattern=r"^[a-z][a-zA-Z0-9]*$",

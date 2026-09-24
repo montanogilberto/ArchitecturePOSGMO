@@ -1,0 +1,128 @@
+{
+  "module": "usageMeter",
+  "description": "The Factory AI GMO platform needs to track the resource consumption of Large Language Models (LLMs) for each `factoryRun`. This module, `usageMeter`, is designed to capture granular details of LLM invocations, including the number of tokens processed and the associated monetary cost. This data is crucial for future billing capabilities, allowing the Factory to accurately charge users for their LLM usage within the Software Construction Factory. It extends the foundational `factoryRun` module by providing the necessary accounting details for AI-driven operations, ensuring transparency and enabling cost recovery. This continues the authenticated dependency chain: `Account` -> `Organization` -> `Projects` -> `Factory Runs` -> `Artifacts` -> `Usage` -> `Billing`, where `usageMeter` fulfills the 'Usage' component. \n\nBUSINESS REQUIREMENTS\n- Record the specific LLM model used for a given `factoryRun`.\n- Store the number of prompt tokens and completion tokens consumed by each LLM invocation.\n- Calculate and store the total tokens for each LLM invocation.\n- Track the monetary cost associated with each LLM invocation and its currency.\n- Log the start and end timestamps of each LLM call to measure duration.\n- Allow authorized personnel to view usage metrics associated with a `factoryRun`.\n\nCONSTRAINTS\n- This module belongs to Factory AI GMO's own commercial platform and has no existing `companyId` relationship to POS GMO retail tenants; it must never be given a `companyId`.\n- `usageMeterId`, `created_At`, and `updated_at` are automatically generated and server-controlled; they must not be declared as explicit fields.\n- `created_At` uses the exact casing `created_At` (capital A).\n- `updated_at` uses the exact casing `updated_at` (all lowercase).\n- Since the `factoryRun` module's underlying database table is not yet live, the relationship to `factoryRun` must be a plain string reference (`factoryRunRef`), not a formal foreign key.\n\nOPEN ARCHITECTURAL QUESTIONS\n1. Cost aggregation and billing: This module records individual LLM usage events. A subsequent module or process will be required to aggregate these usage events by `factoryRun` (or `project`, or `organization`) and apply pricing plans for actual billing. How will this aggregation and billing pipeline be implemented, and what are the specific data points required from `usageMeter` to facilitate accurate billing (e.g., different pricing tiers for different models or token counts)?\n2. Idempotency and retries: In case of failures or retries in LLM invocations, how should duplicate `usageMeter` entries be handled? Should there be a mechanism to uniquely identify and prevent double-counting for the same logical LLM call within a `factoryRun`, or is it acceptable to log every attempt, even if it's a retry of a previously failed one?\n3. Granularity of tracking: The current proposal tracks LLM usage at the individual call level. Is this sufficient, or will there be a future need to track more granular details, such as usage per API call within a single LLM invocation (if multiple API calls are made for a single logical 'prompt') or other metrics beyond tokens and cost?",
+  "fields": [
+    {
+      "name": "usageMeterRef",
+      "type": "string",
+      "required": true,
+      "max_length": 50,
+      "description": "A unique identifier for this specific LLM usage event, possibly external."
+    },
+    {
+      "name": "factoryRunRef",
+      "type": "string",
+      "required": true,
+      "max_length": 50,
+      "description": "A reference to the associated Factory Run, as the factoryRun table is not yet live."
+    },
+    {
+      "name": "modelName",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "The name of the Large Language Model used (e.g., 'gemini-pro', 'gpt-4')."
+    },
+    {
+      "name": "promptTokens",
+      "type": "integer",
+      "required": true,
+      "description": "The number of tokens in the prompt sent to the LLM."
+    },
+    {
+      "name": "completionTokens",
+      "type": "integer",
+      "required": true,
+      "description": "The number of tokens in the LLM's completion/response."
+    },
+    {
+      "name": "totalTokens",
+      "type": "integer",
+      "required": true,
+      "description": "The sum of promptTokens and completionTokens for the LLM call."
+    },
+    {
+      "name": "cost",
+      "type": "decimal",
+      "required": true,
+      "description": "The monetary cost incurred for this specific LLM usage event."
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "required": true,
+      "max_length": 3,
+      "description": "The currency of the cost (e.g., 'USD', 'EUR')."
+    },
+    {
+      "name": "startedAt",
+      "type": "datetime",
+      "required": true,
+      "description": "The timestamp when the LLM call started."
+    },
+    {
+      "name": "finishedAt",
+      "type": "datetime",
+      "required": true,
+      "description": "The timestamp when the LLM call completed."
+    }
+  ],
+  "relationships": [
+    "factoryRun"
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/usageMeters",
+    "allowedRoles": [
+      "Admin",
+      "Manager"
+    ],
+    "uiPattern": "List/Detail",
+    "components": [
+      {
+        "step": 1,
+        "name": "UsageMeterListView",
+        "description": "Displays a list of all LLM usage meters, with filtering and pagination."
+      },
+      {
+        "step": 2,
+        "name": "UsageMeterDetailView",
+        "description": "Shows detailed information for a single LLM usage meter, including token counts, cost, and timestamps."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/usageMeters",
+        "method": "POST",
+        "description": "Creates a new LLM usage meter entry."
+      },
+      {
+        "path": "/usageMeters/all",
+        "method": "GET",
+        "description": "Retrieves a list of all LLM usage meters."
+      },
+      {
+        "path": "/usageMeters/one",
+        "method": "POST",
+        "description": "Retrieves a single LLM usage meter by its ID."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "usageMeters"
+    ],
+    "storedProcedures": [
+      "sp_usageMeters",
+      "sp_usageMeters_all",
+      "sp_usageMeters_one"
+    ]
+  }
+}

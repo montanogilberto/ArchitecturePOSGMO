@@ -12,6 +12,6 @@ sys.path.insert(0, "/Users/apple12/Agent_POSGMO/posgmo-factory")
 from dotenv import load_dotenv
 load_dotenv("/Users/apple12/Agent_POSGMO/posgmo-factory/.env")
 
-from agents.prd_builder_agent import prd_builder_agent
+from agents.prd_builder import prd_builder_agent
 
 root_agent = prd_builder_agent

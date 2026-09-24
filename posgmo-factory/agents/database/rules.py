@@ -42,9 +42,24 @@ def execute_sql_on_server(
         "TrustServerCertificate=yes;"
     )
 
-    combined = "\n".join([create_table, sp_upsert, sp_all, sp_one])
-    # Split on GO (case-insensitive, on its own line) — pyodbc cannot handle GO
-    batches = [b.strip() for b in re.split(r"^\s*GO\s*$", combined, flags=re.MULTILINE) if b.strip()]
+    # Each of the 4 params is ALREADY a separate structural block (CREATE
+    # TABLE vs. 3 independent CREATE OR ALTER PROC statements) — they must
+    # never be joined into one string before batching. CREATE/ALTER
+    # PROCEDURE (and VIEW/FUNCTION/TRIGGER) must be the first statement in
+    # its own batch; joining all 4 blocks together and relying on
+    # database_agent to have remembered a GO separator between CREATE TABLE
+    # and the first CREATE PROC produced exactly that error live (factoryRun,
+    # factoryArtifact) whenever the LLM omitted GO, which was every run
+    # observed so far. Splitting per-block first, THEN on internal GO within
+    # each block, makes each block's own batch boundary structural instead
+    # of dependent on LLM compliance — still honors extra GO markers a block
+    # might contain internally.
+    def _split_on_go(sql: str) -> list[str]:
+        return [b.strip() for b in re.split(r"^\s*GO\s*$", sql, flags=re.MULTILINE) if b.strip()]
+
+    batches: list[str] = []
+    for block in (create_table, sp_upsert, sp_all, sp_one):
+        batches.extend(_split_on_go(block))
 
     # SQL Server error numbers that mean "already exists" — safe to skip on re-runs
     _ALREADY_EXISTS_CODES = {

@@ -57,6 +57,9 @@ label is currently just a generic file descriptor with no behavioral
 description -- a real quality gap for later, not pretended away.
 """
 import json
+import os
+
+import pytest
 
 from factory_experience import (
     _chunk_adrs,
@@ -349,6 +352,13 @@ def test_search_returns_empty_list_when_index_has_no_chunks(tmp_path, monkeypatc
 # that semantic retrieval works here, not a nice-to-have extra.
 # ---------------------------------------------------------------------------
 
+requires_gemini = pytest.mark.skipif(
+    not os.getenv("GEMINI_API_KEY"),
+    reason="live test: requires GEMINI_API_KEY (factory_experience._embed reads only this var)",
+)
+
+
+@requires_gemini
 def test_live_sql_batching_query_surfaces_factoryartifact_finding():
     results = search("generating multiple SQL statements together", top_k=3)
     assert any(
@@ -357,6 +367,7 @@ def test_live_sql_batching_query_surfaces_factoryartifact_finding():
     ), f"expected the factoryArtifact batching finding in top 3, got: {[r['finding'] for r in results]}"
 
 
+@requires_gemini
 def test_live_tenancy_paraphrase_surfaces_organization_precedent():
     results = search("this entity is not tied to any retail company", top_k=3)
     assert any(r["milestone"] == "Milestone 2" for r in results), (
@@ -365,6 +376,7 @@ def test_live_tenancy_paraphrase_surfaces_organization_precedent():
     )
 
 
+@requires_gemini
 def test_live_cross_prd_not_live_yet_reference_pattern_surfaces_multiple_modules():
     """Phase 2's proof: this exact 'reference a parent that isn't live yet'
     pattern was independently hit by organization, projects, factoryRun, and
@@ -382,6 +394,7 @@ def test_live_cross_prd_not_live_yet_reference_pattern_surfaces_multiple_modules
     )
 
 
+@requires_gemini
 def test_live_ui_pattern_query_surfaces_real_implementation_code():
     """Phase 3's proof: retrieves actual generated frontend CODE (not a
     finding or PRD paragraph ABOUT that code) for a plain-language UI

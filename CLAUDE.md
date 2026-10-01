@@ -64,6 +64,8 @@ The factory itself is a **Google ADK** multi-agent pipeline written in Python:
 
 This is the **POS GMO AI Factory** — an autonomous software factory that generates production-ready modules (frontend, backend, SQL, stored procedures, docs, tests, PRs) for the POS GMO platform while strictly following its existing architecture. The repo contains JSON/CSV knowledge files that agents must read before generating any code.
 
+**Canonical roadmap:** `posgmo-factory/docs/gmo-agentic-roadmap.md` — moving GMO apps from deterministic (L1) to reasoning, proactive, self-improving (L6), with the Factory performing that transformation. Inventory is the first vertical slice.
+
 **Architecture repository (source of truth):** https://github.com/montanogilberto/ArchitecturePOSGMO
 
 ## Tech Stack

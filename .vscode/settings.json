@@ -1,0 +1,12 @@
+{
+  // posgmo_factory / prd_builder are symlinks to posgmo-factory / prd-builder,
+  // needed only by `adk web` (see posgmo-factory/scripts/setup_dev_ui.sh).
+  "files.exclude": {
+    "posgmo_factory": true,
+    "prd_builder": true
+  },
+  "search.exclude": {
+    "posgmo_factory": true,
+    "prd_builder": true
+  }
+}

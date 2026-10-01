@@ -1,0 +1,3 @@
+2026-09-23T16:29:23Z
+POST-FREEZE 2026-09-23T16:35:04Z: fixer _fix_bare_refresher_event (frontend) -- verified by replay on factoryRunUsage-20260923-092926-2 + regression test; not exercised by batch-4 processes already running
+POST-FREEZE 2026-09-23T16:42:44Z: fixer/reviewer/loop_exit/review_fixer -> pure-Python stages (agents/deterministic_stage.py). Batch 5 = final code.

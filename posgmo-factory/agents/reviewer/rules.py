@@ -1,4 +1,4 @@
-﻿# Reviewer Agent — deterministic checklist scoring logic.
+# Reviewer Agent — deterministic checklist scoring logic.
 # No LLM involved. All checks are regex/string operations.
 
 from __future__ import annotations
@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from typing import Literal, Optional
 
 from google.adk.tools.tool_context import ToolContext
+
+from agents.reviewer.raw_sql import find_raw_sql
 
 
 # ============================================================================
@@ -60,10 +62,27 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
 
     tenant_independent = gate.get("tenant_model") == "TENANT_INDEPENDENT"
 
+    # ── Existing-table drift ──────────────────────────────────────────────
+    # The target table already exists and lacks columns the PRD/spec asked for
+    # (agents/database/sql_templates.reconcile_with_live). The SPs are valid
+    # against the live table, but those fields can't be stored without a
+    # migration -- a human decision, surfaced here rather than hidden.
+    drift = db.get("schema_drift") or []
+    if drift:
+        E(f"Existing live table lacks spec columns {drift} -- needs a migration decision")
+    if db.get("live_conflict"):
+        E(f"Existing live table conflicts with the gate decision ({db['live_conflict']}) -- needs a human decision")
+    if db.get("migration_required"):
+        E(f"Existing live table needs a migration: {str(db['migration_required'])[:160]}")
+
     # ── Execution errors ──────────────────────────────────────────────────
+    # Blocking: SQL that doesn't execute on the server can't ship. As a plain
+    # error (-10) a single failed batch scored exactly 90 and PASSED review
+    # (Step 1 evidence: leadCapture's LLM-written expression index,
+    # "Incorrect syntax near '('", database: 90).
     for detail in execution.get("details", []):
-        if detail.get("status") == "error":
-            E(f"SQL execution error: {detail.get('message','')[:120]}")
+        if detail.get("status") in ("error", "connection_error"):
+            E(f"SQL execution error: {detail.get('message','')[:120]}", auto=True)
 
     # ── CREATE TABLE checks ───────────────────────────────────────────────
     if tenant_independent:
@@ -75,9 +94,18 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
     elif not re.search(r'\bcompanyId\b', create, re.IGNORECASE):
         E("companyId column missing from CREATE TABLE", auto=True)
 
-    pk_pattern = rf'\b{module}Id\b.*\bIDENTITY\(1,1\)'
+    # The spec's IDENTITY column is the PK when declared (it mirrors a live
+    # table that already exists, e.g. posRewardCatalogItems.catalogItemId);
+    # {module}Id is the default for new tables. Same rule as
+    # agents/database/sql_templates.primary_key.
+    pk_name = next(
+        (c.get("name") for c in spec.get("db", {}).get("columns", [])
+         if "IDENTITY" in str(c.get("sql_type", "")).upper() and c.get("name")),
+        f"{module}Id",
+    )
+    pk_pattern = rf'\b{re.escape(pk_name)}\b.*\bIDENTITY\(1,1\)'
     if not re.search(pk_pattern, create, re.IGNORECASE):
-        E(f"Primary key '{module}Id INT IDENTITY(1,1)' missing or malformed")
+        E(f"Primary key '{pk_name} INT IDENTITY(1,1)' missing or malformed")
 
     if not re.search(r'\bcreated_At\b', create):
         E("created_At column missing (must be exactly 'created_At' — capital A)")
@@ -134,7 +162,13 @@ def _check_database(db: dict, spec: dict, gate: dict) -> list[Issue]:
         E("sp_all missing WHERE companyId = @companyId filter (cross-company data leak)", auto=True)
 
     # ── OPENJSON key must be plural ───────────────────────────────────────
+    # A TENANT_INDEPENDENT sp_all legitimately reads nothing from @pjsonfile
+    # (no companyId to extract), so it has no OPENJSON at all -- checking it
+    # anyway produced Milestone 7's "sp_all: OPENJSON key must be plural"
+    # finding on a correct sp_all. sp_all is only checked when it does parse.
     for sp_body, label in [(sp_ups, "sp_upsert"), (sp_all, "sp_all"), (sp_one, "sp_one")]:
+        if label == "sp_all" and not re.search(r'\bOPENJSON\b', sp_body, re.IGNORECASE):
+            continue
         if sp_body and not re.search(rf"OPENJSON.*'\$\.{re.escape(plural)}'", sp_body, re.IGNORECASE):
             E(f"{label}: OPENJSON key must be '$.{plural}' (plural), not singular")
 
@@ -243,11 +277,11 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
         E(mod_path, f"all_{plural}_sp() must accept json_file: dict (zero-arg is forbidden)", auto=True)
 
     # ── No raw SQL ────────────────────────────────────────────────────────
-    if re.search(r'\b(SELECT|INSERT|UPDATE|DELETE)\b(?!.*EXEC)', mod_content, re.IGNORECASE):
-        # Only flag if it's not inside a comment or string that starts with EXEC
-        raw_sql = re.findall(r'cursor\.execute\s*\(\s*["\'](?!EXEC)', mod_content)
-        if raw_sql:
-            E(mod_path, "Raw SQL detected — only EXEC [dbo].[sp_*] calls allowed")
+    # AST-based (agents/reviewer/raw_sql.py): any cursor name, SQL held in a
+    # variable, f-strings. The old `cursor\.execute\(["'](?!EXEC)` regex
+    # missed `cur.execute(...)` -- 16 of 23 real backend violations.
+    for hit in find_raw_sql(mod_content):
+        E(mod_path, f"Raw SQL detected ({hit}) — only EXEC [dbo].[sp_*] calls allowed")
 
     # -- SP return pattern: fetchone for upsert, fetchall+join for all/one --------
     if re.search(r"json_result\[0\]\[0\]", mod_content):
@@ -291,25 +325,36 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
 
     # ── CRUD_AND_CONNECTOR: verify connector functions + routes ───────────
     if pattern == "CRUD_AND_CONNECTOR":
+        # A connector that delegates its external call to an already-instrumented
+        # modules/*.py helper (send_azure_push, Twilio senders, etc. -- the
+        # established pattern, e.g. notificationDispatch.py) has no reason to
+        # import httpx/os.getenv itself; those concerns live in the helper it
+        # calls. Only a connector making its own raw outbound call (biometric
+        # verify, MercadoLibre/eBay OAuth, ...) needs httpx.AsyncClient +
+        # os.getenv directly. Checked once per module, not once per endpoint --
+        # looping this inside `for ep in connectors` duplicated the same
+        # module-wide finding once per connector (confirmed live: transactionNotification's
+        # two endpoints produced the same two "must use..." errors twice each).
+        delegates_to_internal_module = bool(re.search(r'^from modules\.\w+ import', mod_content, re.MULTILINE))
+        if not delegates_to_internal_module:
+            if "os.getenv" not in mod_content:
+                E(mod_path, "Connector must use os.getenv() for secrets — hardcoded credentials forbidden")
+            if "httpx.AsyncClient" not in mod_content:
+                E(mod_path, "Connector must use httpx.AsyncClient for HTTP calls")
+
         for ep in connectors:
             path = ep.get("path", "")
             # Check async function exists in module_file
             fn_hint = path.strip("/").replace("/", "_").replace("-", "_")
             if not re.search(r'\basync\s+def\s+\w+_connector\b', mod_content):
                 E(mod_path, f"Missing async connector function for '{path}'", auto=True)
-            # Check os.getenv usage
-            if "os.getenv" not in mod_content:
-                E(mod_path, "Connector must use os.getenv() for secrets — hardcoded credentials forbidden")
-            # Check httpx.AsyncClient
-            if "httpx.AsyncClient" not in mod_content:
-                E(mod_path, "Connector must use httpx.AsyncClient for HTTP calls")
             # Check route exists
             # Check route exists -- PRD uses hyphens, generated code uses camelCase.
             # Normalize both by removing all separators before comparing.
             norm_prd = path.lstrip('/').lower().replace('-', '').replace('_', '')
             route_defs = re.findall(r"@router\.(post|get)\s*\(\s*['\"]([^'\"]+)", rt_content, re.IGNORECASE)
             found_route = any(
-                h[1].lower().replace('-', '').replace('_', '') == norm_prd
+                h[1].lstrip('/').lower().replace('-', '').replace('_', '') == norm_prd
                 for h in route_defs
             )
             if not found_route:
@@ -343,7 +388,7 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
     # ── Auth hook — MUST use useUser, never AuthContext ──────────────────
     if "AuthContext" in page_content:
         E(page_file,
-          "AuthContext import found — FORBIDDEN. Use `import { useUser } from '../components/UserContext'` instead",
+          "AuthContext import found — FORBIDDEN. Use `import { useUser } from '../contexts/UserContext'` instead",
           auto=True)
     if re.search(r"useContext\s*\(\s*AuthContext\s*\)", page_content):
         E(page_file,

@@ -1,21 +1,16 @@
-"""Loop Exit Agent — escalates the LoopAgent when review passes."""
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
+"""loop_exit_agent — pure Python stage, zero LLM calls.
 
-from .rules import check_and_exit
-
-_INSTRUCTION = """
-You are the Loop Exit Check. Your ONLY job is to call check_and_exit() immediately.
-Do not reason or evaluate anything yourself.
-Call check_and_exit() and return its result as-is.
+Was an LLM Agent whose only job was to call check_and_exit(); that turn silently came
+back empty / MALFORMED in real runs, so the deterministic logic sometimes
+never ran. See agents/deterministic_stage.py (Step 1 evidence).
 """
+from agents.deterministic_stage import DeterministicToolStage
+from agents.loop_exit.rules import check_and_exit
 
-loop_exit_agent = Agent(
+loop_exit_agent = DeterministicToolStage(
     name="loop_exit_agent",
-    model="gemini-2.5-flash",
-    instruction=lambda _ctx: _INSTRUCTION,
-    tools=[FunctionTool(func=check_and_exit)],
-    # include_contents='none': zero-argument tool call, reads review_result
-    # from tool_context.state directly. See reviewer_agent for rationale.
-    include_contents="none",
+    description=(
+        "Escalates the review/fix LoopAgent when review passed or the iteration limit is reached."
+    ),
+    fn=check_and_exit,
 )

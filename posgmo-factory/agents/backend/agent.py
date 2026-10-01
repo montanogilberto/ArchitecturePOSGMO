@@ -1,8 +1,8 @@
-﻿"""Backend Agent definition."""
+"""Backend Agent definition."""
 from google.adk.agents import Agent
-from agents.mcp_tools import get_mcp_toolset
+from agents.models import CODE_MODEL
+from agents.preloaded_knowledge import with_preloaded_knowledge
 from agents.backend.prompt import INSTRUCTION
-from agents.state_injection import with_state
 
 backend_agent = Agent(
     name="backend_agent",
@@ -14,14 +14,20 @@ backend_agent = Agent(
         "necessarily POS-specific; read gate_result/specification for what this run "
         "actually needs, not an assumed product line."
     ),
-    model="gemini-2.5-flash",
+    model=CODE_MODEL,
     # Targeted context: backend/prompt.py declares "gate_result" and
     # "specification" as its required inputs, nothing else. See
     # database_agent for the full rationale (Experiments 1-4 repeatedly hit
     # MALFORMED_FUNCTION_CALL / empty turns here under full conversation
     # history -- this is the "critical test" agent from Experiment 4).
-    instruction=with_state(INSTRUCTION, ["gate_result", "specification"]),
+    instruction=with_preloaded_knowledge(
+        INSTRUCTION, ["gate_result", "specification"],
+        ["get_generation_rules", "get_backend_patterns", "get_backend_routes", "get_sp_patterns"],
+        agent_name="backend_agent",
+    ),
     include_contents="none",
-    tools=[get_mcp_toolset()],
+    # No tools: knowledge is pre-loaded (agents/preloaded_knowledge.py). Step 1
+    # evidence: MALFORMED_FUNCTION_CALL on these calls failed 3/3 retries in a run.
+    tools=[],
     output_key="backend_artifacts",
 )

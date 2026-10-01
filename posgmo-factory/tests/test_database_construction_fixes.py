@@ -178,3 +178,21 @@ def test_fix_database_wires_tenant_model_from_gate_result():
     gate_result = {"tier": "TIER_1_CATALOG", "tenant_model": "TENANT_INDEPENDENT", "_module": "foo"}
     fixed_artifacts, fixes = fix_database(db_artifacts, gate_result)
     assert "@companyId" not in fixed_artifacts["sp_all"]
+
+
+def test_one_sp_wrapper_singular_renamed_in_module_and_route():
+    """Third occurrence of the one_{module} singular drift -- on the module's
+    SP wrapper (posRewardCatalogItem real run, Step 1). SP names untouched."""
+    from agents.fixer.rules import fix_backend
+    module_src = ("def one_posRewardCatalogItem_sp(json_file: dict):\n"
+                  "    cursor.execute(\"EXEC [dbo].[sp_posRewardCatalogItems_one] @pjsonfile = %s\")\n")
+    route_src = ("from modules.posRewardCatalogItems import one_posRewardCatalogItem_sp\n"
+                 "def one_posRewardCatalogItems(json: dict):\n    return one_posRewardCatalogItem_sp(json)\n")
+    fixed, fixes = fix_backend(
+        {"module_file": {"content": module_src}, "route_file": {"content": route_src}},
+        {"_module": "posRewardCatalogItem"},
+    )
+    assert "def one_posRewardCatalogItems_sp(" in fixed["module_file"]["content"]
+    assert "one_posRewardCatalogItem_sp" not in fixed["route_file"]["content"]
+    assert "sp_posRewardCatalogItems_one" in fixed["module_file"]["content"]
+    assert len(fixes) == 2

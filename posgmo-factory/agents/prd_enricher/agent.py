@@ -1,5 +1,6 @@
 """PRD Enricher Agent definition."""
 from google.adk.agents import Agent
+from agents.models import CODE_MODEL
 from google.adk.tools import FunctionTool
 from agents.mcp_tools import get_mcp_toolset
 from agents.prd_enricher.prompt import INSTRUCTION
@@ -12,7 +13,7 @@ prd_enricher_agent = Agent(
         "business validation rules, missing standard fields, and UI layout hints. "
         "Runs after PRD Parser and before Schema Analyst."
     ),
-    model="gemini-2.5-flash",
+    model=CODE_MODEL,
     instruction=lambda _ctx: INSTRUCTION,  # lambda bypasses ADK inject_session_state KeyError
     tools=[
         get_mcp_toolset(),

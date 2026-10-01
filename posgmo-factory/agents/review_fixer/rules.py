@@ -54,14 +54,14 @@ def _fix_auth_context(content: str) -> str:
     content = re.sub(
         r"const\s+\{([^}]+)\}\s*=\s*useContext\s*\(\s*AuthContext\s*\);?",
         lambda m: (
-            "import { useUser } from '../components/UserContext';\n"
+            "import { useUser } from '../contexts/UserContext';\n"
             "const { companyId, userId, roleCode, username } = useUser();"
         ),
         content,
     )
     # Add useUser import if not already present
     if "useUser" not in content:
-        content = "import { useUser } from '../components/UserContext';\n" + content
+        content = "import { useUser } from '../contexts/UserContext';\n" + content
     # Fix user?.companyId → companyId (useUser exposes it directly)
     content = content.replace("user?.companyId", "companyId")
     content = content.replace("user.companyId", "companyId")
@@ -180,8 +180,19 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
             if "catch" in msg_lo and "any" in msg_lo:
                 content = _fix_catch_any(content)
 
-            if "bare customevent" in msg_lo or ("customevent" in msg_lo and "generic" in msg_lo):
+            if "customevent<any>" in msg_lo.replace(" ", ""):
+                # fix_frontend's deterministic fixer, reused: fixer_agent runs
+                # BEFORE frontend_agent, so it never sees page output -- this
+                # was the only path left for a CustomEvent<any> finding
+                # (Step 1 evidence: supplier run scored frontend 80 on it).
+                from agents.fixer.rules import _ensure_ionic_imports, _fix_custom_event_any
+                content, applied = _fix_custom_event_any(content)
+                content = _ensure_ionic_imports(content, applied)
+            elif "bare customevent" in msg_lo or ("customevent" in msg_lo and "generic" in msg_lo):
                 content = _fix_bare_custom_event(content)
+                from agents.fixer.rules import _ensure_ionic_imports, _fix_bare_refresher_event
+                content, applied = _fix_bare_refresher_event(content)
+                content = _ensure_ionic_imports(content, applied)
 
             if content != original:
                 frontend["page_file"]["content"] = content

@@ -31,13 +31,19 @@ def test_root_agent_pipeline_is_unchanged_by_debate_v2():
     2026-09-16 as a legitimate, deliberate factory change — a deterministic,
     zero-LLM step that executes database_agent's SQL, replacing a tool call
     that used to be database_agent's own responsibility. See
-    docs/experiment1-leadCapture-evaluation.md for why. Nothing here comes
-    from debate_v2 — see the import-boundary test above for that guarantee.)"""
+    docs/experiment1-leadCapture-evaluation.md for why. architect_stage
+    wrapping architect_agent with bounded retries was added 2026-09-22, Step 1
+    construction reliability -- see agents/retry.py -- and spec_reconciler_agent
+    (live table outranks the spec, agents/spec_reconciler/). pr_stage wrapping
+    pr_agent with a deterministic pass/fail gate was added 2026-09-23 -- LLM
+    instruction-following on "only proceed if review passed" was confirmed
+    unreliable live, see agents/pr_gate/. Nothing here comes from debate_v2 —
+    see the import-boundary test above for that guarantee.)"""
     from agents.agent import root_agent
     stage_names = [a.name for a in root_agent.sub_agents]
     assert stage_names == [
         "host_architect_agent", "prd_parser_agent", "prd_enricher_agent",
-        "schema_analyst_agent", "architect_agent", "decision_gate_agent",
-        "generation_stage", "database_executor_agent", "fixer_agent", "frontend_agent",
-        "review_fix_loop", "pr_agent",
+        "schema_analyst_agent", "architect_stage", "decision_gate_agent", "spec_reconciler_agent",
+        "generation_stage", "database_executor_agent", "fixer_agent", "frontend_stage",
+        "review_fix_loop", "pr_stage",
     ]

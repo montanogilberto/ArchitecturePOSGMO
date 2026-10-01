@@ -51,7 +51,7 @@ def github_create_branch(repo: str, branch_name: str, base_branch: str = "main")
     Creates a new git branch in the given GitHub repository.
 
     Args:
-        repo:        Full repo name, e.g. "montanogilberto/checkInPOS".
+        repo:        Full repo name, e.g. "{owner}/{repo}" (use the actual repo slug from session state -- never copy this literal placeholder).
         branch_name: Name of the branch to create, e.g. "feat/supplier-module".
         base_branch: Branch to fork from. Defaults to "main".
 
@@ -82,7 +82,7 @@ def github_push_file(repo: str, branch: str, path: str, content: str, message: s
     Creates or updates a single file in a GitHub repository branch.
 
     Args:
-        repo:    Full repo name, e.g. "montanogilberto/checkInPOS".
+        repo:    Full repo name, e.g. "{owner}/{repo}" (use the actual repo slug from session state -- never copy this literal placeholder).
         branch:  Target branch name.
         path:    File path relative to repo root, e.g. "src/api/supplierApi.ts".
         content: Full file content as a plain string.
@@ -303,7 +303,7 @@ def patch_setting_tsx(
     icon: str,
 ) -> dict:
     """
-    Fetches src/pages/Setting.tsx from the frontend repo, adds the new module
+    Fetches src/pages/system/Setting.tsx from the frontend repo, adds the new module
     feature entry inside the correct MODULES section, then pushes it back.
 
     Args:
@@ -319,7 +319,7 @@ def patch_setting_tsx(
     """
     with httpx.Client(timeout=30) as client:
         r = client.get(
-            f"{_GH_API}/repos/{repo}/contents/src/pages/Setting.tsx",
+            f"{_GH_API}/repos/{repo}/contents/src/pages/system/Setting.tsx",
             headers=_gh_headers(),
             params={"ref": branch},
         )
@@ -378,7 +378,7 @@ def patch_setting_tsx(
 
     with httpx.Client(timeout=30) as client:
         r = client.put(
-            f"{_GH_API}/repos/{repo}/contents/src/pages/Setting.tsx",
+            f"{_GH_API}/repos/{repo}/contents/src/pages/system/Setting.tsx",
             headers=_gh_headers(),
             json={
                 "message": f"feat: add {code} to Setting.tsx permissions matrix",
@@ -388,7 +388,7 @@ def patch_setting_tsx(
             },
         )
         r.raise_for_status()
-        return {"status": "patched", "file": "src/pages/Setting.tsx", "added": code}
+        return {"status": "patched", "file": "src/pages/system/Setting.tsx", "added": code}
 
 
 def patch_ui_feature_type(
@@ -633,7 +633,7 @@ def patch_user_context(
 
         # ── UserContext.tsx ──────────────────────────────────────────────────
         r = client.get(
-            f"{_GH_API}/repos/{repo}/contents/src/components/UserContext.tsx",
+            f"{_GH_API}/repos/{repo}/contents/src/contexts/UserContext.tsx",
             headers=_gh_headers(),
             params={"ref": branch},
         )
@@ -676,7 +676,7 @@ def patch_user_context(
         if uc_dirty:
             encoded = base64.b64encode(uc_src.encode()).decode()
             client.put(
-                f"{_GH_API}/repos/{repo}/contents/src/components/UserContext.tsx",
+                f"{_GH_API}/repos/{repo}/contents/src/contexts/UserContext.tsx",
                 headers=_gh_headers(),
                 json={
                     "message": "feat: add extra user fields to UserContext",
@@ -685,11 +685,11 @@ def patch_user_context(
                     "sha": uc_sha,
                 },
             ).raise_for_status()
-            patched_files.append("src/components/UserContext.tsx")
+            patched_files.append("src/contexts/UserContext.tsx")
 
         # ── Login.tsx ────────────────────────────────────────────────────────
         r = client.get(
-            f"{_GH_API}/repos/{repo}/contents/src/pages/Authentication/Login.tsx",
+            f"{_GH_API}/repos/{repo}/contents/src/pages/authentication/Login.tsx",
             headers=_gh_headers(),
             params={"ref": branch},
         )
@@ -745,7 +745,7 @@ def patch_user_context(
         if lg_dirty:
             encoded = base64.b64encode(lg_src.encode()).decode()
             client.put(
-                f"{_GH_API}/repos/{repo}/contents/src/pages/Authentication/Login.tsx",
+                f"{_GH_API}/repos/{repo}/contents/src/pages/authentication/Login.tsx",
                 headers=_gh_headers(),
                 json={
                     "message": "feat: thread extra user fields through login flow",
@@ -754,7 +754,7 @@ def patch_user_context(
                     "sha": lg_sha,
                 },
             ).raise_for_status()
-            patched_files.append("src/pages/Authentication/Login.tsx")
+            patched_files.append("src/pages/authentication/Login.tsx")
 
     return {
         "status": "patched" if patched_files else "no_changes",

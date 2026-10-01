@@ -1,4 +1,4 @@
-﻿# Fixer Agent — deterministic SQL/Python/TypeScript fixers.
+# Fixer Agent — deterministic SQL/Python/TypeScript fixers.
 # No LLM involved. All transforms are regex/string operations.
 
 from __future__ import annotations
@@ -181,10 +181,15 @@ def fix_database(db_artifacts: dict, gate_result: dict) -> tuple[dict, list[str]
     tenant_independent = gate_result.get("tenant_model") == "TENANT_INDEPENDENT"
     all_fixes: list[str] = []
 
-    sp_all  = db_artifacts.get("sp_all", "")
-    sp_one  = db_artifacts.get("sp_one", "")
-    sp_ups  = db_artifacts.get("sp_upsert", "")
-    create  = db_artifacts.get("create_table", "")
+    # `or ""`: a key present with JSON null (LLM output for an existing live
+    # table, e.g. "create_table": null) must not crash re.sub -- Step 1
+    # evidence: leadCapture-20260923-095805-2 TypeError took down the run.
+    for key in ("sp_all", "sp_one", "sp_upsert", "create_table"):
+        db_artifacts[key] = db_artifacts.get(key) or ""
+    sp_all  = db_artifacts["sp_all"]
+    sp_one  = db_artifacts["sp_one"]
+    sp_ups  = db_artifacts["sp_upsert"]
+    create  = db_artifacts["create_table"]
 
     # 1. DATETIME2 → DATETIME for non-IOT
     if tier != "TIER_4_IOT":
@@ -314,8 +319,11 @@ def fix_backend(backend_artifacts: dict, gate_result: dict) -> tuple[dict, list[
     plural = f"{module}s" if module else ""
     all_fixes: list[str] = []
 
-    module_content = backend_artifacts.get("module_file", {}).get("content", "")
-    route_content  = backend_artifacts.get("route_file", {}).get("content", "")
+    for key in ("module_file", "route_file"):
+        if not isinstance(backend_artifacts.get(key), dict):
+            backend_artifacts[key] = {"content": ""}
+    module_content = backend_artifacts["module_file"].get("content") or ""
+    route_content  = backend_artifacts["route_file"].get("content") or ""
 
     # 1. Remove round() calls
     module_content, f1 = _fix_round_calls(module_content)
@@ -328,6 +336,21 @@ def fix_backend(backend_artifacts: dict, gate_result: dict) -> tuple[dict, list[
         route_content,  f3 = _fix_route_get_to_post(route_content, plural)
         route_content,  f4 = _fix_one_route_plural(route_content, module, plural)
         all_fixes.extend(f2 + f3 + f4)
+        # 4. one_{module}_sp -> one_{plural}_sp in BOTH files (definition in
+        # the module, import + call in the route). Third independent
+        # occurrence of the same singular naturalization, this time on the
+        # wrapper function (Step 1 evidence: posRewardCatalogItem run,
+        # backend 80 "Missing function: one_posRewardCatalogItems_sp()").
+        sp_fn = re.compile(rf'\bone_{re.escape(module)}_sp\b')
+        for label in ("module", "route"):
+            content = module_content if label == "module" else route_content
+            new = sp_fn.sub(f"one_{plural}_sp", content)
+            if new != content:
+                all_fixes.append(f"Renamed one_{module}_sp → one_{plural}_sp ({label} file)")
+                if label == "module":
+                    module_content = new
+                else:
+                    route_content = new
 
     backend_artifacts["module_file"]["content"] = module_content
     backend_artifacts["route_file"]["content"]  = route_content
@@ -347,6 +370,7 @@ _ION_COMPONENT_EVENT_DETAIL: dict[str, str] = {
     "IonToggle":     "ToggleChangeEventDetail",
     "IonSearchbar":  "SearchbarInputEventDetail",
     "IonTextarea":   "TextareaChangeEventDetail",
+    "IonRefresher":  "RefresherEventDetail",
 }
 
 # Additional imports required for the fixed types
@@ -444,6 +468,27 @@ def _fix_bare_custom_event(tsx: str) -> tuple[str, list[str]]:
     return new, fixes
 
 
+def _fix_bare_refresher_event(tsx: str) -> tuple[str, list[str]]:
+    """Bare `CustomEvent` on an IonRefresher handler -> CustomEvent<RefresherEventDetail>.
+    Covers both a named handler bound via onIonRefresh={name} and an inline
+    onIonRefresh={(e: CustomEvent) => ...}. Step 1 evidence: factoryRunUsage
+    page `const handleRefresh = async (event: CustomEvent) =>` failed review
+    ("Bare CustomEvent") every loop iteration -- the bare fixer only knew IonDatetime."""
+    fixes: list[str] = []
+    bare = r"(\(\s*\w+\s*:\s*CustomEvent)(?!\s*<)"
+    for name in set(re.findall(r"onIonRefresh=\{\s*(\w+)\s*\}", tsx)):
+        new = re.sub(rf"(\b{re.escape(name)}\s*=\s*(?:async\s*)?){bare}",
+                     r"\1\2<RefresherEventDetail>", tsx)
+        if new != tsx:
+            fixes.append(f"Typed IonRefresher handler {name}: CustomEvent<RefresherEventDetail>")
+            tsx = new
+    new = re.sub(rf"(onIonRefresh=\{{\s*(?:async\s*)?){bare}", r"\1\2<RefresherEventDetail>", tsx)
+    if new != tsx:
+        fixes.append("Typed inline IonRefresher handler: CustomEvent<RefresherEventDetail>")
+        tsx = new
+    return tsx, fixes
+
+
 def _ensure_ionic_imports(tsx: str, fixes: list[str]) -> str:
     """
     If we introduced new detail types, make sure they are imported from @ionic/react.
@@ -483,8 +528,11 @@ def _ensure_ionic_imports(tsx: str, fixes: list[str]) -> str:
 def fix_frontend(frontend_artifacts: dict, gate_result: dict) -> tuple[dict, list[str]]:
     all_fixes: list[str] = []
 
-    page_content = frontend_artifacts.get("page_file", {}).get("content", "")
-    api_content  = frontend_artifacts.get("api_file", {}).get("content", "")
+    for key in ("page_file", "api_file"):
+        if not isinstance(frontend_artifacts.get(key), dict):
+            frontend_artifacts[key] = {"content": ""}
+    page_content = frontend_artifacts["page_file"].get("content") or ""
+    api_content  = frontend_artifacts["api_file"].get("content") or ""
 
     # 1. catch (err: any) → catch (err)
     for attr, content in [("page_file", page_content), ("api_file", api_content)]:
@@ -503,7 +551,12 @@ def fix_frontend(frontend_artifacts: dict, gate_result: dict) -> tuple[dict, lis
     fixed, fixes = _fix_custom_event_any(page_content)
     all_fixes.extend(fixes)
 
-    # 4. Bare CustomEvent (no generic)
+    # 4. Bare CustomEvent (no generic). Component-specific typing FIRST:
+    # the generic fallback below types any remaining bare CustomEvent as
+    # <void>, which would make `event.detail.complete()` on an IonRefresher
+    # handler a TypeScript error while still passing review.
+    fixed, f3 = _fix_bare_refresher_event(fixed)
+    all_fixes.extend(f3)
     fixed, f2 = _fix_bare_custom_event(fixed)
     all_fixes.extend(f2)
 

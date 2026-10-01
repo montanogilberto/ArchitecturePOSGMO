@@ -1,22 +1,16 @@
-﻿"""Fixer Agent definition."""
-from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
-from agents.fixer.prompt import _INSTRUCTION
+"""fixer_agent — pure Python stage, zero LLM calls.
+
+Was an LLM Agent whose only job was to call run_all_fixers(); that turn silently came
+back empty / MALFORMED in real runs, so the deterministic logic sometimes
+never ran. See agents/deterministic_stage.py (Step 1 evidence).
+"""
+from agents.deterministic_stage import DeterministicToolStage
 from agents.fixer.rules import run_all_fixers
 
-fixer_agent = Agent(
+fixer_agent = DeterministicToolStage(
     name="fixer_agent",
     description=(
-        "Deterministic post-generation fixer. Corrects SQL, Python, and TypeScript "
-        "artifacts for the most common LLM generation violations — no LLM involved."
+        "Deterministic post-generation fixer. Corrects SQL, Python, and TypeScript artifacts for the most common LLM generation violations — no LLM involved."
     ),
-    model="gemini-2.5-flash",
-    instruction=lambda _ctx: _INSTRUCTION,
-    tools=[FunctionTool(func=run_all_fixers)],
-    # output_key omitted — run_all_fixers() writes corrected artifacts directly to
-    # tool_context.state. Adding output_key would overwrite artifacts with LLM text.
-    # include_contents='none': zero-argument tool call, reads database_artifacts/
-    # backend_artifacts/gate_result from tool_context.state directly. See
-    # reviewer_agent for rationale.
-    include_contents="none",
+    fn=run_all_fixers,
 )

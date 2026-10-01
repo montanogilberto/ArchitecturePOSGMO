@@ -1,5 +1,6 @@
 ﻿"""PRD Parser Agent definition."""
 from google.adk.agents import Agent
+from agents.models import LIGHT_MODEL
 from google.adk.tools import FunctionTool
 
 from agents.prd_parser.prompt import INSTRUCTION
@@ -12,7 +13,7 @@ prd_parser_agent = Agent(
         "and writes them to session state so all downstream agents can "
         "use {module}, {plural}, {Module}, etc. in their instructions."
     ),
-    model="gemini-2.5-flash",
+    model=LIGHT_MODEL,
     instruction=lambda _ctx: INSTRUCTION,
     tools=[FunctionTool(func=store_prd_context)],
     output_key="prd_context",

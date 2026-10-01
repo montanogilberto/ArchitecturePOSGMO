@@ -20,7 +20,7 @@ apply targeted fixes to the artifacts in session state.
 
 ### Frontend errors (artifact == "frontend")
 - AuthContext / useContext(AuthContext) found
-  → Replace import with: import { useUser } from '../components/UserContext';
+  → Replace import with: import { useUser } from '../contexts/UserContext';
   → Replace useContext(AuthContext) with: const { companyId, userId, roleCode, username } = useUser();
   → Remove AuthContext import entirely.
 

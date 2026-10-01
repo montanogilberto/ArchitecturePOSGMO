@@ -40,7 +40,16 @@ def test_strip_pr_and_design_consistency_is_idempotent():
     twice must not raise and must not remove anything already removed."""
     _strip_pr_and_design_consistency()
     _strip_pr_and_design_consistency()  # must not raise on the second call
-    assert pr_agent not in root_agent.sub_agents
+
+    # Reachable at ANY depth, not just top level: once pr_agent was wrapped in
+    # pr_stage, the old top-level check still passed while a "local export"
+    # run reached github_create_branch.
+    def _reachable(agent):
+        yield agent
+        for sub in getattr(agent, "sub_agents", []) or []:
+            yield from _reachable(sub)
+
+    assert not any(a is pr_agent for a in _reachable(root_agent))
     assert design_consistency_agent not in generation_stage.sub_agents
 
 

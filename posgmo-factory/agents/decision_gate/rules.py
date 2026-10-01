@@ -1,4 +1,4 @@
-﻿# Decision Gate — pure-Python classification logic.
+# Decision Gate — pure-Python classification logic.
 # No LLM involved; all rules are deterministic Python.
 
 """
@@ -432,13 +432,19 @@ def _detect_soft_delete_parents(spec: dict, schema_analysis: dict) -> list[dict]
     return result
 
 
-def _hard_block_check(spec: dict, schema_analysis: dict) -> dict | None:
+def _hard_block_check(spec: dict, schema_analysis: dict, live_tables: list | None = None) -> dict | None:
     """
     Returns a BLOCKED gate_result if a hard block condition is met, else None.
     Current hard blocks: invalid FK targets.
     (table_already_exists is a warning, not a block — CREATE OR ALTER handles it.)
     """
     valid_fk_targets = {t["table"].lower() for t in schema_analysis.get("valid_fk_targets", [])}
+    # db_context.all_tables comes straight from INFORMATION_SCHEMA (the
+    # analyze_database_schema tool); valid_fk_targets is the schema analyst
+    # LLM's summary of it and can omit tables. Live schema outranks the
+    # summary -- Step 1 evidence: leadCapture BLOCKED with "FK target
+    # 'companies' does not exist" although dbo.companies exists.
+    valid_fk_targets |= {str(t).lower() for t in (live_tables or [])}
     columns = spec.get("db", {}).get("columns", [])
 
     for col in columns:
@@ -515,7 +521,8 @@ def compute_gate_result(state: dict) -> dict:
             "summary": "Pipeline blocked: specification not found.",
         }
 
-    hard_block = _hard_block_check(spec, schema)
+    live_tables = _safe_load(state.get("db_context")).get("all_tables") or []
+    hard_block = _hard_block_check(spec, schema, live_tables)
     if hard_block:
         hard_block.setdefault("applicable_decisions", [])
         return hard_block

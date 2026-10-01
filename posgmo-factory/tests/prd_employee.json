@@ -1,0 +1,46 @@
+{
+  "module": "employee",
+  "description": "Company-scoped employee directory (HR + payroll picker) for POS GMO companies. BROWNFIELD: dbo.employees already exists live with sp_employees/_all/_one and routes /employees, /all_employees, /one_employee, but the table has NO companyId, so every company sees and edits every other company's staff (payroll expense picker included). This PRD adds tenancy, it does not recreate the table.\n\nBUSINESS REQUIREMENTS\n- Admin/Manager can list, create, edit and delete the employees of THEIR company only.\n- Each employee has a department (dbo.departments), an employment type (dbo.employmentTypes: permanent/temporary/contractor) and a status (dbo.status: Active/Inactive). Leaving a job = status Inactive + endDate, not a delete.\n- The payroll expense form (expenseType='payroll') picks employees from the same company-scoped list.\n\nCONSTRAINTS -- already decided\n- Migration is ALTER-only: ADD companyId INT NULL + FK to companies, ADD updated_at. Existing rows keep companyId NULL (they are seed/demo rows with no reliable company) and simply stop appearing in any company's list until assigned.\n- Email uniqueness moves from global UNIQUE(email) to UNIQUE(companyId, email) -- the same person may work for two companies.\n- Every SP action (insert/update/delete/one/all) filters by companyId from @pjsonfile; update/delete of another company's employeeId is 'Employee not found'.\n- Delete is rejected when dbo.expenses (payroll) or dbo.employeeProjectAssignments reference the employee -- the caller must deactivate instead. FK_expenses_employeeId already exists.\n- Response shape follows sp_suppliers: CRUD returns one row / one column [jsonResult] {status,message,value}; _all/_one return FOR JSON PATH ROOT('employees') with ids AND display names (departmentName, employmentType, status) flattened -- the legacy _all used FOR JSON AUTO and nested them as et[].d[].s[] without ids.\n- Legacy column casing (createdAt, not created_At) is kept -- renaming a live column is out of scope.\n\nFOLLOW-UP (not in this PRD)\n- sp_expense payroll validation should also check employees.companyId = expense companyId (closes the KNOWN LIMITATION in smartloans_backend sql/migrations/2026-09-03_add_expense_payroll.sql).",
+  "fields": [
+    { "name": "firstName", "type": "string", "required": true, "max_length": 50 },
+    { "name": "lastName", "type": "string", "required": true, "max_length": 50 },
+    { "name": "email", "type": "string", "required": true, "max_length": 100,
+      "description": "Unique per company: UNIQUE(companyId, email)." },
+    { "name": "phoneNumber", "type": "string", "required": false, "max_length": 20 },
+    { "name": "address", "type": "string", "required": false, "max_length": 255 },
+    { "name": "employmentTypeId", "type": "integer", "required": true,
+      "fk_table": "employmentTypes", "fk_column": "employmentTypeId" },
+    { "name": "position", "type": "string", "required": false, "max_length": 100 },
+    { "name": "departmentId", "type": "integer", "required": true,
+      "fk_table": "departments", "fk_column": "departmentId" },
+    { "name": "statusId", "type": "integer", "required": true,
+      "fk_table": "status", "fk_column": "statusId",
+      "description": "dbo.status (renamed from dbo.statuses live, see 2026-09-30_fix_statuses_table_rename.sql). 1=Active, 2=Inactive." },
+    { "name": "hireDate", "type": "date", "required": false },
+    { "name": "endDate", "type": "date", "required": false },
+    { "name": "emergencyContactName", "type": "string", "required": false, "max_length": 100 },
+    { "name": "emergencyContactRelationship", "type": "string", "required": false, "max_length": 50 },
+    { "name": "emergencyContactPhone", "type": "string", "required": false, "max_length": 20 },
+    { "name": "notes", "type": "text", "required": false }
+  ],
+  "relationships": ["companies", "departments", "employmentTypes", "status"],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/employees",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "card-list (shared-card-list.css, same as SupplierPage) + create/edit modal + delete confirm; MVVM feature folder src/pages/admin/Employees/"
+  },
+  "backend": {
+    "endpoints": [
+      { "path": "/employees", "method": "POST", "description": "CRUD, action 1/2/3, body { employees: [{ companyId, ..., action }] }" },
+      { "path": "/all_employees", "method": "POST", "description": "Was GET with no params (unscoped). Now POST { employees: [{ companyId }] }." },
+      { "path": "/one_employee", "method": "POST", "description": "{ employees: [{ companyId, employeeId }] }. Route previously called an undefined function (500)." }
+    ]
+  },
+  "database": {
+    "tables": ["employees"],
+    "storedProcedures": ["sp_employees", "sp_employees_all", "sp_employees_one"]
+  }
+}

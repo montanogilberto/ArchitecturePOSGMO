@@ -1,18 +1,82 @@
 # GMO Agentic Application Roadmap
 
-**Status:** canonical roadmap as of 2026-09-30. Supersedes
+**Status:** canonical roadmap, **frozen 2026-09-30**. Supersedes
 `docs/factory-knowledge-roadmap.md` (whose five phases are now treated as
 completed groundwork — see [Relationship to earlier roadmaps](#relationship-to-earlier-roadmaps)).
 `docs/commercial-app-milestones.md` remains the evidence log for individual
 Factory runs.
 
+**Frozen** means: no new phases, and no new Factory infrastructure is built
+ahead of the Inventory execution plan. Changes to this document require
+evidence from a real run, recorded in `commercial-app-milestones.md`.
+
 ## North Star
 
 Build an agentic GMO ecosystem where applications understand goals, reason
 over business context, create plans, execute actions through governed tools,
-observe results, detect problems, and continuously improve — with the
-Factory acting as the engineering system that creates and evolves those
-capabilities.
+observe results, detect problems, and continuously improve **under explicit
+human, tenant, security, and autonomy controls** — with the Factory acting
+as the engineering system that creates and evolves those capabilities.
+
+### Roadmap structure
+
+```
+K1–K5  Knowledge Groundwork                 DONE
+  │
+  ▼
+P1–P2  Goal → Plan → Real Product           ← Inventory (next)
+  │
+  ▼
+P3     Generalized Agent Platform
+  │
+  ▼
+P4     Reasoning Applications
+  │
+  ▼
+P5     Proactive Applications
+  │
+  ▼
+P6     Self-Improving Factory
+  │
+  ▼
+P7     Agentic Software Ecosystem
+```
+
+### The transformation
+
+```
+TODAY                              TARGET
+
+Business                           Business Goal
+   ↓                                    ↓
+Human                              Agent: Understand → Reason → Plan
+   ↓                                    ↓
+Application                        Governed Tools
+   ↓                                    ↓
+Deterministic workflow             Application → Observe → Learn
+                                        ↓
+                                   Factory → Improve ↺
+```
+
+### The overarching metric: Factory Delivery Rate
+
+> **Factory Delivery Rate** — the percentage of planned product changes that
+> the Factory carries from approved goal to merged, deployed, observable
+> functionality **without unplanned human implementation**.
+
+Tracked per goal through every stage:
+
+```
+Goal → Plan generated → Plan executed → PR created → PR merged →
+Deployed → Observed → Working
+```
+
+**Baseline (2026-09-30): effectively 0% for complete product features.** The
+only Factory PR on product repos (`feat/factoryRunUsage-module`) is open,
+unmerged, and is the Factory's own module. This is not a failure of the
+Factory architecture — it identifies precisely the next engineering
+problem. Inventory is the first measurable transition from "Factory
+capability exists" to "Factory capability produces real GMO software."
 
 The Factory therefore has two responsibilities:
 
@@ -50,6 +114,11 @@ The goal is not to replace deterministic software:
    an evaluation set of fixed scenarios with expected decisions.
 8. **MCP/Graph is the authoritative source of facts; RAG retrieves
    evidence.** (Carried over from the previous roadmap.)
+9. **The Factory Plan is the contract.** No stage invents work absent from
+   the approved plan (see [The Factory Plan](#the-factory-plan)).
+10. **Autonomy is three separate dimensions, never one.** High reasoning
+    autonomy never implies execution or deployment autonomy (see
+    [Autonomy dimensions](#autonomy-dimensions)).
 
 ## Target architecture
 
@@ -143,23 +212,58 @@ by the tool gateway, not by the prompt.
 Promotion of a tool to a higher level requires an ADR in `decision_registry/`.
 Money-moving tools are capped at `EXECUTE_WITH_APPROVAL` permanently.
 
+## Autonomy dimensions
+
+Autonomy is measured on three independent dimensions. Advancing one never
+advances another implicitly; each promotion requires its own ADR.
+
+| Dimension | Meaning | Ceiling |
+|---|---|---|
+| **Reasoning autonomy** | How independently an agent analyzes situations and formulates plans/recommendations | May become high across all products |
+| **Execution autonomy** | Which actions an agent can actually perform (the tool autonomy levels above) | Per tool; money movement capped at `EXECUTE_WITH_APPROVAL` |
+| **Deployment autonomy** | Whether Factory-generated software can progress (merge, deploy) without human approval | Human approval required for merge and production deploy through P7 unless an ADR scopes an exception |
+
+This prevents reading "P7 / L6" as "fully autonomous." The system can become
+highly autonomous in reasoning and software preparation while sensitive
+execution and production deployment remain approval-gated.
+
 ## Canonical Factory lifecycle
 
 ```
 GOAL        What are we trying to accomplish?
+  ↓
 DISCOVER    What already exists? (live schema, ecosystem graph, repos)
+  ↓
 UNDERSTAND  What does the system currently do?
+  ↓
 PLAN        What capabilities are required / missing? → Factory Plan
+  ↓
 REASON      What architecture and implementation make sense? (decision gate, ADRs)
-EXECUTE     Generate and modify the required repositories
-VERIFY      Tests + schema + contracts + cross-repo integration
+  ↓
+EXECUTE  ◄──────────────────────────────┐
+  ↓                                      │
+VERIFY      Tests + schema + contracts + │
+            cross-repo integration       │
+  ↓                                      │
+┌──────────┐   No / new information      │
+│ Passed?  │──────────► REASON ──► RE-PLAN
+└────┬─────┘            (plan version +1, reason recorded)
+     │ Yes
+     ▼
 DEPLOY      Move changes into real applications (human-approved)
+  ↓
 OBSERVE     Monitor actual behavior through the log tables
-REASON      Analyze real-world results
-RECOVER     Fix problems
-LEARN       Capture experience (factory_experience index, ADRs)
-IMPROVE     Update system and applications  ↺
+  ↓
+LEARN       Capture experience (factory_experience index, ADRs, delivery report)
+  ↓
+IMPROVE     Update system and applications  ↺ (new GOAL)
 ```
+
+**RE-PLAN is a formal state, not an exception path.** It is entered when
+verification fails *or* when execution discovers a material requirement not
+represented in the plan. Re-planning produces a new plan version with the
+reason recorded; execution then resumes from the new version. This loop is
+the main difference between a deterministic pipeline and an agentic one.
 
 ## The Factory Plan
 
@@ -167,9 +271,39 @@ The Factory's primary output becomes a **Factory Plan**, not a set of files.
 Files are produced by executing the plan. The schema starts minimal and grows
 only from what real runs need (Principle 2).
 
+### The plan is the contract between planning and execution
+
+No generation stage (database, backend, frontend, agent) may independently
+invent work that is absent from the approved plan. If execution discovers a
+material requirement not represented in the plan, the Factory must
+**RE-PLAN** before continuing — it does not let one stage silently resolve it.
+
+```
+                 Factory Plan (planId, version)
+                          │
+          ┌───────────────┼───────────────┐
+          ▼               ▼               ▼
+       Backend         Frontend         Agent
+   (smartloans_      (POSVending)   (LoanAgents_
+     backend)                        SmartLoans)
+          │               │               │
+          └───────────────┼───────────────┘
+                          ▼
+                 Cross-repo contract
+         (route ↔ API client ↔ agent tool,
+          all derived from the same plan)
+```
+
+Every generated artifact, PR and delivery report references the `planId`
+and plan version it was produced from. Without this, the backend agent
+invents a requirement, the frontend interprets it differently, and the
+agent repo does something else.
+
 ```json
 {
   "planId": "plan-2026-10-inventory",
+  "version": 1,
+  "replans": [],
   "goal": "Enable inventory management in POS",
   "business_objective": "Cashiers and owners always know stock and avoid stock-outs",
   "affected_products": ["POS"],
@@ -199,9 +333,41 @@ only from what real runs need (Principle 2).
   "observability": ["log_audit on every adjustment", "workflow_step for adjust flow", "timed_integration on agent calls"],
   "deployment": ["PRs on 3 repos", "human review", "SQL already live — no DDL"],
   "rollback": ["revert PRs; no schema change"],
-  "success_criteria": ["merged in all 3 repos", "deployed", "≤ N human edits to generated code", "agent eval set passes"]
+  "success_criteria": ["merged in all required repos", "deployed", "cross-repo validation passes", "agent eval set passes", "works against real data", "every human edit recorded with reason"]
 }
 ```
+
+## Agent Decision Record (AgDR)
+
+ADRs record **architecture** decisions (design time, `decision_registry/`).
+AgDRs record **runtime reasoning evidence** for important agent decisions.
+They are mandatory for any action at `PROPOSE` or above in SmartLoans and
+for every financial operation, and recommended elsewhere.
+
+```json
+{
+  "agdrId": "...",
+  "workflowId": "...",
+  "correlationId": "...",
+  "companyId": 1,
+  "agent": "pos_inventory_support",
+  "goal": "...",
+  "situation": "...",
+  "evidence": [{"tool": "get_stock", "summary": "..."}],
+  "reasoning_summary": "...",
+  "decision": "...",
+  "tools_used": [],
+  "proposed_actions": [],
+  "autonomy_level": "PROPOSE",
+  "approval": {"required": true, "approvedBy": "...", "timestamp": "..."},
+  "result": "..."
+}
+```
+
+AgDRs store **auditable evidence and decision summaries, not
+chain-of-thought.** They are linked to the four log tables through
+`workflowId`/`correlationId` and pass through the same redactor (no secrets,
+PII or base64). Storage location is a Phase 3 deliverable.
 
 ## Phases
 
@@ -224,6 +390,8 @@ experience/architecture/implementation RAG.
 - Dependency, risk and missing-capability analysis
 - Task generation with `dependsOn` ordering
 - Validation, deployment and rollback sections
+- Plan versioning and the RE-PLAN state (new version + recorded reason)
+- Plan-adherence check: every generated artifact traces to a plan task; untraced work fails verification
 
 **Exit criteria:** the inventory goal produces a plan whose `existing`
 section is correct against the live DB and repos, and whose tasks are
@@ -251,9 +419,29 @@ fixer, reviewer, `pr_gate`), PR agent with `patch_app_tsx`, `pos` and
 - Cross-repo contract validation (backend route ↔ frontend client ↔ agent tool)
 - Coordinated PRs across up to three repos, linked by `planId`
 
-**Exit criteria:** inventory merged and deployed in all three repos, with
-the number of human edits to generated code recorded in
-`commercial-app-milestones.md`.
+**Exit criteria:** Inventory is merged and deployed in all required
+repositories, passes cross-repository validation and its agent evaluation
+set, works against real data, and the Factory records the number **and
+reason** for every human edit required after generation.
+
+Each delivery produces a **Factory delivery report** (raw evidence; no
+single composite score yet — the raw numbers are more valuable initially):
+
+```
+Factory delivery report — plan-2026-10-inventory v1
+
+Generated files:          27
+Human edits:               4
+  Architectural mismatch:  1
+  Logic defect:            2
+  Formatting:              1
+Re-plans:                  1  (reason: ...)
+
+Stage reached: goal → plan → executed → PR → merged → deployed → observed → working
+```
+
+Reports are appended to `commercial-app-milestones.md` and feed the Factory
+Delivery Rate.
 
 ### Phase 3 — Agentic Application Foundation
 
@@ -277,6 +465,7 @@ building from scratch.
 - Memory: bounded sessions (TTL + turn cap — fixes TICKET-002 open item #2), durable experience store, current-state snapshot tools
 - Structured plans and execution state for multi-step agent workflows (`workflowId`)
 - Agent observability: every proposal/approval/tool call logged
+- AgDR storage and emission for `PROPOSE`+ actions (mandatory in SmartLoans / financial operations)
 - Evaluation harness: per-agent scenario sets with expected decisions
 - Factory can generate a new agent + tools from a plan (used in Phase 2 T3)
 
@@ -299,8 +488,19 @@ SmartLoans (portfolio, collections), Laundry (orders, turnaround), Arcade and
 Rewards — each agent implements Observe → Understand → Reason → Plan → Act →
 Verify → Explain, citing the tool evidence it used.
 
-**Exit criteria:** per application, at least one reasoning agent whose eval
-set covers explanation quality and correct tool evidence; Laundry reaches L3+.
+**Acceptance condition for "reasoning":** an agent must reach a materially
+useful conclusion that **could not be obtained reliably by a single
+deterministic lookup**.
+
+| | Question | What the agent does |
+|---|---|---|
+| ❌ Retrieval, not reasoning | "What is current inventory?" | `get_stock` → one SP read |
+| ✅ Reasoning | "What inventory should we worry about?" | stock + sales velocity + historical consumption + reorder threshold + supplier availability + seasonality/business rules → recommendation with evidence |
+
+**Exit criteria:** per application, at least one agent meeting the
+acceptance condition above, with an eval set that covers conclusion
+correctness, explanation quality and correct tool evidence, and an AgDR for
+each decision; Laundry reaches L3+.
 
 ### Phase 5 — Proactive Applications
 
@@ -358,15 +558,21 @@ APPLICATION → OBSERVE → REASON → IMPROVE ↺
 
 The human remains owner and approver of important decisions; the Factory
 handles increasing amounts of planning, implementation, verification and
-operational learning.
+operational learning. P7 means **high reasoning autonomy**, not unrestricted
+execution or deployment autonomy — those remain bounded by the
+[autonomy dimensions](#autonomy-dimensions).
 
 **Exit criteria:** a business goal entered once results in planned, built,
 reviewed, deployed and observed changes across products, with humans acting
-only at approval points.
+only at approval points, and a sustained Factory Delivery Rate tracked over
+consecutive goals.
 
 ## First vertical slice: Inventory
 
-Inventory exercises Phases 1–5 on one feature.
+**Inventory is the first execution plan.** No additional Factory
+infrastructure is built before attempting it; gaps it exposes are fixed as
+part of delivering it (via RE-PLAN and the delivery report), not ahead of
+time. Inventory exercises Phases 1–5 on one feature.
 
 | Layer | Current state |
 |---|---|

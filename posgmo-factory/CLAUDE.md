@@ -138,3 +138,36 @@ The `decision_gate_agent` classifies every PRD into a tier that affects SQL type
 | `TIER_2_FINANCIAL` | Monetary decimal columns | `DECIMAL(10,2)` for money, no rounding in Python |
 | `TIER_3_TRANSACTIONAL` | Sales domain + line items + financial FK | Two tables (header + detail), single SP transaction |
 | `TIER_4_IOT` | Hardware/sensor keywords | `DATETIME2(3)`, no soft-delete, chart view |
+
+## Business Intake API (website → Factory)
+
+`agents/business_intake/` + `business_intake_api.py` — lets the GMO Ecosystem app send a business need (text, optional website URL, or an audio note) and get an evidence-grounded analysis back. **Read-only**: no PRD is written, no construction runs, no database is touched.
+
+**What GMO already has comes from `../Product/GMO_MODULES.md`** (modules, agents, and how each is wired), parsed and keyword-matched in plain Python (`modules.py`). Keep that file current; it is re-read automatically when it changes.
+
+```
+text (+ website URL)                     audio note
+  │                                        ▼
+  │                              intake_understanding_agent — LLM, audio only (transcribe)
+  ▼                                        │
+answer cache (same text + url + language + GMO_MODULES.md version → 0 model calls)
+  ▼
+website.py            — read the owner's site (public http/https only, SSRF-guarded, text only)
+gather_business_evidence — PURE PYTHON: GMO_MODULES.md matches + index, schema columns/FKs, draft PRDs
+  ▼
+intake_analyst_agent  — the ONE model call: REUSE / EXTEND / INVESTIGATE / CREATE / NOT_APPLICABLE per capability,
+                        workflow (verified/inferred/unknown), ≤3 high-impact questions, factoryDecision
+```
+
+The analyst follows the product owner's Business Intake specification (see `agents/business_intake/prompt.py`): catalog entries are candidates, never proof; evidence.py verifies each candidate's wiring against Backend/*.json, the schema snapshot and ecosystem_graph and assigns an `evidenceLevel`; the full route/SP/table inventory is included so hidden implementations can be found. `prdRequests` are cleared in code unless `factoryDecision == "READY_FOR_PRD"`.
+
+```bash
+uvicorn business_intake_api:app --port 8090      # POST /intake/analyze, GET /health
+pytest tests/test_business_intake.py -v          # live test skipped without GEMINI_API_KEY
+```
+
+Env: `INTAKE_ALLOWED_ORIGINS` (website origins, comma-separated), `INTAKE_RATE_LIMIT_PER_HOUR` (default 20 per IP; cached answers don't count), `FACTORY_INTAKE_MODEL` (default gemini-2.5-flash). `factory_experience` search is off by default (it costs an embedding call). Each `prdRequests` line is meant to be fed to `factory_agent.py` by a person, deliberately.
+
+## Website commercial core (`site_commercial/`)
+
+Mounted by `business_intake_api.py` under `/site`: visit counter, per-visitor AI token allowance (enforced on `/intake/analyze` with HTTP 402), lead capture (mini registration + contact form, fields from `tests/prd_leadCapture.json`) and lead follow-up admin (`X-Admin-Key` = `SITE_ADMIN_KEY`). Interim SQLite store in `SITE_DATA_DIR` until the leadCapture module exists in the GMO backend. Tests: `tests/test_site_commercial.py`.

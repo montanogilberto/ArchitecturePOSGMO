@@ -28,3 +28,4 @@ agents/.adk/
 *_state.json
 *.log
 pr_export/
+data/

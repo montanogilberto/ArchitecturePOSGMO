@@ -1,0 +1,44 @@
+{
+  "module": "productImage",
+  "description": "Photos of a product (N per product): the front/back photos the product label reader used to fill 'Nuevo Producto', plus any photo added by hand. Image bytes live in Azure Blob Storage (uploaded first via POST /products/upload-image, which returns a blobUrl); this table only stores the URL, its order and which one is the primary image shown in the POS catalog.",
+  "fields": [
+    { "name": "productId", "type": "integer", "required": true, "fk_table": "products", "fk_column": "productId",
+      "description": "Product the photo belongs to." },
+    { "name": "imageUrl", "type": "string", "required": true, "max_length": 500,
+      "description": "Blob URL returned by POST /products/upload-image ({companyId}/product_images/...)." },
+    { "name": "sortOrder", "type": "integer", "required": true,
+      "description": "Display order, 0-based. The label reader saves photos in the order they were taken (front first)." },
+    { "name": "isPrimary", "type": "boolean", "required": true,
+      "description": "The image shown in the POS catalog/product list. Exactly one per product." },
+    { "name": "source", "type": "string", "required": true, "max_length": 20,
+      "description": "Allowed values: label_reader (photo taken to read the label), manual (added by hand)." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "products", "cardinality": "1:N", "notes": "A product has 0..N images; deleting a product deletes its image rows (sp_products_save action=3 must also clean dbo.productImages)." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/products",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "Embedded in ProductWizard (no own page)",
+    "components": [
+      { "step": 1, "name": "ProductWizard image section",
+        "description": "Existing src/components/pos/productWizard/ProductWizard.tsx: thumbnails of the label-reader photos + 'Agregar imagen'; tap one to mark it primary. On submit: upload each new photo (uploadProductImage) then save rows with productImageApi after the product exists." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.productImages"],
+    "storedProcedures": ["dbo.sp_productImages", "dbo.sp_productImages_all", "dbo.sp_productImages_one"],
+    "hints": [
+      "Standard CRUD action 0/1/2/3. action=0 read filters by productId (all images of one product, ORDER BY sortOrder).",
+      "Batch insert: action=1 accepts several rows in productImages[] for the same productId in one call (the wizard saves all photos at once).",
+      "CHECK source IN ('label_reader','manual').",
+      "Exactly one isPrimary=1 per product: when a row is saved with isPrimary=1, set isPrimary=0 on the product's other rows in the same transaction; if none is primary after insert, mark the lowest sortOrder as primary.",
+      "Index on (companyId, productId).",
+      "Readers of products (sp_products_all, sp_products_by_company) should expose the primary image as imageUrl via OUTER APPLY (SELECT TOP 1 imageUrl FROM productImages WHERE productId = p.productId AND isPrimary = 1)."
+    ]
+  }
+}

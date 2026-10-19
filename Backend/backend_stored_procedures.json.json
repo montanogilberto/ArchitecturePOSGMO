@@ -1,46 +1,2335 @@
 {
   "stored_procedures": [
-    { "name": "sp_checkContact", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_checkUsername", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_users", "module_binding": "modules/users.py", "parameters": ["@pjsonfile"], "actions": ["1=insert (rejects duplicate name or email; accepts clientId to link a login to an existing dbo.clients row)", "2=update (also upserts userCompanies when companyId present; accepts clientId to link/re-link after creation)", "3=delete"] },
-    { "name": "sp_checks", "module_binding": "modules/checks.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_checks_all", "module_binding": "modules/checks.py", "parameters": [] },
-    { "name": "sp_checks_one", "module_binding": "modules/checks.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_checks_today", "module_binding": "modules/checks.py", "parameters": [] },
-    { "name": "sp_contractors", "module_binding": "modules/contractors.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_contractors_all", "module_binding": "modules/contractors.py", "parameters": [] },
-    { "name": "sp_departaments", "module_binding": "modules/departaments.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_employees", "module_binding": "modules/employees.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_employmentTypes", "module_binding": "modules/employmentTypes.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_income", "module_binding": "modules/income.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_login", "module_binding": "modules/login.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_orders", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_orders_list", "module_binding": "modules/orders.py", "parameters": [] },
-    { "name": "sp_orders_tracking_status", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_orders_products_one", "module_binding": "modules/orders.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_sellListings", "module_binding": "modules/sellListings.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_tankWaters", "module_binding": "modules/IOT.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_stripe_connectedAccounts", "module_binding": "modules/stripe_payments.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_stripe_transactions", "module_binding": "modules/stripe_payments.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_clientWallets", "module_binding": "modules/walletBalance.py", "parameters": ["@pjsonfile"], "actions": ["reserve", "release", "debit", "credit", "get"] },
-    { "name": "sp_loanInstallments", "module_binding": "modules/automatedPayments.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_savedPaymentMethods", "module_binding": "modules/automatedPayments.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_onboardingReminders", "module_binding": "modules/onboardingReminders.py", "parameters": ["@pjsonfile"], "actions": ["getIncomplete", "markReminded"] },
-    { "name": "sp_pushNotifications", "module_binding": "modules/pushNotifications.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_pushNotifications_all", "module_binding": "modules/pushNotifications.py", "parameters": [] },
-    { "name": "sp_pushNotifications_one", "module_binding": "modules/pushNotifications.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_pushNotifications_activeUsers", "module_binding": "modules/pushNotifications.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_pushNotifications_recordDelivery", "module_binding": "modules/pushNotifications.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loans", "module_binding": "modules/loans.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loans_all", "module_binding": "modules/loans.py", "parameters": [] },
-    { "name": "sp_loans_one", "module_binding": "modules/loans.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loanOffers", "module_binding": "modules/loanOffers.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loanOffers_all", "module_binding": "modules/loanOffers.py", "parameters": [] },
-    { "name": "sp_loanOffers_one", "module_binding": "modules/loanOffers.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loanProposals", "module_binding": "modules/loanProposals.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loanProposals_all", "module_binding": "modules/loanProposals.py", "parameters": [] },
-    { "name": "sp_loanProposals_one", "module_binding": "modules/loanProposals.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_loanChat", "module_binding": "modules/loanChat.py", "parameters": ["@pjsonfile"] },
-    { "name": "sp_legalCases", "module_binding": "modules/legalCases.py", "parameters": ["@pjsonfile"] }
+    {
+      "name": "sp_checkContact",
+      "module_binding": "modules/users.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_checkUsername",
+      "module_binding": "modules/users.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_users",
+      "module_binding": "modules/users.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "actions": [
+        "1=insert (rejects duplicate name or email; accepts clientId to link a login to an existing dbo.clients row)",
+        "2=update (also upserts userCompanies when companyId present; accepts clientId to link/re-link after creation)",
+        "3=delete"
+      ]
+    },
+    {
+      "name": "sp_checks",
+      "module_binding": "modules/checks.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_checks_all",
+      "module_binding": "modules/checks.py",
+      "parameters": []
+    },
+    {
+      "name": "sp_checks_one",
+      "module_binding": "modules/checks.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_checks_today",
+      "module_binding": "modules/checks.py",
+      "parameters": []
+    },
+    {
+      "name": "sp_contractors",
+      "module_binding": "modules/contractors.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_contractors_all",
+      "module_binding": "modules/contractors.py",
+      "parameters": []
+    },
+    {
+      "name": "sp_departaments",
+      "module_binding": "modules/departaments.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_employees",
+      "module_binding": "modules/employees.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_employmentTypes",
+      "module_binding": "modules/employmentTypes.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_income",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_login",
+      "module_binding": "modules/login.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_orders",
+      "module_binding": "modules/orders.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_orders_list",
+      "module_binding": "modules/orders.py",
+      "parameters": []
+    },
+    {
+      "name": "sp_orders_tracking_status",
+      "module_binding": "modules/orders.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_orders_products_one",
+      "module_binding": "modules/orders.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_sellListings",
+      "module_binding": "modules/sellListings.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_tankWaters",
+      "module_binding": "modules/IOT.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_stripe_connectedAccounts",
+      "module_binding": "modules/stripe_payments.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_stripe_transactions",
+      "module_binding": "modules/stripe_payments.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_clientWallets",
+      "module_binding": "modules/walletBalance.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "actions": [
+        "reserve",
+        "release",
+        "debit",
+        "credit",
+        "get"
+      ]
+    },
+    {
+      "name": "sp_loanInstallments",
+      "module_binding": "modules/automatedPayments.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_savedPaymentMethods",
+      "module_binding": "modules/automatedPayments.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_onboardingReminders",
+      "module_binding": "modules/onboardingReminders.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "actions": [
+        "getIncomplete",
+        "markReminded"
+      ]
+    },
+    {
+      "name": "sp_pushNotifications",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_pushNotifications_all",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_pushNotifications_one",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_pushNotifications_activeUsers",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_pushNotifications_recordDelivery",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loans",
+      "module_binding": "modules/loans.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loans_all",
+      "module_binding": "modules/loans.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loans_one",
+      "module_binding": "modules/loans.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanOffers",
+      "module_binding": "modules/loanOffers.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanOffers_all",
+      "module_binding": "modules/loanOffers.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanOffers_one",
+      "module_binding": "modules/loanOffers.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanProposals",
+      "module_binding": "modules/loanProposals.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanProposals_all",
+      "module_binding": "modules/loanProposals.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanProposals_one",
+      "module_binding": "modules/loanProposals.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_loanChat",
+      "module_binding": "modules/loanChat.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "sp_legalCases",
+      "module_binding": "modules/legalCases.py",
+      "parameters": [
+        "@pjsonfile"
+      ]
+    },
+    {
+      "name": "one_products",
+      "module_binding": null,
+      "parameters": [
+        "@productId"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_FactoryRunUsages",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_FactoryRunUsages_all",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_FactoryRunUsages_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_alterdiagram",
+      "module_binding": null,
+      "parameters": [
+        "@diagramname",
+        "@owner_id",
+        "@version",
+        "@definition"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_applicationLog",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeChipOrders_all",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeChipOrders_confirm",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeChipOrders_create",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeChipOrders_declare",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeChipPacks_all",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeGames_all",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadePurchases_all",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadePurchases_credit",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadePurchases_receipt",
+      "module_binding": "modules/arcadeStore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_all",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_double",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_liveWins",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_one",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_open",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_settle",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_state",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeRounds_void",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeTransactions_all",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeWallets_dailyBonus",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_arcadeWallets_one",
+      "module_binding": "modules/arcade.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_auditLog",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_bankAccounts",
+      "module_binding": "modules/bankAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_bankAccountsLifecycle",
+      "module_binding": "modules/bankAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_bankAccounts_all",
+      "module_binding": "modules/bankAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_bankAccounts_one",
+      "module_binding": "modules/bankAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_businessFaqs",
+      "module_binding": "modules/whatsappAssistant.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_businessInfo",
+      "module_binding": "modules/whatsappAssistant.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_buyOffers",
+      "module_binding": "modules/buyOffers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_cashRegister",
+      "module_binding": "modules/cashRegister.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_chartOfAccounts",
+      "module_binding": "modules/chartOfAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_chartOfAccounts_all",
+      "module_binding": "modules/chartOfAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_chartOfAccounts_one",
+      "module_binding": "modules/chartOfAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_chartOfAccounts_seed",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@companyId"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientCapabilities",
+      "module_binding": "modules/clientCapabilities.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientDashboards",
+      "module_binding": "modules/clientDashboards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientDashboards_all",
+      "module_binding": "modules/clientDashboards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientFaceRecognitions",
+      "module_binding": "modules/clientFaceRecognitions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientFaceRecognitions_all",
+      "module_binding": "modules/clientFaceRecognitions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientFaceRecognitions_one",
+      "module_binding": "modules/clientFaceRecognitions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientFollowUps",
+      "module_binding": "modules/clientFollowUps.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientFollowUps_all",
+      "module_binding": "modules/clientFollowUps.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientFollowUps_one",
+      "module_binding": "modules/clientFollowUps.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientLoginCodes",
+      "module_binding": "modules/client_login.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clients",
+      "module_binding": "modules/clients.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clients_all",
+      "module_binding": "modules/clients.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clients_one",
+      "module_binding": "modules/clients.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clients_qr",
+      "module_binding": "modules/clients.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_commands_all",
+      "module_binding": "modules/commands.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_commissionTerminals",
+      "module_binding": "modules/commissionTerminals.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_commissionTerminals_all",
+      "module_binding": "modules/commissionTerminals.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_commissionTerminals_one",
+      "module_binding": "modules/commissionTerminals.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companies",
+      "module_binding": "modules/companies.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companiesBranch_by_company",
+      "module_binding": "modules/companiesBranches.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companiesBranches",
+      "module_binding": "modules/companiesBranches.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companiesBranches_all",
+      "module_binding": "modules/companiesBranches.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companiesBranches_one",
+      "module_binding": "modules/companiesBranches.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companies_all",
+      "module_binding": "modules/companies.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companies_one",
+      "module_binding": "modules/companies.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyTokens_balance",
+      "module_binding": "modules/companyTokens.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyTokens_record",
+      "module_binding": "modules/companyTokens.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyTokens_topup",
+      "module_binding": "modules/companyTokens.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_contractors_one",
+      "module_binding": "modules/contractors.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_costRules",
+      "module_binding": "modules/costRules.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_creatediagram",
+      "module_binding": null,
+      "parameters": [
+        "@diagramname",
+        "@owner_id",
+        "@version",
+        "@definition"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_creditScore_data",
+      "module_binding": "modules/creditScore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_creditScores",
+      "module_binding": "modules/creditScore.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_database_info_tables",
+      "module_binding": "modules/utils.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_deleteClientCascade",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_departaments_all",
+      "module_binding": "modules/departaments.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_departaments_one",
+      "module_binding": "modules/departaments.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_departments",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_departments_all",
+      "module_binding": null,
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_departments_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_digitalContracts",
+      "module_binding": "modules/digitalContracts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_disbursement",
+      "module_binding": "modules/disbursement.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_dropdiagram",
+      "module_binding": null,
+      "parameters": [
+        "@diagramname",
+        "@owner_id"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employeeProjectAssignments",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employeeProjectAssignments_all",
+      "module_binding": "modules/employeeProjectAssignments.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employeeProjectAssignments_one",
+      "module_binding": "modules/employeeProjectAssignments.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employees_all",
+      "module_binding": "modules/employees.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employees_one",
+      "module_binding": "modules/employees.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employmentTypes_all",
+      "module_binding": "modules/employmentTypes.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_employmentTypes_one",
+      "module_binding": "modules/employmentTypes.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_exchangeRates",
+      "module_binding": "modules/exchangeRates.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_exchangeRates_by_day",
+      "module_binding": "modules/exchangeRates.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_exchangeRates_latestToUsd",
+      "module_binding": null,
+      "parameters": [
+        "@fromCurrency",
+        "@asOfDate"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_exchangeRates_upsert",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_expense",
+      "module_binding": "modules/expenses.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_expense_all",
+      "module_binding": "modules/expenses.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_expense_monthly",
+      "module_binding": "modules/expenses.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_expense_one",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_fundingTransactions",
+      "module_binding": "modules/fundingTransactions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_helpdiagramdefinition",
+      "module_binding": null,
+      "parameters": [
+        "@diagramname",
+        "@owner_id"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_helpdiagrams",
+      "module_binding": null,
+      "parameters": [
+        "@diagramname",
+        "@owner_id"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_all",
+      "module_binding": "modules/income.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_applyCommission",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_applyDiscounts",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_apply_promo",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_clientRequest",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@action",
+        "@companyId",
+        "@clientRequestId",
+        "@incomeId"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_delete",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_monthly",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_one",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_income_reverseOnDelete",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@incomeId"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ingestState_dequeue",
+      "module_binding": null,
+      "parameters": [
+        "@top",
+        "@workerId",
+        "@lockSeconds"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ingestState_finish",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_integrationLog",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_inventory_adjust",
+      "module_binding": null,
+      "parameters": [
+        "@pjson"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_inventory_list",
+      "module_binding": null,
+      "parameters": [
+        "@companyId"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_inventory_post",
+      "module_binding": null,
+      "parameters": [
+        "@companyId",
+        "@productId",
+        "@quantityDelta",
+        "@reason",
+        "@refType",
+        "@refId",
+        "@userId",
+        "@notes"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_all",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_backfillIncomeCommissions",
+      "module_binding": null,
+      "parameters": [
+        "@companyId",
+        "@fromDate",
+        "@dryRun"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_backfillMovements",
+      "module_binding": null,
+      "parameters": [
+        "@companyId",
+        "@fromDate",
+        "@dryRun"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_byReference",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_correctDates",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@companyId",
+        "@fromDate",
+        "@dryRun"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_ledger",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_one",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_reconcileMovements",
+      "module_binding": null,
+      "parameters": [
+        "@companyId",
+        "@fromDate",
+        "@toDate"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_journalEntries_trialBalance",
+      "module_binding": "modules/journalEntries.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_laundryDeviceUses",
+      "module_binding": "modules/laundryDevices.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_laundryDeviceUses_all",
+      "module_binding": "modules/laundryDevices.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_laundryDevices",
+      "module_binding": "modules/laundryDevices.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_laundryDevices_all",
+      "module_binding": "modules/laundryDevices.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_leadCaptures",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_leadCaptures_all",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_leadCaptures_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_led_status",
+      "module_binding": "modules/IOT.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_listingDrafts",
+      "module_binding": "modules/listingDrafts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_loanInstallments_one",
+      "module_binding": "modules/automatedPayments.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_loans_matchLenders",
+      "module_binding": "modules/loans.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_logs_all",
+      "module_binding": null,
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_machines",
+      "module_binding": "modules/costEngine.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_maintenanceLogs",
+      "module_binding": "modules/maintenancePredictor.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_marketplaceOrders",
+      "module_binding": "modules/marketplaceOrders.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_mercadolibre_webhook",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_messageTickets",
+      "module_binding": "modules/messageTickets.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_messageTickets_next",
+      "module_binding": null,
+      "parameters": [
+        "@batchSize"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_mlOAuthStates",
+      "module_binding": "modules/mercadolibre.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_mlTokens",
+      "module_binding": "modules/mercadolibre.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ml_jobs",
+      "module_binding": "modules/mlJobs.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ml_search_runs",
+      "module_binding": "modules/mlSearchRuns.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_name_tables",
+      "module_binding": null,
+      "parameters": [
+        "@table_name"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_notificationDispatchPolicy_one",
+      "module_binding": "modules/notificationDispatch.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_notificationDispatches",
+      "module_binding": "modules/notificationDispatch.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_notificationDispatches_all",
+      "module_binding": "modules/notificationDispatch.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_notificationDispatches_lookup",
+      "module_binding": "modules/notificationDispatch.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_notificationDispatches_one",
+      "module_binding": "modules/notificationDispatch.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_observability_logBatch",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_opportunities",
+      "module_binding": "modules/opportunities.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_orders_all",
+      "module_binding": "modules/orders.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_orders_one",
+      "module_binding": "modules/orders.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_paymentHistory_all",
+      "module_binding": "modules/paymentHistory.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_paymentIntents",
+      "module_binding": "modules/paymentIntents.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardBalances",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardBalances_applyDelta",
+      "module_binding": null,
+      "parameters": [
+        "@companyId",
+        "@clientId",
+        "@pointsDelta",
+        "@earnedDelta",
+        "@redeemedDelta",
+        "@newBalance"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardBalances_dashboardSummary",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardCatalogItems",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardFreeProductStatus",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardProductCounts",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardProductRates",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardRedemptions",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardRedemptions_redeem",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardRedemptions_reverseForIncome",
+      "module_binding": "modules/income.py",
+      "parameters": [
+        "@incomeId"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardTransactions",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardTransactions_adjust",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardTransactions_earnFromTicket",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posRewardsDashboard",
+      "module_binding": "modules/posRewards.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_posSupportChat",
+      "module_binding": "modules/posSupportChat.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_pos_laundry",
+      "module_binding": "modules/laundry.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_pos_laundry_all",
+      "module_binding": "modules/laundry.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_procurementJobs",
+      "module_binding": "modules/procurementJobs.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_productMatches",
+      "module_binding": "modules/productMatches.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_productionOrders",
+      "module_binding": "modules/alertDispatcher.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_all",
+      "module_binding": "modules/products.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_by_company",
+      "module_binding": "modules/products.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_categories",
+      "module_binding": "modules/productCategories.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_categories_all",
+      "module_binding": "modules/productCategories.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_categories_by_company_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_food",
+      "module_binding": "modules/products.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_one",
+      "module_binding": "modules/products.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_products_save",
+      "module_binding": "modules/products.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_profitabilitySnapshots",
+      "module_binding": "modules/profitabilityOptimizer.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_projects",
+      "module_binding": "modules/projects.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_projects_all",
+      "module_binding": "modules/projects.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_projects_one",
+      "module_binding": "modules/projects.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_promotions",
+      "module_binding": "modules/whatsappAssistant.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_publishJobs",
+      "module_binding": "modules/publishJobs.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_publishJobs_next",
+      "module_binding": null,
+      "parameters": [
+        "@batchSize"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_pushNotifications_forUser",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_pushNotifications_markRead",
+      "module_binding": "modules/pushNotifications.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_pushNotifications_resolveUsers",
+      "module_binding": "modules/notificationDispatch.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_registrationReminders",
+      "module_binding": "modules/registrationReminders.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_renamediagram",
+      "module_binding": null,
+      "parameters": [
+        "@diagramname",
+        "@owner_id",
+        "@new_diagramname"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_reservationHours",
+      "module_binding": "modules/reservations.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_reservationServices",
+      "module_binding": "modules/reservations.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_reservations",
+      "module_binding": "modules/reservations.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_rewardBenefits_all",
+      "module_binding": "modules/rewardBenefits.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_rewardBenefits_bind",
+      "module_binding": "modules/rewardBenefits.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_rewardBenefits_forClient",
+      "module_binding": "modules/rewardBenefits.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_rewardBenefits_reserve",
+      "module_binding": "modules/rewardBenefits.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_rewards",
+      "module_binding": "modules/rewardBenefits.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_rewards_earnOnce",
+      "module_binding": "modules/rewardBenefits.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_roles",
+      "module_binding": "modules/roles.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_select_all_tables",
+      "module_binding": "modules/utils.py",
+      "parameters": [
+        "@table_name"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_select_one_row",
+      "module_binding": "modules/utils.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_sellListings_all",
+      "module_binding": "modules/sellListings.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_sellListings_backup",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_sellListings_query",
+      "module_binding": "modules/sellListings.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_services",
+      "module_binding": "modules/services.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_services_all",
+      "module_binding": "modules/services.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_services_one",
+      "module_binding": "modules/services.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_shipments",
+      "module_binding": "modules/shipments.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_shipments_next",
+      "module_binding": null,
+      "parameters": [
+        "@batchSize"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_statuses",
+      "module_binding": "modules/statuses.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_statuses_all",
+      "module_binding": "modules/statuses.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_statuses_one",
+      "module_binding": "modules/statuses.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_suppliers",
+      "module_binding": "modules/suppliers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_suppliers_all",
+      "module_binding": "modules/suppliers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_suppliers_one",
+      "module_binding": "modules/suppliers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_tankWater_all",
+      "module_binding": "modules/IOT.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ticket",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ticket_redirect",
+      "module_binding": "modules/tickets.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_ticket_tracking",
+      "module_binding": "modules/tickets.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_tickets_one",
+      "module_binding": "modules/tickets.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transactionNotifications",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transactionNotifications_all",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transactionNotifications_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transferEvidence",
+      "module_binding": "modules/transferEvidence.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transfers",
+      "module_binding": "modules/transfers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transfers_all",
+      "module_binding": "modules/transfers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_transfers_one",
+      "module_binding": "modules/transfers.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_unifiedProducts",
+      "module_binding": "modules/unifiedProducts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_upgraddiagrams",
+      "module_binding": null,
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_userCompanies_role",
+      "module_binding": "modules/fundingTransactions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_users_all",
+      "module_binding": "modules/users.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_users_one",
+      "module_binding": "modules/users.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_users_one_email",
+      "module_binding": "modules/users.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_utilityRates",
+      "module_binding": "modules/costEngine.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_vending",
+      "module_binding": "modules/vending.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_vending_all",
+      "module_binding": "modules/vending.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_walletTransactions",
+      "module_binding": "modules/walletTransactions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_walletTransactions_all",
+      "module_binding": "modules/walletTransactions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_walletTransactions_balance",
+      "module_binding": "modules/walletTransactions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_whatsappChannels",
+      "module_binding": "modules/whatsappChannels.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_whatsappConversations",
+      "module_binding": "modules/whatsappChannels.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_whatsappCustomerRewards",
+      "module_binding": "modules/whatsappAssistant.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_whatsapp_messages",
+      "module_binding": "modules/whatsapp.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_workflowLog",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    }
   ]
 }

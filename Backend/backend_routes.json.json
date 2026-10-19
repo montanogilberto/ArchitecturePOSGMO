@@ -1,74 +1,4688 @@
 {
   "routes": [
-    { "path": "/amazon_proxy", "file": "routes_/amazon_proxy.py", "tags": ["Amazon Workspace Proxy"] },
-    { "path": "/buyOffers", "file": "routes_/buyOffers.py", "tags": ["Marketplace Sourcing"] },
-    { "path": "/cashRegister", "file": "routes_/cashRegister.py", "tags": ["POS / Session Logs"] },
-    { "path": "/checks", "file": "routes_/checks.py", "tags": ["Financial Audits"] },
-    { "path": "/clients", "file": "routes_/clients.py", "tags": ["CRM Client Directory"] },
-    { "path": "/commands", "file": "routes_/commands.py", "tags": ["IoT Hardware Control"] },
-    { "path": "/companies", "file": "routes_/companies.py", "tags": ["Multi-Tenant Corporates"] },
-    { "path": "/companiesBranches", "file": "routes_/companiesBranches.py", "tags": ["Branch Workspaces"] },
-    { "path": "/contact_email", "file": "routes_/contact_email.py", "tags": ["Utility Communications"] },
-    { "path": "/contractors", "file": "routes_/contractors.py", "tags": ["HR External Resources"] },
-    { "path": "/costRules", "file": "routes_/costRules.py", "tags": ["Financial Margin Configs"] },
-    { "path": "/departaments", "file": "routes_/departaments.py", "tags": ["HR Departments"] },
-    { "path": "/ebay_proxy", "file": "routes_/ebay_proxy.py", "tags": ["eBay Marketplace Gateway"] },
-    { "path": "/employeeProjectAssignments", "file": "routes_/employeeProjectAssignments.py", "tags": ["PM Allocations"] },
-    { "path": "/employees", "file": "routes_/employees.py", "tags": ["HR Payroll Entities"] },
-    { "path": "/employmentTypes", "file": "routes_/employmentTypes.py", "tags": ["HR Policies"] },
-    { "path": "/exchangeRates", "file": "routes_/exchangeRates.py", "tags": ["Fintech Exchange Operations"] },
-    { "path": "/expenses", "file": "routes_/expenses.py", "tags": ["Cash Flow Deficits"] },
-    { "path": "/income", "file": "routes_/income.py", "tags": ["Cash Flow Surpluses"] },
-    { "path": "/IOT", "file": "routes_/IOT.py", "tags": ["Vending Machine Microcontrollers"] },
-    { "path": "/laundry", "file": "routes_/laundry.py", "tags": ["Laundromat Operational State"] },
-    { "path": "/listingDrafts", "file": "routes_/listingDrafts.py", "tags": ["E-Commerce Item Upload Previews"] },
-    { "path": "/login", "file": "routes_/login.py", "tags": ["Session Provisioning"] },
-    { "path": "/marketplaceOrders", "file": "routes_/marketplaceOrders.py", "tags": ["Cross-Channel Sales Aggregator"] },
-    { "path": "/mercadolibre", "file": "routes_/mercadolibre.py", "tags": ["MercadoLibre Core Engine"] },
-    { "path": "/messageTickets", "file": "routes_/messageTickets.py", "tags": ["CRM Customer Support Chats"] },
-    { "path": "/ml_proxy", "file": "routes_/ml_proxy.py", "tags": ["MercadoLibre Low-Level Wrappers"] },
-    { "path": "/mlJobs", "file": "routes_/mlJobs.py", "tags": ["MercadoLibre Heavy Background Processing"] },
-    { "path": "/mlSearchRuns", "file": "routes_/mlSearchRuns.py", "tags": ["Scraper Extraction Monitors"] },
-    { "path": "/opportunities", "file": "routes_/opportunities.py", "tags": ["Arbitrage Analytics Engine"] },
-    { "path": "/orders", "file": "routes_/orders.py", "tags": ["Core Order Handlers"] },
-    { "path": "/procurementJobs", "file": "routes_/procurementJobs.py", "tags": ["Supply Chain Stock Operations"] },
-    { "path": "/productCategories", "file": "routes_/productCategories.py", "tags": ["Catalog Classifiers"] },
-    { "path": "/productMatches", "file": "routes_/productMatches.py", "tags": ["Universal Catalog Mapping AI"] },
-    { "path": "/products", "file": "routes_/products.py", "tags": ["Inventory Items and Product Variations"] },
-    { "path": "/projects", "file": "routes_/projects.py", "tags": ["Corporate Project Directories"] },
-    { "path": "/publishJobs", "file": "routes_/publishJobs.py", "tags": ["Omnichannel Feed Synchronization"] },
-    { "path": "/routes_ml_proxy", "file": "routes_/routes_ml_proxy.py", "tags": ["MercadoLibre Direct Webhooks"] },
-    { "path": "/scannertext", "file": "routes_/scannertext.py", "tags": ["Azure AI OCR Wrappers"] },
-    { "path": "/sellListings", "file": "routes_/sellListings.py", "tags": ["Active Sales Placements"] },
-    { "path": "/shipments", "file": "routes_/shipments.py", "tags": ["Logistics Tracking Data"] },
-    { "path": "/statuses", "file": "routes_/statuses.py", "tags": ["State Machine Global Dictionary"] },
-    { "path": "/swagger", "file": "routes_/swagger.py", "tags": ["Documentation Layer Customizer"] },
-    { "path": "/symptoms", "file": "routes_/symptoms.py", "tags": ["Medical Advice AI Classifier"] },
-    { "path": "/tickets", "file": "routes_/tickets.py", "tags": ["Customer Slips & Invoices / Notification Despatch"] },
-    { "path": "/unifiedProducts", "file": "routes_/unifiedProducts.py", "tags": ["Universal Master Catalog"] },
-    { "path": "/users", "file": "routes_/users.py", "tags": ["Identity Management Engine"] },
-    { "path": "/utils", "file": "routes_/utils.py", "tags": ["System Inspection Helpers"] },
-    { "path": "/vending_v2", "file": "routes_/vending_v2.py", "tags": ["Refactored Vending Automation Telemetry"] },
-    { "path": "/whatsapp", "file": "routes_/whatsapp.py", "tags": ["Twilio Engine Interfaces"] },
-    { "path": "/stripe", "file": "routes_/stripe_payments.py", "tags": ["Stripe Connect"] },
-    { "path": "/automated-payments", "file": "routes_/automatedPayments.py", "tags": ["Automated Payments"] },
-    { "path": "/wallet", "file": "routes_/walletBalance.py", "tags": ["Wallet Balance"] },
-    { "path": "/onboarding-reminders", "file": "routes_/onboardingReminders.py", "tags": ["Onboarding Reminders"] },
-    { "path": "/loans", "file": "routes_/loan.py", "tags": ["P2P Lending Core"] },
-    { "path": "/loanOffers", "file": "routes_/loanOffers.py", "tags": ["P2P Lending Core"] },
-    { "path": "/loanProposals", "file": "routes_/loanProposals.py", "tags": ["P2P Lending Core"] },
-    { "path": "/loanChat", "file": "routes_/loanChat.py", "tags": ["P2P Lending Core"] },
-    { "path": "/credit-score", "file": "routes_/creditScore.py", "tags": ["Credit Score"] },
-    { "path": "/clientFaceRecognitions", "file": "routes_/clientFaceRecognition.py", "tags": ["connector"] },
-    { "path": "/clientDashboards", "file": "routes_/clientDashboards.py", "tags": ["Client Dashboards"] },
-    { "path": "/digitalContracts", "file": "routes_/digitalContracts.py", "tags": ["Digital Contracts"] },
-    { "path": "/legalCases", "file": "routes_/legalCases.py", "tags": ["Legal Recovery / Juicio Mercantil"] },
-    { "path": "/disbursement", "file": "routes_/disbursement.py", "tags": ["Manual Disbursement (legacy, dormant)"] },
-    { "path": "/ocr", "file": "routes_/document_intelligence.py", "tags": ["Document Intelligence"] },
-    { "path": "/api/geocode", "file": "routes_/geocoding.py", "tags": ["Geocoding"] },
-    { "path": "/signatures", "file": "routes_/signatureUpload.py", "tags": ["Signatures"] },
-    { "path": "/pushNotifications", "file": "routes_/pushNotification.py", "tags": ["Push Notifications"] },
-    { "path": "/suppliers", "file": "routes_/supplier.py", "tags": ["Supply Chain Vendors"] },
-    { "path": "/manufacturing", "file": "routes_/manufacturing.py", "tags": ["Manufacturing"] }
+    {
+      "path": "/amazon_proxy",
+      "file": "routes_/amazon_proxy.py",
+      "tags": [
+        "Amazon Workspace Proxy"
+      ]
+    },
+    {
+      "path": "/buyOffers",
+      "file": "routes_/buyOffers.py",
+      "tags": [
+        "Marketplace Sourcing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "buyOffers"
+      ]
+    },
+    {
+      "path": "/cashRegister",
+      "file": "routes_/cashRegister.py",
+      "tags": [
+        "POS / Session Logs"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "cashRegister"
+      ]
+    },
+    {
+      "path": "/checks",
+      "file": "routes_/checks.py",
+      "tags": [
+        "Financial Audits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "checks"
+      ]
+    },
+    {
+      "path": "/clients",
+      "file": "routes_/clients.py",
+      "tags": [
+        "CRM Client Directory"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "clients"
+      ]
+    },
+    {
+      "path": "/commands",
+      "file": "routes_/commands.py",
+      "tags": [
+        "IoT Hardware Control"
+      ]
+    },
+    {
+      "path": "/companies",
+      "file": "routes_/companies.py",
+      "tags": [
+        "Multi-Tenant Corporates"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "companies"
+      ]
+    },
+    {
+      "path": "/companiesBranches",
+      "file": "routes_/companiesBranches.py",
+      "tags": [
+        "Branch Workspaces"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "companiesBranches"
+      ]
+    },
+    {
+      "path": "/contact_email",
+      "file": "routes_/contact_email.py",
+      "tags": [
+        "Utility Communications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "send_recovery"
+      ]
+    },
+    {
+      "path": "/contractors",
+      "file": "routes_/contractors.py",
+      "tags": [
+        "HR External Resources"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "contractors"
+      ]
+    },
+    {
+      "path": "/costRules",
+      "file": "routes_/costRules.py",
+      "tags": [
+        "Financial Margin Configs"
+      ]
+    },
+    {
+      "path": "/departaments",
+      "file": "routes_/departaments.py",
+      "tags": [
+        "HR Departments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "departaments"
+      ]
+    },
+    {
+      "path": "/ebay_proxy",
+      "file": "routes_/ebay_proxy.py",
+      "tags": [
+        "eBay Marketplace Gateway"
+      ]
+    },
+    {
+      "path": "/employeeProjectAssignments",
+      "file": "routes_/employeeProjectAssignments.py",
+      "tags": [
+        "PM Allocations"
+      ]
+    },
+    {
+      "path": "/employees",
+      "file": "routes_/employees.py",
+      "tags": [
+        "HR Payroll Entities"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "employees"
+      ]
+    },
+    {
+      "path": "/employmentTypes",
+      "file": "routes_/employmentTypes.py",
+      "tags": [
+        "HR Policies"
+      ]
+    },
+    {
+      "path": "/exchangeRates",
+      "file": "routes_/exchangeRates.py",
+      "tags": [
+        "Fintech Exchange Operations"
+      ]
+    },
+    {
+      "path": "/expenses",
+      "file": "routes_/expenses.py",
+      "tags": [
+        "Cash Flow Deficits"
+      ]
+    },
+    {
+      "path": "/income",
+      "file": "routes_/income.py",
+      "tags": [
+        "Cash Flow Surpluses"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "income"
+      ]
+    },
+    {
+      "path": "/IOT",
+      "file": "routes_/IOT.py",
+      "tags": [
+        "Vending Machine Microcontrollers"
+      ]
+    },
+    {
+      "path": "/laundry",
+      "file": "routes_/laundry.py",
+      "tags": [
+        "Laundromat Operational State"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry"
+      ]
+    },
+    {
+      "path": "/listingDrafts",
+      "file": "routes_/listingDrafts.py",
+      "tags": [
+        "E-Commerce Item Upload Previews"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "listingDrafts"
+      ]
+    },
+    {
+      "path": "/login",
+      "file": "routes_/login.py",
+      "tags": [
+        "Session Provisioning"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "login"
+      ]
+    },
+    {
+      "path": "/marketplaceOrders",
+      "file": "routes_/marketplaceOrders.py",
+      "tags": [
+        "Cross-Channel Sales Aggregator"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "marketplaceOrders"
+      ]
+    },
+    {
+      "path": "/mercadolibre",
+      "file": "routes_/mercadolibre.py",
+      "tags": [
+        "MercadoLibre Core Engine"
+      ]
+    },
+    {
+      "path": "/messageTickets",
+      "file": "routes_/messageTickets.py",
+      "tags": [
+        "CRM Customer Support Chats"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "messageTickets",
+        "opportunities_messageTickets"
+      ]
+    },
+    {
+      "path": "/ml_proxy",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibre Low-Level Wrappers"
+      ]
+    },
+    {
+      "path": "/mlJobs",
+      "file": "routes_/mlJobs.py",
+      "tags": [
+        "MercadoLibre Heavy Background Processing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "ml_jobs"
+      ]
+    },
+    {
+      "path": "/mlSearchRuns",
+      "file": "routes_/mlSearchRuns.py",
+      "tags": [
+        "Scraper Extraction Monitors"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "ml_search_runs"
+      ]
+    },
+    {
+      "path": "/opportunities",
+      "file": "routes_/opportunities.py",
+      "tags": [
+        "Arbitrage Analytics Engine"
+      ],
+      "stale": true
+    },
+    {
+      "path": "/orders",
+      "file": "routes_/orders.py",
+      "tags": [
+        "Core Order Handlers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "orders"
+      ]
+    },
+    {
+      "path": "/procurementJobs",
+      "file": "routes_/procurementJobs.py",
+      "tags": [
+        "Supply Chain Stock Operations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "procurementJobs"
+      ]
+    },
+    {
+      "path": "/productCategories",
+      "file": "routes_/productCategories.py",
+      "tags": [
+        "Catalog Classifiers"
+      ]
+    },
+    {
+      "path": "/productMatches",
+      "file": "routes_/productMatches.py",
+      "tags": [
+        "Universal Catalog Mapping AI"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "productMatches"
+      ]
+    },
+    {
+      "path": "/products",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "products"
+      ]
+    },
+    {
+      "path": "/projects",
+      "file": "routes_/projects.py",
+      "tags": [
+        "Corporate Project Directories"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "projects"
+      ]
+    },
+    {
+      "path": "/publishJobs",
+      "file": "routes_/publishJobs.py",
+      "tags": [
+        "Omnichannel Feed Synchronization"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "publishJobs"
+      ]
+    },
+    {
+      "path": "/routes_ml_proxy",
+      "file": "routes_/routes_ml_proxy.py",
+      "tags": [
+        "MercadoLibre Direct Webhooks"
+      ]
+    },
+    {
+      "path": "/scannertext",
+      "file": "routes_/scannertext.py",
+      "tags": [
+        "Azure AI OCR Wrappers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "scannertext"
+      ]
+    },
+    {
+      "path": "/sellListings",
+      "file": "routes_/sellListings.py",
+      "tags": [
+        "Active Sales Placements"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "sellListings"
+      ]
+    },
+    {
+      "path": "/shipments",
+      "file": "routes_/shipments.py",
+      "tags": [
+        "Logistics Tracking Data"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "shipments"
+      ]
+    },
+    {
+      "path": "/statuses",
+      "file": "routes_/statuses.py",
+      "tags": [
+        "State Machine Global Dictionary"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "statuses"
+      ]
+    },
+    {
+      "path": "/swagger",
+      "file": "routes_/swagger.py",
+      "tags": [
+        "Documentation Layer Customizer"
+      ]
+    },
+    {
+      "path": "/symptoms",
+      "file": "routes_/symptoms.py",
+      "tags": [
+        "Medical Advice AI Classifier"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "symptoms"
+      ]
+    },
+    {
+      "path": "/tickets",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ]
+    },
+    {
+      "path": "/unifiedProducts",
+      "file": "routes_/unifiedProducts.py",
+      "tags": [
+        "Universal Master Catalog"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "unifiedProducts"
+      ]
+    },
+    {
+      "path": "/users",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "users"
+      ]
+    },
+    {
+      "path": "/utils",
+      "file": "routes_/utils.py",
+      "tags": [
+        "System Inspection Helpers"
+      ]
+    },
+    {
+      "path": "/vending_v2",
+      "file": "routes_/vending_v2.py",
+      "tags": [
+        "Refactored Vending Automation Telemetry"
+      ]
+    },
+    {
+      "path": "/whatsapp",
+      "file": "routes_/whatsapp.py",
+      "tags": [
+        "Twilio Engine Interfaces"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_webhook"
+      ]
+    },
+    {
+      "path": "/stripe",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ]
+    },
+    {
+      "path": "/automated-payments",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ]
+    },
+    {
+      "path": "/wallet",
+      "file": "routes_/walletBalance.py",
+      "tags": [
+        "Wallet Balance"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "wallet"
+      ]
+    },
+    {
+      "path": "/onboarding-reminders",
+      "file": "routes_/onboardingReminders.py",
+      "tags": [
+        "Onboarding Reminders"
+      ]
+    },
+    {
+      "path": "/loans",
+      "file": "routes_/loan.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "loans"
+      ]
+    },
+    {
+      "path": "/loanOffers",
+      "file": "routes_/loanOffers.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "loan_offers"
+      ]
+    },
+    {
+      "path": "/loanProposals",
+      "file": "routes_/loanProposals.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "loan_proposals"
+      ]
+    },
+    {
+      "path": "/loanChat",
+      "file": "routes_/loanChat.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "loanChat"
+      ]
+    },
+    {
+      "path": "/credit-score",
+      "file": "routes_/creditScore.py",
+      "tags": [
+        "Credit Score"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "credit_score"
+      ]
+    },
+    {
+      "path": "/clientFaceRecognitions",
+      "file": "routes_/clientFaceRecognition.py",
+      "tags": [
+        "connector"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "clientFaceRecognitions"
+      ]
+    },
+    {
+      "path": "/clientDashboards",
+      "file": "routes_/clientDashboards.py",
+      "tags": [
+        "Client Dashboards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "clientDashboards"
+      ]
+    },
+    {
+      "path": "/digitalContracts",
+      "file": "routes_/digitalContracts.py",
+      "tags": [
+        "Digital Contracts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "digitalContracts"
+      ]
+    },
+    {
+      "path": "/legalCases",
+      "file": "routes_/legalCases.py",
+      "tags": [
+        "Legal Recovery / Juicio Mercantil"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "legalCases"
+      ]
+    },
+    {
+      "path": "/disbursement",
+      "file": "routes_/disbursement.py",
+      "tags": [
+        "Manual Disbursement (legacy, dormant)"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "disbursement"
+      ]
+    },
+    {
+      "path": "/ocr",
+      "file": "routes_/document_intelligence.py",
+      "tags": [
+        "Document Intelligence"
+      ]
+    },
+    {
+      "path": "/api/geocode",
+      "file": "routes_/geocoding.py",
+      "tags": [
+        "Geocoding"
+      ]
+    },
+    {
+      "path": "/signatures",
+      "file": "routes_/signatureUpload.py",
+      "tags": [
+        "Signatures"
+      ]
+    },
+    {
+      "path": "/pushNotifications",
+      "file": "routes_/pushNotification.py",
+      "tags": [
+        "Push Notifications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pushNotifications"
+      ]
+    },
+    {
+      "path": "/suppliers",
+      "file": "routes_/supplier.py",
+      "tags": [
+        "Supply Chain Vendors"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "suppliers"
+      ]
+    },
+    {
+      "path": "/manufacturing",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ]
+    },
+    {
+      "path": "/CostRules",
+      "file": "routes_/costRules.py",
+      "tags": [
+        "Financial Margin Configs"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "CostRules"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_arcadeChipOrders",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_arcade_chip_orders"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_arcadeChipPacks",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_arcade_chip_packs"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_arcadeGames",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_arcade_games"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_arcadePurchases",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_arcade_purchases"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_arcadeRounds",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_arcade_rounds"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_arcadeTransactions",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_arcade_transactions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_bankAccounts",
+      "file": "routes_/bankAccounts.py",
+      "tags": [
+        "bankAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_bank_accounts"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_chartOfAccounts",
+      "file": "routes_/chartOfAccounts.py",
+      "tags": [
+        "chartOfAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_chart_of_accounts"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_checks",
+      "file": "routes_/checks.py",
+      "tags": [
+        "Financial Audits"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_checks"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_clientDashboards",
+      "file": "routes_/clientDashboards.py",
+      "tags": [
+        "Client Dashboards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_clientDashboards"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_clientFaceRecognitions",
+      "file": "routes_/clientFaceRecognition.py",
+      "tags": [
+        "connector"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_clientFaceRecognitions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_clientFollowUps",
+      "file": "routes_/clientFollowUps.py",
+      "tags": [
+        "clientFollowUps"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_client_followups"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_clients",
+      "file": "routes_/clients.py",
+      "tags": [
+        "CRM Client Directory"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_clients"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_commands",
+      "file": "routes_/commands.py",
+      "tags": [
+        "IoT Hardware Control"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_commands"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_commissionTerminals",
+      "file": "routes_/commissionTerminals.py",
+      "tags": [
+        "commissionTerminals"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_commission_terminals"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_companies",
+      "file": "routes_/companies.py",
+      "tags": [
+        "Multi-Tenant Corporates"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_companies"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_companiesBranches",
+      "file": "routes_/companiesBranches.py",
+      "tags": [
+        "Branch Workspaces"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_companiesBranches"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_contractors",
+      "file": "routes_/contractors.py",
+      "tags": [
+        "HR External Resources"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_contractors"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_departaments",
+      "file": "routes_/departaments.py",
+      "tags": [
+        "HR Departments"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_departaments"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_employee_project_assignments",
+      "file": "routes_/employeeProjectAssignments.py",
+      "tags": [
+        "PM Allocations"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_employee_project_assignments"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_employees",
+      "file": "routes_/employees.py",
+      "tags": [
+        "HR Payroll Entities"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_employees"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_employment_types",
+      "file": "routes_/employmentTypes.py",
+      "tags": [
+        "HR Policies"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_employment_types"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_expense",
+      "file": "routes_/expenses.py",
+      "tags": [
+        "Cash Flow Deficits"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_expense"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_income",
+      "file": "routes_/income.py",
+      "tags": [
+        "Cash Flow Surpluses"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_income"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_journalEntries",
+      "file": "routes_/journalEntries.py",
+      "tags": [
+        "journalEntries"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_journal_entries"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_laundry",
+      "file": "routes_/laundry.py",
+      "tags": [
+        "Laundromat Operational State"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_laundry"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_laundryDeviceUses",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_laundry_device_uses"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_laundryDevices",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_laundry_devices"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_loanOffers",
+      "file": "routes_/loanOffers.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_loan_offers"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_loanProposals",
+      "file": "routes_/loanProposals.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_loan_proposals"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_loans",
+      "file": "routes_/loan.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_loans"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_notificationDispatches",
+      "file": "routes_/notificationDispatch.py",
+      "tags": [
+        "notificationDispatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_notificationDispatches"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_orders",
+      "file": "routes_/orders.py",
+      "tags": [
+        "Core Order Handlers"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_orders"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_paymentHistory",
+      "file": "routes_/paymentHistory.py",
+      "tags": [
+        "paymentHistory"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_payment_history"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_products",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_products"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_products_categories",
+      "file": "routes_/productCategories.py",
+      "tags": [
+        "Catalog Classifiers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_products_categories"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_projects",
+      "file": "routes_/projects.py",
+      "tags": [
+        "Corporate Project Directories"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_projects"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_pushNotifications",
+      "file": "routes_/pushNotification.py",
+      "tags": [
+        "Push Notifications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_pushNotifications"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_rewardBenefits",
+      "file": "routes_/rewardBenefits.py",
+      "tags": [
+        "rewardBenefits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_reward_benefits"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_sellListings",
+      "file": "routes_/sellListings.py",
+      "tags": [
+        "Active Sales Placements"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_selllisting"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_services",
+      "file": "routes_/service.py",
+      "tags": [
+        "service"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_services"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_statuses",
+      "file": "routes_/statuses.py",
+      "tags": [
+        "State Machine Global Dictionary"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_statuses"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_suppliers",
+      "file": "routes_/supplier.py",
+      "tags": [
+        "Supply Chain Vendors"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_suppliers"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_tankWaters",
+      "file": "routes_/IOT.py",
+      "tags": [
+        "Vending Machine Microcontrollers"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_tankWaters"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_transfers",
+      "file": "routes_/transfers.py",
+      "tags": [
+        "transfers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_transfers"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_users",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_users"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_vending",
+      "file": "routes_/vending_v2.py",
+      "tags": [
+        "Refactored Vending Automation Telemetry"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "all_vending"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_walletTransactions",
+      "file": "routes_/walletTransactions.py",
+      "tags": [
+        "walletTransactions"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_wallet_transactions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/amazon/search",
+      "file": "routes_/amazon_proxy.py",
+      "tags": [
+        "AmazonProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "amazon_search_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/clientFaceRecognition/contract",
+      "file": "routes_/clientFaceRecognition.py",
+      "tags": [
+        "connector"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "contract_clientFaceRecognition"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/clientFaceRecognition/upload-image",
+      "file": "routes_/clientFaceRecognition.py",
+      "tags": [
+        "connector"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_id_image"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/clientFaceRecognition/upload-presence",
+      "file": "routes_/clientFaceRecognition.py",
+      "tags": [
+        "connector"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_presence_capture"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/geocode/reverse",
+      "file": "routes_/geocoding.py",
+      "tags": [
+        "Geocoding"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reverse_geocode_route"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/tickets/receipt-html",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "save_receipt"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/tickets/{ticketId}/send-sms",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "send_sms"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/api/tickets/{ticketId}/send-whatsapp",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "send_whatsapp"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/action",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_action"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/bet",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_bet"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/checkout",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_checkout"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/confirm",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_confirm"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/dailyBonus",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_daily_bonus"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/liveWins",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_live_wins"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/purchase",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_purchase"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/quickBuy",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_quick_buy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/savedCard",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_saved_card"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/speiConfirm",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_spei_confirm"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/speiDeclare",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_spei_declare"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/arcade/speiOrder",
+      "file": "routes_/arcadeStore.py",
+      "tags": [
+        "arcadeStore"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "arcade_spei_order"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/charge-due",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "charge_due"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/generate-schedule",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "generate_schedule"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/pay-spei",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pay_spei"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/save-method",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "save_method"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/saved-method",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "saved_method"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/schedule",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "schedule"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/automated-payments/setup-intent",
+      "file": "routes_/automatedPayments.py",
+      "tags": [
+        "Automated Payments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "setup_intent"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/bank-account/link",
+      "file": "routes_/bankAccounts.py",
+      "tags": [
+        "bankAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "bank_account_link"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/bank-account/verify",
+      "file": "routes_/bankAccounts.py",
+      "tags": [
+        "bankAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "bank_account_verify"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/bankAccounts",
+      "file": "routes_/bankAccounts.py",
+      "tags": [
+        "bankAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "bank_accounts"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/bankAccountsLifecycle",
+      "file": "routes_/bankAccounts.py",
+      "tags": [
+        "bankAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "bank_accounts_lifecycle"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/businessFaqs",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "business_faqs"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/businessInfo",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "business_info"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/by_company_products",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "by_company_products"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/chartOfAccounts",
+      "file": "routes_/chartOfAccounts.py",
+      "tags": [
+        "chartOfAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "chart_of_accounts"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/chartOfAccounts/one",
+      "file": "routes_/chartOfAccounts.py",
+      "tags": [
+        "chartOfAccounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_chart_of_account"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/check_contact",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "check_contact"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/check_username",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "check_username"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/clientCapabilities",
+      "file": "routes_/clientCapabilities.py",
+      "tags": [
+        "clientCapabilities"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "client_capabilities"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/clientFollowUps",
+      "file": "routes_/clientFollowUps.py",
+      "tags": [
+        "clientFollowUps"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "client_followups"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/clients/upload-qr",
+      "file": "routes_/clients.py",
+      "tags": [
+        "CRM Client Directory"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_client_qr"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/commissionTerminals",
+      "file": "routes_/commissionTerminals.py",
+      "tags": [
+        "commissionTerminals"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "commission_terminals"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/commissionTerminals/one",
+      "file": "routes_/commissionTerminals.py",
+      "tags": [
+        "commissionTerminals"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_commission_terminal"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companiesBranches_by_company",
+      "file": "routes_/companiesBranches.py",
+      "tags": [
+        "Branch Workspaces"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "companiesBranches_by_company"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/company_tokens/balance",
+      "file": "routes_/companyTokens.py",
+      "tags": [
+        "companyTokens"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "company_tokens_balance"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/company_tokens/record",
+      "file": "routes_/companyTokens.py",
+      "tags": [
+        "companyTokens"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "company_tokens_record"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/company_tokens/topup",
+      "file": "routes_/companyTokens.py",
+      "tags": [
+        "companyTokens"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "company_tokens_topup"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/credit-score/available-credit",
+      "file": "routes_/creditScore.py",
+      "tags": [
+        "Credit Score"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "available_credit"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/credit-score/compute",
+      "file": "routes_/creditScore.py",
+      "tags": [
+        "Credit Score"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "compute_score"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/credit-score/history",
+      "file": "routes_/creditScore.py",
+      "tags": [
+        "Credit Score"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "score_history"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/docs",
+      "file": "routes_/swagger.py",
+      "tags": [
+        "Documentation Layer Customizer"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "custom_swagger_ui_html"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ebay/search",
+      "file": "routes_/ebay_proxy.py",
+      "tags": [
+        "EbayProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ebay_search_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/employee_project_assignments",
+      "file": "routes_/employeeProjectAssignments.py",
+      "tags": [
+        "PM Allocations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "employee_project_assignments"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/employment_types",
+      "file": "routes_/employmentTypes.py",
+      "tags": [
+        "HR Policies"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "employment_types"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/exchange_rate",
+      "file": "routes_/exchangeRates.py",
+      "tags": [
+        "Fintech Exchange Operations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "exchange_rate"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/exchange_rate_by_day",
+      "file": "routes_/exchangeRates.py",
+      "tags": [
+        "Fintech Exchange Operations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "exchange_rate_by_day"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/expense",
+      "file": "routes_/expenses.py",
+      "tags": [
+        "Cash Flow Deficits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "expense"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/expenses/upload-image",
+      "file": "routes_/expenses.py",
+      "tags": [
+        "Cash Flow Deficits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_expense_receipt"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/featureFlags",
+      "file": "routes_/featureFlags.py",
+      "tags": [
+        "featureFlags"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "feature_flags"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/food_categories_products",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "food_categories_products"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/food_products",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "food_products"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/fundingTransactions",
+      "file": "routes_/fundingTransactions.py",
+      "tags": [
+        "fundingTransactions"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "funding_transactions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/incomePayments",
+      "file": "routes_/income.py",
+      "tags": [
+        "Cash Flow Surpluses"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "income_payments"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/journalEntries",
+      "file": "routes_/journalEntries.py",
+      "tags": [
+        "journalEntries"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "journal_entries"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/journalEntries/balance-sheet",
+      "file": "routes_/journalEntries.py",
+      "tags": [
+        "journalEntries"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "journal_entries_balance_sheet"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/journalEntries/ledger",
+      "file": "routes_/journalEntries.py",
+      "tags": [
+        "journalEntries"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "journal_entries_ledger"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/journalEntries/one",
+      "file": "routes_/journalEntries.py",
+      "tags": [
+        "journalEntries"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_journal_entry"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/journalEntries/trial-balance",
+      "file": "routes_/journalEntries.py",
+      "tags": [
+        "journalEntries"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "journal_entries_trial_balance"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_devices"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices/authorize",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_device_authorize"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices/clientQr",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_device_client_qr"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices/heartbeat",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_device_heartbeat"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices/regenerateClientQrs",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_regenerate_client_qrs"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/led_status",
+      "file": "routes_/IOT.py",
+      "tags": [
+        "Vending Machine Microcontrollers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "led_status"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ledger/balance",
+      "file": "routes_/walletTransactions.py",
+      "tags": [
+        "walletTransactions"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "balance"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/list_orders",
+      "file": "routes_/orders.py",
+      "tags": [
+        "Core Order Handlers"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "list_orders"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/loanChat/config",
+      "file": "routes_/loanChat.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "loanChatConfig"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/alerts/cycle-done",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "alert_cycle_done"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/alerts/low-margin",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "alert_low_margin"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/alerts/low-supply",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "alert_low_supply"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/alerts/maintenance",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "alert_maintenance"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/cost-engine/calculate",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "cost_calculate"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/cost-engine/complete",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "cost_complete"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/cost-engine/rates",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "rates_get"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/cost-engine/rates/save",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "rates_save"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/dashboard",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "dashboard"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/machines",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "create_machine"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/machines/list",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "list_machines"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/machines/update",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "update_machine"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/maintenance/analyze",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "maintenance_analyze"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/maintenance/analyze-all",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "maintenance_analyze_all"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/maintenance/history",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "maintenance_history"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/maintenance/log",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "maintenance_log"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/profitability/analyze",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "profitability_analyze"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/profitability/snapshot",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "profitability_snapshot"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/profitability/snapshots",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "profitability_snapshots"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/queue",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "queue"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/queue/cancel",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "queue_cancel"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/queue/complete",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "queue_complete"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/queue/create",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "queue_create"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/queue/history",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "queue_history"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/manufacturing/queue/start",
+      "file": "routes_/manufacturing.py",
+      "tags": [
+        "Manufacturing"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "queue_start"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/mercadolibre/oauth/authorize",
+      "file": "routes_/mercadolibre.py",
+      "tags": [
+        "MercadoLibre"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "oauth_authorize"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/mercadolibre/oauth/callback",
+      "file": "routes_/mercadolibre.py",
+      "tags": [
+        "MercadoLibre"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "oauth_callback"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/mercadolibre/ping",
+      "file": "routes_/mercadolibre.py",
+      "tags": [
+        "MercadoLibre"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ping"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/mercadolibre/webhook",
+      "file": "routes_/mercadolibre.py",
+      "tags": [
+        "MercadoLibre"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "webhook"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/items",
+      "file": "routes_/routes_ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ml_items_bulk_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/items/{item_id}",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ml_item_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/products/{product_id}/items",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ml_product_items_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/public_ping",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "public_ping"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/search",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ml_search_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/seller_items",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ml_seller_items_proxy"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ml/whoami",
+      "file": "routes_/ml_proxy.py",
+      "tags": [
+        "MercadoLibreProxy"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ml_whoami"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/monthly_expense",
+      "file": "routes_/expenses.py",
+      "tags": [
+        "Cash Flow Deficits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "monthly_expense"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/monthly_income",
+      "file": "routes_/income.py",
+      "tags": [
+        "Cash Flow Surpluses"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "monthly_income"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/myNotifications",
+      "file": "routes_/pushNotification.py",
+      "tags": [
+        "Push Notifications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "my_notifications"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/myNotifications/markRead",
+      "file": "routes_/pushNotification.py",
+      "tags": [
+        "Push Notifications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "my_notifications_mark_read"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/notificationDispatch/confirm",
+      "file": "routes_/notificationDispatch.py",
+      "tags": [
+        "notificationDispatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "notification_confirm"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/notificationDispatch/dispatch",
+      "file": "routes_/notificationDispatch.py",
+      "tags": [
+        "notificationDispatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "notification_dispatch"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/notificationDispatches",
+      "file": "routes_/notificationDispatch.py",
+      "tags": [
+        "notificationDispatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "notificationDispatches"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/notifications/usage",
+      "file": "routes_/notificationUsage.py",
+      "tags": [
+        "notificationUsage"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "notifications_usage"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ocr/extract-id-fields",
+      "file": "routes_/document_intelligence.py",
+      "tags": [
+        "Document Intelligence"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "extract_id_fields_route"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/onboarding-reminders/check",
+      "file": "routes_/onboardingReminders.py",
+      "tags": [
+        "Onboarding Reminders"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "check"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_arcadeRound",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_arcade_round"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_arcadeWallet",
+      "file": "routes_/arcade.py",
+      "tags": [
+        "arcade"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_arcade_wallet"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_checks",
+      "file": "routes_/checks.py",
+      "tags": [
+        "Financial Audits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_checks"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_clientFaceRecognitions",
+      "file": "routes_/clientFaceRecognition.py",
+      "tags": [
+        "connector"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_clientFaceRecognitions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_clientFollowUp",
+      "file": "routes_/clientFollowUps.py",
+      "tags": [
+        "clientFollowUps"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_client_followup"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_clients",
+      "file": "routes_/clients.py",
+      "tags": [
+        "CRM Client Directory"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_clients"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_companies",
+      "file": "routes_/companies.py",
+      "tags": [
+        "Multi-Tenant Corporates"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_companies"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_companiesBranches",
+      "file": "routes_/companiesBranches.py",
+      "tags": [
+        "Branch Workspaces"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_companiesBranches"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_contractor",
+      "file": "routes_/contractors.py",
+      "tags": [
+        "HR External Resources"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_contractor"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_departament",
+      "file": "routes_/departaments.py",
+      "tags": [
+        "HR Departments"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_departaments"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_employee",
+      "file": "routes_/employees.py",
+      "tags": [
+        "HR Payroll Entities"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_employee"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_employee_project_assignment",
+      "file": "routes_/employeeProjectAssignments.py",
+      "tags": [
+        "PM Allocations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_employee_project_assignment"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_employment_type",
+      "file": "routes_/employmentTypes.py",
+      "tags": [
+        "HR Policies"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_employment_type"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_loanOffer",
+      "file": "routes_/loanOffers.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_loan_offer"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_loanProposal",
+      "file": "routes_/loanProposals.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_loan_proposal"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_loans",
+      "file": "routes_/loan.py",
+      "tags": [
+        "P2P Lending Core"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_loans"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_notificationDispatches",
+      "file": "routes_/notificationDispatch.py",
+      "tags": [
+        "notificationDispatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_notificationDispatches"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_orders",
+      "file": "routes_/orders.py",
+      "tags": [
+        "Core Order Handlers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_orders"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_products",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_products"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_products_orders",
+      "file": "routes_/orders.py",
+      "tags": [
+        "Core Order Handlers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "products_one_orders"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_project",
+      "file": "routes_/projects.py",
+      "tags": [
+        "Corporate Project Directories"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_project"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_pushNotification",
+      "file": "routes_/pushNotification.py",
+      "tags": [
+        "Push Notifications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_pushNotification"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_rewardBenefit",
+      "file": "routes_/rewardBenefits.py",
+      "tags": [
+        "rewardBenefits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_reward_benefit"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_services",
+      "file": "routes_/service.py",
+      "tags": [
+        "service"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_services"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_status",
+      "file": "routes_/statuses.py",
+      "tags": [
+        "State Machine Global Dictionary"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_status"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_suppliers",
+      "file": "routes_/supplier.py",
+      "tags": [
+        "Supply Chain Vendors"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_suppliers"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_ticket_tracking",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_ticket_tracking"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_tickets",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_tickets"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_transfer",
+      "file": "routes_/transfers.py",
+      "tags": [
+        "transfers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_transfer"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_users",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_users"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_users_email",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_users_email"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/openapi.json",
+      "file": "routes_/swagger.py",
+      "tags": [
+        "Documentation Layer Customizer"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "openapi_json"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/paymentIntents",
+      "file": "routes_/paymentIntents.py",
+      "tags": [
+        "paymentIntents"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "payment_intents"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/payments/disburse",
+      "file": "routes_/transfers.py",
+      "tags": [
+        "transfers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "payments_disburse"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/payments/status",
+      "file": "routes_/transfers.py",
+      "tags": [
+        "transfers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "payments_status"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardBalances",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_balances"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardBalances/dashboard-summary",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_dashboard_summary"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardCatalogItems",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_catalog_items"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardProductCounts",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_product_counts"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardProductRates",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_product_rates"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardRedemptions",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_redemptions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardRedemptions/redeem",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "redeem"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardTransactions",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_reward_transactions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardTransactions/adjust",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "adjust_points"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewardTransactions/earn-from-ticket",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "earn_from_ticket"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posRewards/dashboard",
+      "file": "routes_/posRewards.py",
+      "tags": [
+        "posRewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "pos_rewards_dashboard"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/posSupportChat",
+      "file": "routes_/posSupportChat.py",
+      "tags": [
+        "posSupportChat"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "posSupportChat"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/product_categories",
+      "file": "routes_/productCategories.py",
+      "tags": [
+        "Catalog Classifiers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "products_categories"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/products/upload-image",
+      "file": "routes_/products.py",
+      "tags": [
+        "Inventory Items and Product Variations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_product_image"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/products_categories",
+      "file": "routes_/productCategories.py",
+      "tags": [
+        "Catalog Classifiers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "products_categories"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/promotions",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "promotions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/query_sellListings",
+      "file": "routes_/sellListings.py",
+      "tags": [
+        "Active Sales Placements"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "query_sellListings"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/r/{short_code}",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "redirect_ticket"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/recibo/{token}",
+      "file": "routes_/tickets.py",
+      "tags": [
+        "Customer Slips & Invoices / Notification Despatch"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "open_receipt"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/redoc",
+      "file": "routes_/swagger.py",
+      "tags": [
+        "Documentation Layer Customizer"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "redoc_html"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/registerDevice",
+      "file": "routes_/pushNotification.py",
+      "tags": [
+        "Push Notifications"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "registerDevice"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/registration-reminders/check",
+      "file": "routes_/registrationReminders.py",
+      "tags": [
+        "Registration Reminders"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "check"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/reservationHours",
+      "file": "routes_/reservations.py",
+      "tags": [
+        "reservations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reservation_hours"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/reservationServices",
+      "file": "routes_/reservations.py",
+      "tags": [
+        "reservations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reservation_services"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/reservations",
+      "file": "routes_/reservations.py",
+      "tags": [
+        "reservations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reservations"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/reservations/migrate",
+      "file": "routes_/reservations.py",
+      "tags": [
+        "reservations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reservations_migrate"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/rewardBenefits/bind",
+      "file": "routes_/rewardBenefits.py",
+      "tags": [
+        "rewardBenefits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "bind_reward_benefit"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/rewardBenefits/reserve",
+      "file": "routes_/rewardBenefits.py",
+      "tags": [
+        "rewardBenefits"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reserve_reward_benefit"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/rewards",
+      "file": "routes_/rewards.py",
+      "tags": [
+        "rewards"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "rewards"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/roles",
+      "file": "routes_/roles.py",
+      "tags": [
+        "roles"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "roles"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/select_all_tables/{table_name}",
+      "file": "routes_/utils.py",
+      "tags": [
+        "System Inspection Helpers"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "select_all_tables_"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/select_elements_with_filter",
+      "file": "routes_/utils.py",
+      "tags": [
+        "System Inspection Helpers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "select_elements_with_filter"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/select_info_tables",
+      "file": "routes_/utils.py",
+      "tags": [
+        "System Inspection Helpers"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "select_info_tables_"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/select_one_row",
+      "file": "routes_/utils.py",
+      "tags": [
+        "System Inspection Helpers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "select_one_row_"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/send_account_created",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "account_created"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/send_client_login_code",
+      "file": "routes_/client_login.py",
+      "tags": [
+        "client_login"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "send_code"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/send_recovery_email",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "send_recovery"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/send_verification_code",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "send_code"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/services",
+      "file": "routes_/service.py",
+      "tags": [
+        "service"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "services"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/set_client_password",
+      "file": "routes_/client_login.py",
+      "tags": [
+        "client_login"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "set_password"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/signatures/upload",
+      "file": "routes_/signatureUpload.py",
+      "tags": [
+        "Signatures"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_signature"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/account-session",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "account_session"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/connected-accounts",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "create_or_get_connected_account"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/connected-accounts/bank",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "connected_account_bank"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/connected-accounts/kyc",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "connected_account_kyc"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/connected-accounts/status",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "connected_account_status"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/disburse",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "disburse"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/onboarding-link",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "onboarding_link"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/payment-intents",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "payment_intent"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/payment-intents/confirm",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "confirm_intent"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/transactions",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "transactions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/webhook",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "webhook"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/withdraw",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "withdraw"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/tankWaters",
+      "file": "routes_/IOT.py",
+      "tags": [
+        "Vending Machine Microcontrollers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "tankWaters"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/today_checks",
+      "file": "routes_/checks.py",
+      "tags": [
+        "Financial Audits"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "today_checks"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/tracking_status_orders",
+      "file": "routes_/orders.py",
+      "tags": [
+        "Core Order Handlers"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "orders_tracking_status"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/transferEvidence",
+      "file": "routes_/transferEvidence.py",
+      "tags": [
+        "transferEvidence"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "transfer_evidence"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/transferEvidence/upload-image",
+      "file": "routes_/transferEvidence.py",
+      "tags": [
+        "transferEvidence"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "upload_transfer_evidence"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/vending",
+      "file": "routes_/vending_v2.py",
+      "tags": [
+        "Refactored Vending Automation Telemetry"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "vending"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/verify_client_login_code",
+      "file": "routes_/client_login.py",
+      "tags": [
+        "client_login"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "verify_code"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/verify_client_password",
+      "file": "routes_/client_login.py",
+      "tags": [
+        "client_login"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "verify_password"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/verify_code",
+      "file": "routes_/users.py",
+      "tags": [
+        "Identity Management Engine"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "check_code"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/wallet/all",
+      "file": "routes_/walletBalance.py",
+      "tags": [
+        "Wallet Balance"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_wallets"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/wallet/credit",
+      "file": "routes_/walletBalance.py",
+      "tags": [
+        "Wallet Balance"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "credit"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/wallet/debit",
+      "file": "routes_/walletBalance.py",
+      "tags": [
+        "Wallet Balance"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "debit"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/wallet/release",
+      "file": "routes_/walletBalance.py",
+      "tags": [
+        "Wallet Balance"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "release"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/wallet/reserve",
+      "file": "routes_/walletBalance.py",
+      "tags": [
+        "Wallet Balance"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reserve"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/walletTransactions",
+      "file": "routes_/walletTransactions.py",
+      "tags": [
+        "walletTransactions"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "wallet_transactions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/assistant/customerRewards",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_customer_rewards"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/channels",
+      "file": "routes_/whatsappCloud.py",
+      "tags": [
+        "whatsappCloud"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_channels"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/cloud/migrate",
+      "file": "routes_/whatsappCloud.py",
+      "tags": [
+        "whatsappCloud"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_cloud_migrate"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/cloud/webhook",
+      "file": "routes_/whatsappCloud.py",
+      "tags": [
+        "whatsappCloud"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_cloud_verify",
+        "whatsapp_cloud_webhook"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/status",
+      "file": "routes_/whatsapp.py",
+      "tags": [
+        "Twilio Engine Interfaces"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_status_callback"
+      ],
+      "source": "knowledge_sync"
+    }
   ]
 }

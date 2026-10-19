@@ -58,6 +58,23 @@ def _json(relative: str) -> any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _live(entries):
+    """Drop entries knowledge_sync marked stale (removed from the real repos /
+    live DB). They stay on disk for history, never in an agent's context."""
+    if isinstance(entries, list):
+        return [e for e in entries if not (isinstance(e, dict) and e.get("stale"))]
+    return entries
+
+
+def _conventions(layer: str) -> dict:
+    """One layer of Conventions/repo_conventions.json (written by knowledge_sync):
+    the repo's own rule document + a real, recent reference implementation."""
+    data = _json("Conventions/repo_conventions.json")
+    if not isinstance(data, dict) or "error" in data:
+        return {"unavailable": "run `python -m knowledge_sync` to generate conventions"}
+    return data.get(layer, {})
+
+
 def _csv_rows(relative: str, fieldnames: list[str]) -> list[dict]:
     path = KNOWLEDGE_ROOT / relative
     if not path.exists():
@@ -81,9 +98,17 @@ def get_frontend_patterns() -> dict:
     return {
         "architecture":  _json("Frontend/frontend_knowledge.json"),
         "modules":       _json("Frontend/frontend_modules.json.json"),
-        "routes":        _json("Frontend/frontend_routes.json.json"),
+        "routes":        _live(_json("Frontend/frontend_routes.json.json")),
         "ui_patterns":   _json("Frontend/frontend_ui_patterns.json.json"),
-        "components":    _json("Frontend/frontend_components.json.json"),
+        # Names + paths only: the full catalog with props is get_component_catalog()
+        # (frontend_agent preloads both — don't ship the props twice).
+        "components":    [{"componentName": c.get("componentName"), "filePath": c.get("filePath")}
+                          for c in _live(_json("Frontend/frontend_components.json.json"))],
+        # Current style, synced from the POSVending repo: its own CLAUDE.md
+        # rules (MVVM feature folders, shared layer, UI rules) + a real
+        # reference feature. Where this conflicts with older entries above,
+        # the conventions win — they are newer and come from the repo itself.
+        "conventions":   _conventions("frontend"),
     }
 
 
@@ -116,7 +141,7 @@ def get_component_catalog() -> list:
 
     Agents must reuse these components rather than inventing new ones.
     """
-    return _json("Frontend/frontend_components.json.json")
+    return _live(_json("Frontend/frontend_components.json.json"))
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +164,10 @@ def get_backend_patterns() -> dict:
         "domains":      _json("Backend/backend_business_domains.json.json"),
         "ai_features":  _json("Backend/backend_ai_features.json.json"),
         "prompts":      _json("Backend/backend_prompts.json.json"),
+        # Current style, synced from smartloans_backend: the newest complete,
+        # observable module (routes_/ + modules/) and the newest migration
+        # with its _ROLLBACK partner — imitate these.
+        "conventions":  _conventions("backend"),
     }
 
 
@@ -150,7 +179,10 @@ def get_backend_routes() -> list:
     Use this to check for naming conflicts before registering a new route
     and to understand the existing route structure.
     """
-    return _json("Backend/backend_routes.json.json").get("routes", [])
+    # Compact: path/methods/file is what conflict checks need; curated tags
+    # and handler names stay in the file (~4x smaller in an agent prompt).
+    return [{"path": r["path"], "methods": r.get("methods", []), "file": r.get("file")}
+            for r in _live(_json("Backend/backend_routes.json.json").get("routes", []))]
 
 
 @mcp.tool()
@@ -163,7 +195,59 @@ def get_sp_patterns() -> list:
     Naming convention: sp_{module}, sp_{module}_all, sp_{module}_one.
     """
     data = _json("Backend/backend_stored_procedures.json.json")
-    return data.get("stored_procedures", data)
+    return _live(data.get("stored_procedures", data))
+
+
+# ---------------------------------------------------------------------------
+# Synced repo inventory (knowledge_sync)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def get_repo_conventions(layer: str = "") -> dict:
+    """
+    Returns the CURRENT conventions of the GMO repos, synced by knowledge_sync:
+    each repo's own rule document plus a real, recent reference implementation
+    (frontend MVVM feature, backend module + migration, agent with PROPOSE).
+
+    Args:
+        layer: "frontend", "backend" or "agents"; empty returns all three.
+    """
+    if layer:
+        return _conventions(layer)
+    data = _json("Conventions/repo_conventions.json")
+    return data if isinstance(data, dict) else {}
+
+
+@mcp.tool()
+def get_api_clients() -> list:
+    """
+    Returns every src/api/*.ts client in POSVending with its exported functions
+    and the backend path + method each calls (path is null when built dynamically).
+
+    Use this to reuse an existing client instead of duplicating an endpoint call.
+    """
+    return _json("Frontend/frontend_api_clients.json")
+
+
+@mcp.tool()
+def get_frontend_features() -> list:
+    """
+    Returns the feature folders under POSVending src/pages/{area}/{Feature}/ and
+    whether each follows the MVVM layout ({Feature}View.tsx + {Feature}Logic.ts).
+
+    Use this to place a new page in the right area folder.
+    """
+    return _json("Frontend/frontend_features.json")
+
+
+@mcp.tool()
+def get_agents_catalog() -> list:
+    """
+    Returns every agent in LoanAgents_SmartLoans: name, model, tools, and whether
+    it PROPOSES writes through tools/pending_actions.py (human-confirmed) or is
+    read-only.
+    """
+    return _json("Agents/agents_catalog.json")
 
 
 # ---------------------------------------------------------------------------

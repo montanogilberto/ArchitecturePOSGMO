@@ -28,4 +28,6 @@ agents/.adk/
 *_state.json
 *.log
 pr_export/
-data/
+
+# knowledge_sync: per-run drift report (the manifest.json is committed)
+knowledge_sync/last_report.md

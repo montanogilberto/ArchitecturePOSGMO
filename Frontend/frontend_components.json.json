@@ -1,93 +1,208 @@
 [
   {
     "componentName": "UnifiedReceipt",
-    "filePath": "src/components/UnifiedReceipt.tsx",
+    "filePath": "src/components/pos/UnifiedReceipt.tsx",
     "type": "Organisms / Views",
     "reusable": true,
     "description": "Renders standardized receipts with full support for zeroed-out local taxes (IVA = 0), localized formatting conversions, and deep cross-device alignment parameters.",
     "props": [
-      { "name": "data", "type": "UnifiedReceiptData", "required": true },
-      { "name": "onPrint", "type": "() => void", "required": false },
-      { "name": "showModal", "type": "boolean", "required": false },
-      { "name": "onClose", "type": "() => void", "required": false },
-      { "name": "options", "type": "PrintOptions", "required": false }
-    ]
+      {
+        "name": "data",
+        "type": "UnifiedReceiptData",
+        "required": true
+      },
+      {
+        "name": "onPrint",
+        "type": "() => void",
+        "required": false
+      },
+      {
+        "name": "showModal",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": false
+      },
+      {
+        "name": "options",
+        "type": "PrintOptions",
+        "required": false
+      }
+    ],
+    "folder": "pos"
   },
   {
     "componentName": "ProductWizard",
-    "filePath": "src/components/ProductWizard/ProductWizard.tsx",
+    "filePath": "src/components/pos/productWizard/ProductWizard.tsx",
     "type": "Molecules / Step-by-Step Forms",
     "reusable": true,
     "description": "A complex linear setup mechanism enabling validation steps for name registry, image parsing configurations, and dynamic options assignment setup.",
     "props": [
-      { "name": "isOpen", "type": "boolean", "required": true },
-      { "name": "onClose", "type": "() => void", "required": true },
-      { "name": "onSave", "type": "(productData: any) => void", "required": true }
-    ]
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onSave",
+        "type": "(productData: any) => void",
+        "required": true
+      }
+    ],
+    "folder": "pos/productWizard"
   },
   {
     "componentName": "ClientSelector",
-    "filePath": "src/components/ClientSelector.tsx",
+    "filePath": "src/components/pos/ClientSelector.tsx",
     "type": "Molecules",
     "reusable": true,
     "description": "Displays custom multi-device client selection modals with dynamic searching indexes, fallbacks, and instantaneous creation fields inside overlays.",
     "props": [
-      { "name": "isOpen", "type": "boolean", "required": true },
-      { "name": "onClose", "type": "() => void", "required": true },
-      { "name": "onChange", "type": "(client: any) => void", "required": true },
-      { "name": "selectedClient", "type": "any", "required": false }
-    ]
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onChange",
+        "type": "(client: any) => void",
+        "required": true
+      },
+      {
+        "name": "selectedClient",
+        "type": "any",
+        "required": false
+      }
+    ],
+    "folder": "pos"
   },
   {
     "componentName": "IncomesFilters",
-    "filePath": "src/components/IncomesFilters.tsx",
+    "filePath": "src/components/finance/IncomesFilters.tsx",
     "type": "Molecules",
     "reusable": true,
     "description": "Provides UI query parameters across transactions containing full query index text fields, specific payment systems selections, and localized calendar range controls.",
     "props": [
-      { "name": "searchText", "type": "string", "required": true },
-      { "name": "setSearchText", "type": "(value: string) => void", "required": true },
-      { "name": "filterPaymentMethod", "type": "string", "required": true },
-      { "name": "setFilterPaymentMethod", "type": "(value: string) => void", "required": true },
-      { "name": "filterDateFrom", "type": "string", "required": true },
-      { "name": "filterDateTo", "type": "string", "required": true }
-    ]
+      {
+        "name": "searchText",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "setSearchText",
+        "type": "(value: string) => void",
+        "required": true
+      },
+      {
+        "name": "filterPaymentMethod",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "setFilterPaymentMethod",
+        "type": "(value: string) => void",
+        "required": true
+      },
+      {
+        "name": "filterDateFrom",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "filterDateTo",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "folder": "finance"
   },
   {
     "componentName": "DateTypeAlert",
-    "filePath": "src/components/Alerts/DateTypeAlert.tsx",
+    "filePath": "src/components/alerts/DateTypeAlert.tsx",
     "type": "Atoms",
     "reusable": true,
     "description": "Abstracted wrapper managing alerts prompting users to select either individual targeted calendar days or range boundaries.",
     "props": [
-      { "name": "isOpen", "type": "boolean", "required": true },
-      { "name": "onDidDismiss", "type": "() => void", "required": true },
-      { "name": "onDateTypeChange", "type": "(type: 'single' | 'range') => void", "required": true }
-    ]
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onDidDismiss",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onDateTypeChange",
+        "type": "(type: 'single' | 'range') => void",
+        "required": true
+      }
+    ],
+    "folder": "alerts"
   },
   {
     "componentName": "StripeAccountOnboarding",
-    "filePath": "src/components/StripeAccountOnboarding.tsx",
+    "filePath": "src/components/payments/StripeAccountOnboarding.tsx",
     "type": "Molecules / Step-by-Step Forms",
     "reusable": true,
     "description": "Embeds Stripe's Connect account-onboarding component in-app via @stripe/connect-js's ConnectComponentsProvider, backed by an AccountSession created server-side (collection_options.fields = 'eventually_due' so the bank/CLABE external-account field is always surfaced). Replaces the earlier hosted-URL window.open() redirect flow.",
     "props": [
-      { "name": "clientId", "type": "number", "required": true },
-      { "name": "companyId", "type": "number", "required": true },
-      { "name": "onExit", "type": "() => void", "required": true }
-    ]
+      {
+        "name": "clientId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onExit",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "folder": "payments"
   },
   {
     "componentName": "SavedCardSetup",
-    "filePath": "src/components/SavedCardSetup.tsx",
+    "filePath": "src/components/payments/SavedCardSetup.tsx",
     "type": "Molecules / Step-by-Step Forms",
     "reusable": true,
     "description": "Collects a card via Stripe Elements (@stripe/react-stripe-js) backed by a server-created SetupIntent, confirms it client-side, then persists it as the client's saved payment method for automated daily repayment collection. Shows last4/brand once saved.",
     "props": [
-      { "name": "clientId", "type": "number", "required": true },
-      { "name": "companyId", "type": "number", "required": true },
-      { "name": "onSaved", "type": "() => void", "required": false }
-    ]
+      {
+        "name": "clientId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onSaved",
+        "type": "() => void",
+        "required": false
+      }
+    ],
+    "folder": "payments"
   },
   {
     "componentName": "BiometricLockScreen",
@@ -96,40 +211,1423 @@
     "reusable": true,
     "description": "Full-screen native biometric (Face ID / fingerprint) gate mounted above the router, blocking app resume/launch and sensitive actions until the device biometric prompt succeeds. Wraps @aparajita/capacitor-biometric-auth.",
     "props": [
-      { "name": "children", "type": "React.ReactNode", "required": true }
-    ]
+      {
+        "name": "children",
+        "type": "React.ReactNode",
+        "required": true
+      }
+    ],
+    "folder": ""
   },
   {
     "componentName": "FaceLivenessCapture",
-    "filePath": "src/components/FaceLivenessCapture.tsx",
+    "filePath": "src/components/kyc/FaceLivenessCapture.tsx",
     "type": "Organisms / Views",
     "reusable": true,
     "description": "Client-side face-liveness challenge (left/right/up/down + blink detection) using @vladmandic/face-api entirely on-device — no Azure calls. Renders a circular progress-ring overlay and compares descriptors against the captured ID selfie (CONSISTENCY_DISTANCE_THRESHOLD=0.95, MATCH_DISTANCE_THRESHOLD=0.6).",
     "props": [
-      { "name": "referenceImage", "type": "string (base64 or blob URL)", "required": true },
-      { "name": "onSuccess", "type": "(confidenceScore: number) => void", "required": true },
-      { "name": "onFail", "type": "() => void", "required": true }
-    ]
+      {
+        "name": "referenceImage",
+        "type": "string (base64 or blob URL)",
+        "required": true
+      },
+      {
+        "name": "onSuccess",
+        "type": "(confidenceScore: number) => void",
+        "required": true
+      },
+      {
+        "name": "onFail",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "folder": "kyc"
   },
   {
     "componentName": "GuidedDocumentCapture",
-    "filePath": "src/components/GuidedDocumentCapture.tsx",
+    "filePath": "src/components/kyc/GuidedDocumentCapture.tsx",
     "type": "Organisms / Views",
     "reusable": true,
     "description": "Live-camera guided ID capture with real-time distance/framing hint labels, feeding Tesseract.js (idOcr.ts) client-side OCR and/or the backend Azure Document Intelligence endpoint for INE field extraction.",
     "props": [
-      { "name": "side", "type": "'front' | 'back'", "required": true },
-      { "name": "onCapture", "type": "(imageBlob: Blob) => void", "required": true }
-    ]
+      {
+        "name": "side",
+        "type": "'front' | 'back'",
+        "required": true
+      },
+      {
+        "name": "onCapture",
+        "type": "(imageBlob: Blob) => void",
+        "required": true
+      }
+    ],
+    "folder": "kyc"
   },
   {
     "componentName": "PresenceCapture",
-    "filePath": "src/components/PresenceCapture.tsx",
+    "filePath": "src/components/kyc/PresenceCapture.tsx",
     "type": "Organisms / Views",
     "reusable": true,
     "description": "Records a short video plus @capacitor/geolocation coordinates as proof-of-presence during onboarding, reverse-geocoded via the backend's /api/geocode endpoint for a human-readable address.",
     "props": [
-      { "name": "onCaptured", "type": "(data: { videoBlob: Blob; latitude: number; longitude: number; accuracy: number }) => void", "required": true }
-    ]
+      {
+        "name": "onCaptured",
+        "type": "(data: { videoBlob: Blob; latitude: number; longitude: number; accuracy: number }) => void",
+        "required": true
+      }
+    ],
+    "folder": "kyc"
+  },
+  {
+    "componentName": "LogoutAlert",
+    "filePath": "src/components/alerts/LogoutAlert.tsx",
+    "folder": "alerts",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onDidDismiss",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "handleLogoutConfirm",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "alerts",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ExpenseForm",
+    "filePath": "src/components/finance/ExpenseForm.tsx",
+    "folder": "finance",
+    "props": [],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ExpenseItemsEditor",
+    "filePath": "src/components/finance/ExpenseItemsEditor.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "items",
+        "type": "ExpenseItem[]",
+        "required": true
+      },
+      {
+        "name": "onChange",
+        "type": "(items: ExpenseItem[]) => void",
+        "required": true
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "invalid",
+        "type": "boolean",
+        "required": false
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ExpenseMovementList",
+    "filePath": "src/components/finance/ExpenseMovementList.tsx",
+    "folder": "finance",
+    "props": [],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "IncomeMovementList",
+    "filePath": "src/components/finance/IncomeMovementList.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "incomes",
+        "type": "IncomeMovement[]",
+        "required": true
+      },
+      {
+        "name": "onOpenTicket",
+        "type": "(incomeId: number) => void",
+        "required": true
+      },
+      {
+        "name": "busyId",
+        "type": "number | null",
+        "required": true
+      },
+      {
+        "name": "onDelete",
+        "type": "(incomeId: number) => void",
+        "required": false
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "IncomesChart",
+    "filePath": "src/components/finance/IncomesChart.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "chartData",
+        "type": "any",
+        "required": true
+      },
+      {
+        "name": "totalIncome",
+        "type": "number",
+        "required": false
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "NewServiceModal",
+    "filePath": "src/components/finance/NewServiceModal.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onCreated",
+        "type": "(service: Service, services: Service[]) => void",
+        "required": true
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "NewSupplierModal",
+    "filePath": "src/components/finance/NewSupplierModal.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "initialName",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onCreated",
+        "type": "(supplier: Supplier, suppliers: Supplier[]) => void",
+        "required": true
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "NewSupplyProductModal",
+    "filePath": "src/components/finance/NewSupplyProductModal.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "initialName",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onCreated",
+        "type": "(product: { productId: number; name: string; code: string }) => void",
+        "required": true
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "TicketReadingCard",
+    "filePath": "src/components/finance/TicketReadingCard.tsx",
+    "folder": "finance",
+    "props": [
+      {
+        "name": "state",
+        "type": "'idle' | 'loading' | 'done' | 'failed'",
+        "required": true
+      },
+      {
+        "name": "ticket",
+        "type": "TicketExtraction | null",
+        "required": true
+      },
+      {
+        "name": "expenseType",
+        "type": "ExpenseType",
+        "required": true
+      },
+      {
+        "name": "applied",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "resolvedLines",
+        "type": "number[]",
+        "required": true
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "review",
+        "type": "ExpenseReviewView",
+        "required": true
+      },
+      {
+        "name": "canReviewManually",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onReview",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onApply",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onAnalyze",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onPickSupplier",
+        "type": "(supplierId: number) => void",
+        "required": true
+      },
+      {
+        "name": "onCreateSupplier",
+        "type": "(name: string) => void",
+        "required": true
+      },
+      {
+        "name": "onPickLineProduct",
+        "type": "(lineIndex: number, productId: number, name: string) => void",
+        "required": true
+      },
+      {
+        "name": "onCreateLineProduct",
+        "type": "(lineIndex: number) => void",
+        "required": true
+      }
+    ],
+    "type": "finance",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "IdExtractedFieldsSummary",
+    "filePath": "src/components/kyc/IdExtractedFieldsSummary.tsx",
+    "folder": "kyc",
+    "props": [
+      {
+        "name": "fields",
+        "type": "ExtractedIdFields",
+        "required": true
+      },
+      {
+        "name": "onFieldsChange",
+        "type": "(fields: ExtractedIdFields) => void",
+        "required": true
+      },
+      {
+        "name": "ocrLoading",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "ocrError",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "type": "kyc",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "SignaturePad",
+    "filePath": "src/components/kyc/SignaturePad.tsx",
+    "folder": "kyc",
+    "props": [
+      {
+        "name": "onSave",
+        "type": "(dataUrl: string) => void",
+        "required": true
+      },
+      {
+        "name": "onClear",
+        "type": "() => void",
+        "required": false
+      },
+      {
+        "name": "height",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "type": "kyc",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "DiscoverProductModal",
+    "filePath": "src/components/layout/DiscoverProductModal.tsx",
+    "folder": "layout",
+    "props": [
+      {
+        "name": "product",
+        "type": "DiscoverProduct | null",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "clientId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "userId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "layout",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "Header",
+    "filePath": "src/components/layout/Header.tsx",
+    "folder": "layout",
+    "props": [
+      {
+        "name": "presentAlertPopover",
+        "type": "(e: React.MouseEvent) => void",
+        "required": true
+      },
+      {
+        "name": "presentMailPopover",
+        "type": "(e: React.MouseEvent) => void",
+        "required": true
+      },
+      {
+        "name": "screenTitle",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "showBackButton",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "backButtonText",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "backButtonHref",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "posSupportTopic",
+        "type": "PosSupportTopic",
+        "required": false
+      }
+    ],
+    "type": "layout",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "TokenBalanceChip",
+    "filePath": "src/components/layout/TokenBalanceChip.tsx",
+    "folder": "layout",
+    "props": [],
+    "type": "layout",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "LoanCompletionRing",
+    "filePath": "src/components/loans/LoanCompletionRing.tsx",
+    "folder": "loans",
+    "props": [
+      {
+        "name": "percentage",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "size",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "strokeWidth",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "steps",
+        "type": "LoanStep[]",
+        "required": false
+      },
+      {
+        "name": "showSteps",
+        "type": "boolean",
+        "required": false
+      }
+    ],
+    "type": "loans",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "BankAccountLink",
+    "filePath": "src/components/payments/BankAccountLink.tsx",
+    "folder": "payments",
+    "props": [
+      {
+        "name": "clientId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "holderName",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "onChanged",
+        "type": "(accounts: BankAccount[]) => void",
+        "required": false
+      }
+    ],
+    "type": "payments",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "CashRegisterCard",
+    "filePath": "src/components/payments/CashRegisterCard.tsx",
+    "folder": "payments",
+    "props": [
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "userId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onToast",
+        "type": "(msg: string, color?: \"success\" | \"danger\" | \"warning\") => void",
+        "required": true
+      },
+      {
+        "name": "onCashRegisterStatusChange",
+        "type": "(isOpen: boolean) => void",
+        "required": false
+      }
+    ],
+    "type": "payments",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "NativeConnectOnboarding",
+    "filePath": "src/components/payments/NativeConnectOnboarding.tsx",
+    "folder": "payments",
+    "props": [
+      {
+        "name": "clientId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "email",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "onProgress",
+        "type": "(done: boolean) => void",
+        "required": true
+      },
+      {
+        "name": "onIdentitySaved",
+        "type": "(fields: {",
+        "required": false
+      },
+      {
+        "name": "firstName",
+        "type": "string; lastName: string; dob: string",
+        "required": true
+      },
+      {
+        "name": "email",
+        "type": "string; phone: string; taxId: string",
+        "required": true
+      },
+      {
+        "name": "line1",
+        "type": "string; city: string; stateProv: string; postalCode: string",
+        "required": true
+      },
+      {
+        "name": "prefill",
+        "type": "Partial<KycPrefill>",
+        "required": false
+      },
+      {
+        "name": "startAtPayout",
+        "type": "boolean",
+        "required": false
+      }
+    ],
+    "type": "payments",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "AlertPopover",
+    "filePath": "src/components/popovers/AlertPopover.tsx",
+    "folder": "popovers",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "event",
+        "type": "Event | undefined",
+        "required": true
+      },
+      {
+        "name": "onDidDismiss",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "popovers",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "MailPopover",
+    "filePath": "src/components/popovers/MailPopover.tsx",
+    "folder": "popovers",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "event",
+        "type": "Event | undefined",
+        "required": true
+      },
+      {
+        "name": "onDidDismiss",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "popovers",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "MenuPopover",
+    "filePath": "src/components/popovers/MenuPopover.tsx",
+    "folder": "popovers",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onDidDismiss",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "popovers",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "CartItem",
+    "filePath": "src/components/pos/CartItem.tsx",
+    "folder": "pos",
+    "props": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "quantity",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "price",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "selectedOptionLabels",
+        "type": "{ [key: string]: string | string[] }",
+        "required": false
+      },
+      {
+        "name": "onRemove",
+        "type": "(id: string) => void",
+        "required": true
+      }
+    ],
+    "type": "pos",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "CartItemCard",
+    "filePath": "src/components/pos/CartItemCard.tsx",
+    "folder": "pos",
+    "props": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "quantity",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "unitPrice",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "totalPrice",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "originalPrice",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "discountAmount",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "discountLabel",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "selectedOptionLabels",
+        "type": "{ [key: string]: string | string[] }",
+        "required": false
+      },
+      {
+        "name": "pieces",
+        "type": "Piezas",
+        "required": false
+      },
+      {
+        "name": "onRemove",
+        "type": "(id: string) => void",
+        "required": true
+      }
+    ],
+    "type": "pos",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "CategoryChips",
+    "filePath": "src/components/pos/CategoryChips.tsx",
+    "folder": "pos",
+    "props": [
+      {
+        "name": "categories",
+        "type": "ProductCategoryItem[]",
+        "required": true
+      },
+      {
+        "name": "selectedId",
+        "type": "number | null",
+        "required": true
+      },
+      {
+        "name": "onSelect",
+        "type": "(categoryId: number | null) => void",
+        "required": true
+      },
+      {
+        "name": "showAll",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "subAllLabel",
+        "type": "(categoryName: string) => string",
+        "required": false
+      }
+    ],
+    "type": "pos",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ClientQrScannerModal",
+    "filePath": "src/components/pos/ClientQrScannerModal.tsx",
+    "folder": "pos",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onClientFound",
+        "type": "(client: Client) => void",
+        "required": true
+      }
+    ],
+    "type": "pos",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ProductForm",
+    "filePath": "src/components/pos/ProductForm.tsx",
+    "folder": "pos",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onClose",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "product",
+        "type": "Product | null",
+        "required": false
+      }
+    ],
+    "type": "pos",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "CompanySelector",
+    "filePath": "src/components/pos/companySelector/CompanySelector.tsx",
+    "folder": "pos/companySelector",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onConfirm",
+        "type": "(companyId: number, companyName: string, branchId: number, branchName: string) => void",
+        "required": true
+      }
+    ],
+    "type": "pos/companySelector",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ProductLabelReader",
+    "filePath": "src/components/pos/productWizard/ProductLabelReader.tsx",
+    "folder": "pos/productWizard",
+    "props": [
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "onApply",
+        "type": "(reading: ProductLabelReading) => string[]",
+        "required": true
+      },
+      {
+        "name": "onPhotosChange",
+        "type": "(photos: string[]) => void",
+        "required": false
+      }
+    ],
+    "type": "pos/productWizard",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "BenefitPicker",
+    "filePath": "src/components/rewards/BenefitPicker.tsx",
+    "folder": "rewards",
+    "props": [
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "clientId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "balance",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "onReserved",
+        "type": "() => void",
+        "required": false
+      }
+    ],
+    "type": "rewards",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "BetSelector",
+    "filePath": "src/components/ui/BetSelector.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "bet",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onChange",
+        "type": "(bet: number) => void",
+        "required": true
+      },
+      {
+        "name": "minBet",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "maxBet",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "coinBalance",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "busy",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "actionLabel",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "onAction",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ConfirmBackButton",
+    "filePath": "src/components/ui/ConfirmBackButton.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "defaultHref",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "CountryPhoneInput",
+    "filePath": "src/components/ui/CountryPhoneInput.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "country",
+        "type": "Country",
+        "required": true
+      },
+      {
+        "name": "onCountryChange",
+        "type": "(country: Country) => void",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "onValueChange",
+        "type": "(national: string) => void",
+        "required": true
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "DetailField",
+    "filePath": "src/components/ui/DetailField.tsx",
+    "folder": "ui",
+    "props": [],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "EmptyState",
+    "filePath": "src/components/ui/EmptyState.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "icon",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "action",
+        "type": "React.ReactNode",
+        "required": false
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ExploreContainer",
+    "filePath": "src/components/ui/ExploreContainer.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "FollowUpList",
+    "filePath": "src/components/ui/FollowUpList.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "items",
+        "type": "ClientFollowUp[]",
+        "required": true
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "Pager",
+    "filePath": "src/components/ui/Pager.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "page",
+        "type": "Page<unknown>",
+        "required": true
+      },
+      {
+        "name": "onPage",
+        "type": "(page: number) => void",
+        "required": true
+      },
+      {
+        "name": "noun",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "emptyText",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "PeriodSegment",
+    "filePath": "src/components/ui/PeriodSegment.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "idPrefix",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "PeriodFilter",
+        "required": true
+      },
+      {
+        "name": "onChange",
+        "type": "(value: PeriodFilter) => void",
+        "required": true
+      },
+      {
+        "name": "custom",
+        "type": "CustomRange",
+        "required": true
+      },
+      {
+        "name": "onCustomChange",
+        "type": "(range: CustomRange) => void",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "PeriodFilter[]",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ProvablyFairSheet",
+    "filePath": "src/components/ui/ProvablyFairSheet.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "isOpen",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "onDismiss",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "serverSeedHash",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "serverSeed",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "clientSeed",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "nonce",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "rtp",
+        "type": "number",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "RoundResultModal",
+    "filePath": "src/components/ui/RoundResultModal.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "result",
+        "type": "RoundResult | null",
+        "required": true
+      },
+      {
+        "name": "coinBalance",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "onPlayAgain",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "onDismiss",
+        "type": "() => void",
+        "required": true
+      },
+      {
+        "name": "detail",
+        "type": "React.ReactNode",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "StatusBadge",
+    "filePath": "src/components/ui/StatusBadge.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "status",
+        "type": "string | undefined | null",
+        "required": true
+      },
+      {
+        "name": "map",
+        "type": "Record<string, StatusMeta>",
+        "required": true
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ZoomableImage",
+    "filePath": "src/components/ui/ZoomableImage.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "src",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "alt",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "onReplace",
+        "type": "() => void",
+        "required": false
+      },
+      {
+        "name": "replaceLabel",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "onError",
+        "type": "() => void",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
   }
 ]

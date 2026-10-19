@@ -14,18 +14,25 @@ from debate_v2.context_graph import (
 
 def test_schema_has_real_tables_loaded():
     tables = load_schema_tables()
-    assert len(tables) > 50           # sanity: this is the real 119-table schema, not empty
+    assert len(tables) > 50           # sanity: the real live-synced schema, not empty
     assert "companies" in tables
     assert "clients" in tables
 
 
-def test_reward_domain_has_no_table_in_the_real_schema():
-    """This is the concrete discrepancy Phase 3 exists to catch: the draft
-    PRD's own prose claims an 'existing loan-behavior rewardBalances table',
-    but no such table is in the canonical schema snapshot."""
-    item = check_domain_has_no_matching_table("reward")
+def test_domain_with_no_table_is_reported_as_verified_absence():
+    """A domain absent from the canonical schema snapshot is a verified fact,
+    not an assumption. (This used to be asserted on 'reward' — true in the
+    Aug-2026 snapshot, false once the rewards module shipped and
+    knowledge_sync refreshed the snapshot from the live DB; the check must
+    not depend on a domain staying unbuilt.)"""
+    item = check_domain_has_no_matching_table("spaceshipHangar")
     assert item.kind == ContextItemKind.verified_fact
-    assert "No table matching 'reward'" in item.claim
+    assert "No table matching 'spaceshipHangar'" in item.claim
+
+
+def test_reward_domain_tables_are_found_once_built():
+    item = check_domain_has_no_matching_table("reward")
+    assert "real table(s) matching 'reward'" in item.claim
 
 
 def test_known_domain_table_is_found():
@@ -53,7 +60,7 @@ def test_gather_context_now_includes_schema_cross_check_for_rewards():
     surfaces the schema contradiction alongside the Phase 2 PRD evidence."""
     verified, assumptions = gather_context("create a new module for rewards")
     verified_claims = " ".join(v.claim for v in verified)
-    assert "No table matching 'reward' exists in the current schema snapshot" in verified_claims
+    assert "matching 'reward'" in verified_claims   # the schema cross-check ran for this domain
     assert "Parent table 'companies' exists in the schema" in verified_claims
     # posRewardCatalogItem is listed as a *parentModule* in one draft PRD's
     # relationships[] but is not itself a real table yet — must be an assumption.

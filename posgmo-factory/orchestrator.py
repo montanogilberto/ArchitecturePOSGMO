@@ -23,6 +23,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
+from knowledge_sync import run_before_factory
 from agents import root_agent
 from prd_schema import PRDInput
 from pipeline_diagnostics import classify_event, summarize as summarize_diagnostics
@@ -160,6 +161,9 @@ async def run_factory(prd_dict: dict, user_id: str = "factory", target: str = "p
     target: "pos" (default) or "commercial" — see _build_session_state.
     """
     prd = PRDInput.model_validate(prd_dict)
+    # Refresh knowledge from the real repos + live DB first, so generation
+    # follows the CURRENT architecture/style (best-effort, never blocks).
+    await asyncio.to_thread(run_before_factory)
 
     session = await _session_service.create_session(
         app_name="posgmo_factory",

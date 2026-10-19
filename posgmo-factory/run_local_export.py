@@ -26,6 +26,7 @@ from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
 from orchestrator import _build_session_state, _REPO_ENV_VARS
+from knowledge_sync import run_before_factory
 from prd_schema import PRDInput
 from agents import root_agent
 from agents.agent import generation_stage
@@ -87,6 +88,7 @@ def _parse_maybe_fenced_json(raw) -> dict | None:
 async def run_local(prd_dict: dict, user_id: str = "factory", target: str = "pos") -> dict:
     _strip_pr_and_design_consistency()
     prd = PRDInput.model_validate(prd_dict)
+    await asyncio.to_thread(run_before_factory)  # current knowledge first (best-effort)
     session = await _session_service.create_session(
         app_name="posgmo_factory_local",
         user_id=user_id,

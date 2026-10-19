@@ -1,188 +1,464 @@
 [
-    {
-        "parent_table": "listingDrafts",
-        "child_table": "publishJobs",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_publishJobs_listingDrafts"
-    },
-    {
-        "parent_table": "roles",
-        "child_table": "userCompanies",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_users_companies_roles"
-    },
-    {
-        "parent_table": "ml_search_runs",
-        "child_table": "ml_search_results",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_ml_search_results_run"
-    },
-    {
-        "parent_table": "roles",
-        "child_table": "role_permissions",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK__role_perm__roleI__0B129727"
-    },
-    {
-        "parent_table": "permissions",
-        "child_table": "role_permissions",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK__role_perm__permi__0C06BB60"
-    },
-    {
-        "parent_table": "companies",
-        "child_table": "users",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_users_companies"
-    },
-    {
-        "parent_table": "modules",
-        "child_table": "permissions",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_permissions_modules"
-    },
-    {
-        "parent_table": "productOptions",
-        "child_table": "productOptionChoices",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK__productOp__produ__1975C517"
-    },
-    {
-        "parent_table": "companies",
-        "child_table": "company_modules",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK__company_m__compa__1A54DAB7"
-    },
-    {
-        "parent_table": "modules",
-        "child_table": "company_modules",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK__company_m__modul__1B48FEF0"
-    },
-    {
-        "parent_table": "unifiedProducts",
-        "child_table": "marketplaceOrders",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_marketplaceOrders_unifiedProducts"
-    },
-    {
-        "parent_table": "cashRegisterSessions",
-        "child_table": "cashRegisterMovements",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_cashRegisterMovements_session"
-    },
-    {
-        "parent_table": "income",
-        "child_table": "cashRegisterMovements",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_cashRegisterMovements_income"
-    },
-    {
-        "parent_table": "promotions",
-        "child_table": "promotion_targets",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_promotion_targets_promotions"
-    },
-    {
-        "parent_table": "marketplaceOrders",
-        "child_table": "procurementJobs",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_procurement_orders"
-    },
-    {
-        "parent_table": "expenses",
-        "child_table": "expenseDetails",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_expenseDetails_expense"
-    },
-    {
-        "parent_table": "marketplaceOrders",
-        "child_table": "shipments",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_shipments_orders"
-    },
-    {
-        "parent_table": "marketplaceOrders",
-        "child_table": "messageTickets",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_messageTickets_orders"
-    },
-    {
-        "parent_table": "ml_scrape_runs",
-        "child_table": "ml_scrape_pages",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_ml_scrape_pages_runId"
-    },
-    {
-        "parent_table": "ml_scrape_runs",
-        "child_table": "ml_scrape_items",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_ml_scrape_items_runId"
-    },
-    {
-        "parent_table": "ml_scrape_pages",
-        "child_table": "ml_scrape_items",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_ml_scrape_items_pageId"
-    },
-    {
-        "parent_table": "unifiedProducts",
-        "child_table": "buyOffers",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_buyOffers_unifiedProducts"
-    },
-    {
-        "parent_table": "ml_scrape_items",
-        "child_table": "sellListings",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_sellListings_scrapeItemId"
-    },
-    {
-        "parent_table": "unifiedProducts",
-        "child_table": "sellListings",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_sellListings_unifiedProducts"
-    },
-    {
-        "parent_table": "sellListings",
-        "child_table": "sellListingAttributes",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_sellListingAttributes_sellListings"
-    },
-    {
-        "parent_table": "unifiedProducts",
-        "child_table": "productMatches",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_productMatches_unifiedProducts"
-    },
-    {
-        "parent_table": "unifiedProducts",
-        "child_table": "opportunities",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_opportunities_unifiedProducts"
-    },
-    {
-        "parent_table": "buyOffers",
-        "child_table": "opportunities",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_opportunities_buyOffers"
-    },
-    {
-        "parent_table": "sellListings",
-        "child_table": "opportunities",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_opportunities_sellListings"
-    },
-    {
-        "parent_table": "unifiedProducts",
-        "child_table": "listingDrafts",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_listingDrafts_unifiedProducts"
-    },
-    {
-        "parent_table": "income",
-        "child_table": "incomeDetails",
-        "type": "||--o{",
-        "fk_constraint_name": "fk_FK_incomeDetails_income"
-    }
+  {
+    "parent_table": "arcadeGames",
+    "child_table": "arcadeRounds",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_arcadeRounds_game"
+  },
+  {
+    "parent_table": "bankAccounts",
+    "child_table": "transfers",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_transfers_bankAccount"
+  },
+  {
+    "parent_table": "bankAccountSnapshots",
+    "child_table": "paymentIntents",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_paymentIntents_bankAccountSnapshots"
+  },
+  {
+    "parent_table": "buyOffers",
+    "child_table": "opportunities",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_opportunities_buyOffers"
+  },
+  {
+    "parent_table": "cashRegisterSessions",
+    "child_table": "cashRegisterMovements",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_cashRegisterMovements_session"
+  },
+  {
+    "parent_table": "chartOfAccounts",
+    "child_table": "journalEntryLines",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_journalEntryLines_account"
+  },
+  {
+    "parent_table": "clientFollowUpsStatus",
+    "child_table": "clientFollowUps",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_clientFollowUps_status"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "aiMessages",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_aiMessages_Clients"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "fundingTransactions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_fundingTransactions_BorrowerClients"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "fundingTransactions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_fundingTransactions_LenderClients"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "paymentIntents",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_paymentIntents_payeeClients"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "paymentIntents",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_paymentIntents_payerClients"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "transactionNotifications",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_transactionNotifications_clients_clientId"
+  },
+  {
+    "parent_table": "clients",
+    "child_table": "transferEvidence",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_transferEvidence_UploadedBy"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "aiMessages",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_aiMessages_Companies"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "clientFaceRecognitions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_ClientFaceRecognitions_Company"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "companyModules",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__company_m__compa__1A54DAB7"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "companyTokenLedger",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_companyTokenLedger_company"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "employees",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_employees_companyId"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "notificationDispatches",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_notificationDispatches_companies"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "Services",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__Services__compan__0D05CC91"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "suppliers",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__Suppliers__compa__4AF81212"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "transactionNotifications",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_transactionNotifications_companies_companyId"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "users",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_users_companies"
+  },
+  {
+    "parent_table": "employees",
+    "child_table": "expenses",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_expenses_employeeId"
+  },
+  {
+    "parent_table": "employees",
+    "child_table": "leadCaptures",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_LeadCaptures_Employees"
+  },
+  {
+    "parent_table": "expenses",
+    "child_table": "expenseDetails",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_expenseDetails_expense"
+  },
+  {
+    "parent_table": "income",
+    "child_table": "cashRegisterMovements",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_cashRegisterMovements_income"
+  },
+  {
+    "parent_table": "income",
+    "child_table": "incomeDetails",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_incomeDetails_income"
+  },
+  {
+    "parent_table": "journalEntries",
+    "child_table": "journalEntryLines",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_journalEntryLines_entry"
+  },
+  {
+    "parent_table": "laundryDevices",
+    "child_table": "laundryDeviceUses",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_laundryDeviceUses_device"
+  },
+  {
+    "parent_table": "listingDrafts",
+    "child_table": "publishJobs",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_publishJobs_listingDrafts"
+  },
+  {
+    "parent_table": "loanInstallments",
+    "child_table": "paymentIntents",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_paymentIntents_loanInstallments"
+  },
+  {
+    "parent_table": "loanProposalsStatus",
+    "child_table": "loanProposals",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_loanProposals_status"
+  },
+  {
+    "parent_table": "loans",
+    "child_table": "fundingTransactions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_fundingTransactions_Loans"
+  },
+  {
+    "parent_table": "loans",
+    "child_table": "paymentIntents",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_paymentIntents_loans"
+  },
+  {
+    "parent_table": "marketplaceOrders",
+    "child_table": "messageTickets",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_messageTickets_orders"
+  },
+  {
+    "parent_table": "marketplaceOrders",
+    "child_table": "procurementJobs",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_procurement_orders"
+  },
+  {
+    "parent_table": "marketplaceOrders",
+    "child_table": "shipments",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_shipments_orders"
+  },
+  {
+    "parent_table": "measurements",
+    "child_table": "productOptionChoices",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productOptionChoices_measurements"
+  },
+  {
+    "parent_table": "mlScrapeItems",
+    "child_table": "sellListings",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_sellListings_scrapeItemId"
+  },
+  {
+    "parent_table": "mlScrapePages",
+    "child_table": "mlScrapeItems",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_ml_scrape_items_pageId"
+  },
+  {
+    "parent_table": "mlScrapeRuns",
+    "child_table": "mlScrapeItems",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_ml_scrape_items_runId"
+  },
+  {
+    "parent_table": "mlScrapeRuns",
+    "child_table": "mlScrapePages",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_ml_scrape_pages_runId"
+  },
+  {
+    "parent_table": "mlSearchRuns",
+    "child_table": "mlSearchResults",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_ml_search_results_run"
+  },
+  {
+    "parent_table": "modules",
+    "child_table": "companyModules",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__company_m__modul__1B48FEF0"
+  },
+  {
+    "parent_table": "modules",
+    "child_table": "permissions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_permissions_modules"
+  },
+  {
+    "parent_table": "notificationDispatchPolicy",
+    "child_table": "notificationDispatches",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_notificationDispatches_policy"
+  },
+  {
+    "parent_table": "notificationDispatchStatus",
+    "child_table": "notificationDispatches",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_notificationDispatches_status"
+  },
+  {
+    "parent_table": "paymentIntents",
+    "child_table": "fundingTransactions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_fundingTransactions_PaymentIntents"
+  },
+  {
+    "parent_table": "permissions",
+    "child_table": "rolePermissions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__role_perm__permi__0C06BB60"
+  },
+  {
+    "parent_table": "posRewardCatalogItems",
+    "child_table": "posRewardRedemptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_posRewardRedemptions_catalogItem"
+  },
+  {
+    "parent_table": "productCategories",
+    "child_table": "productCategories",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productCategories_parent"
+  },
+  {
+    "parent_table": "productCategories",
+    "child_table": "productCategories",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productCategories_parentCategory"
+  },
+  {
+    "parent_table": "productCategories",
+    "child_table": "products",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_products_productCategories"
+  },
+  {
+    "parent_table": "productOptions",
+    "child_table": "productOptionChoices",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__productOp__produ__1975C517"
+  },
+  {
+    "parent_table": "promotions",
+    "child_table": "promotionTargets",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_promotionTargets_promotions"
+  },
+  {
+    "parent_table": "pushNotifications",
+    "child_table": "notificationDeliveries",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_NotificationDeliveries_PushNotifications"
+  },
+  {
+    "parent_table": "roles",
+    "child_table": "roleGroups",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_roleGroups_role"
+  },
+  {
+    "parent_table": "roles",
+    "child_table": "rolePermissions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK__role_perm__roleI__0B129727"
+  },
+  {
+    "parent_table": "roles",
+    "child_table": "roleUiFeatures",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_roleUiFeatures_role"
+  },
+  {
+    "parent_table": "roles",
+    "child_table": "userCompanies",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_users_companies_roles"
+  },
+  {
+    "parent_table": "sellListings",
+    "child_table": "opportunities",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_opportunities_sellListings"
+  },
+  {
+    "parent_table": "sellListings",
+    "child_table": "sellListingAttributes",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_sellListingAttributes_sellListings"
+  },
+  {
+    "parent_table": "Services",
+    "child_table": "expenses",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_expenses_serviceId"
+  },
+  {
+    "parent_table": "signupGroups",
+    "child_table": "roleGroups",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_roleGroups_group"
+  },
+  {
+    "parent_table": "stripeTransactions",
+    "child_table": "transactionNotifications",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_transactionNotifications_stripeTransactions_transactionId"
+  },
+  {
+    "parent_table": "transfersStatus",
+    "child_table": "transfers",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_transfers_status"
+  },
+  {
+    "parent_table": "uiFeatures",
+    "child_table": "roleUiFeatures",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_roleUiFeatures_feature"
+  },
+  {
+    "parent_table": "unifiedProducts",
+    "child_table": "buyOffers",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_buyOffers_unifiedProducts"
+  },
+  {
+    "parent_table": "unifiedProducts",
+    "child_table": "listingDrafts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_listingDrafts_unifiedProducts"
+  },
+  {
+    "parent_table": "unifiedProducts",
+    "child_table": "marketplaceOrders",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_marketplaceOrders_unifiedProducts"
+  },
+  {
+    "parent_table": "unifiedProducts",
+    "child_table": "opportunities",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_opportunities_unifiedProducts"
+  },
+  {
+    "parent_table": "unifiedProducts",
+    "child_table": "productMatches",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productMatches_unifiedProducts"
+  },
+  {
+    "parent_table": "unifiedProducts",
+    "child_table": "sellListings",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_sellListings_unifiedProducts"
+  },
+  {
+    "parent_table": "walletTransactionsEntryType",
+    "child_table": "walletTransactions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_walletTransactions_entryType"
+  },
+  {
+    "parent_table": "whatsappChannels",
+    "child_table": "whatsappConversations",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_whatsappConversations_channel"
+  }
 ]

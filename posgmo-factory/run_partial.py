@@ -34,6 +34,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from google.adk.agents import SequentialAgent
+from knowledge_sync import run_before_factory
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
@@ -98,6 +99,7 @@ async def run_partial(from_agent: str, seed_state: dict, user_id: str = "factory
         sub_agents=agents_to_run,
     )
 
+    await asyncio.to_thread(run_before_factory)  # current knowledge first (best-effort)
     session_service = InMemorySessionService()
     session = await session_service.create_session(
         app_name="posgmo_factory_partial",

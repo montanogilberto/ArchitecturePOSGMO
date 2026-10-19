@@ -1,0 +1,295 @@
+[
+  {
+    "folder": "agents/analysis",
+    "name": "analysis_agent",
+    "kind": "SequentialAgent",
+    "model": null,
+    "description": "Proposal analysis: Risk -> Recommendation, structured output only (no chat synthesis)",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/borrower",
+    "name": "borrower_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Articulates the borrower's ideal negotiating position (lower rate, longer term, faster approval), grounded in the real conversation terms and the Recommendation Agent's suggestion.",
+    "tools": [
+      "get_conversation"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/business_intake",
+    "name": "intake_understanding_agent",
+    "kind": "Agent",
+    "model": null,
+    "description": "Transcribes a business owner's audio note (or reads their text) and restates the need in English with domain terms.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/cash_register",
+    "name": "cash_register_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reviews a cash register's daily close-out summary and flags whether expected vs. physical cash balances — advisory only, never opens, closes, or adjusts the register itself.",
+    "tools": [
+      "get_cash_register_daily_summary",
+      "list_cash_register_movements"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/client_followup",
+    "name": "client_followup_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads a client's follow-up history and loan status and suggests the next follow-up action and a risk status — advisory only, never contacts the client or changes any record itself.",
+    "tools": [
+      "get_client_follow_ups",
+      "get_client_loans"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/contract",
+    "name": "contract_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Once a borrower and lender have agreed on terms, prepares the digital loan contract via smartloans_backend's digitalContracts API. Never negotiates, never invents terms.",
+    "tools": [
+      "get_conversation",
+      "create_contract"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/evidence_validation",
+    "name": "evidence_validation_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reviews a photo of a SPEI transfer receipt (comprobante) against the declared amount/date/bank/beneficiary and reports per-field matches or mismatches — advisory evidence validation, not a money-movement or loan-activation decision.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/expense",
+    "name": "expense_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Suggests a category for a new expense and flags likely duplicates or unusually high amounts against recent history — advisory only, never creates or edits an expense itself.",
+    "tools": [
+      "get_recent_expenses"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/face_validation",
+    "name": "face_validation_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reviews a full onboarding evidence set — five head-position photos (front/up/down/left/right) from the liveness challenge, the presence video, and the INE portrait — and judges whether they show one real, present person matching the ID. Reports per-check findings rather than a bare pass/fail, and says 'cannot assess' instead of guessing when an image is unreadable.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/id_document",
+    "name": "id_document_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads photos of a Mexican INE (voter ID) and extracts identity fields (nombre, domicilio, CURP, clave de elector, fecha de nacimiento) for KYC via Gemini vision. Never guesses or computes a field it can't actually read in the image.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/lender",
+    "name": "lender_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Articulates the lender's ideal negotiating position (rate covers risk, protect capital, reduce default risk), grounded in the real conversation terms and the Risk Agent's assessment.",
+    "tools": [
+      "get_conversation"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/negotiation",
+    "name": "negotiation_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Helps a borrower and lender reach a loan agreement faster by reading the conversation, the borrower's real account data, and suggesting grounded, concrete negotiation moves.",
+    "tools": [
+      "get_conversation",
+      "get_client_loans",
+      "get_client_dashboard",
+      "get_credit_score"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/orchestrator",
+    "name": "orchestrator_agent",
+    "kind": "SequentialAgent",
+    "model": null,
+    "description": "Full SmartLoans negotiation pipeline: Risk -> Recommendation -> Borrower -> Lender -> Negotiation",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/order_triage",
+    "name": "order_triage_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Summarizes today's orders and flags any stuck too long in a non-terminal status — read-only triage, never changes an order's status itself.",
+    "tools": [
+      "list_open_orders"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/pos_accounting_support",
+    "name": "pos_accounting_support_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Chat assistant for POS cashiers/admins asking about the accounting result — explains the real trial balance (Balanza de Comprobación), never invents a figure, and never posts or edits a journal entry itself.",
+    "tools": [
+      "get_trial_balance",
+      "hybrid_search"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/pos_clients_support",
+    "name": "pos_clients_support_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Chat assistant for POS cashiers/admins using the 'Clientes' new-client registration wizard — explains each step, troubleshoots, lists/searches real registered clients, traces a client's reward points back through the real sale that earned them (multi-hop GMO relationship graph — see retrieval/graph.py), and can PROPOSE creating a client when the cashier's message already gives every required field",
+    "tools": [
+      "get_one_client",
+      "list_clients",
+      "get_reward_balance",
+      "get_reward_transactions",
+      "resolve_income_receipt",
+      "hybrid_search",
+      "propose_action"
+    ],
+    "proposes_writes": true
+  },
+  {
+    "folder": "agents/pos_expenses_support",
+    "name": "pos_expenses_support_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Chat assistant for POS cashiers/admins asking about recorded expenses — explains real expense totals and recent entries, and can PROPOSE registering a new general/payroll expense when the cashier's message already gives every required field (never executes the write itself — the backend does that only after explicit confirmation).",
+    "tools": [
+      "get_expense_total",
+      "get_recent_expenses",
+      "hybrid_search",
+      "propose_action"
+    ],
+    "proposes_writes": true
+  },
+  {
+    "folder": "agents/pos_income_support",
+    "name": "pos_income_support_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Chat assistant for POS cashiers/admins asking about recorded income — explains real income figures for the current month, and can PROPOSE registering a new income record when the cashier's message already gives every required field (never executes the write itself — the backend does that only after explicit confirmation).",
+    "tools": [
+      "get_monthly_income",
+      "hybrid_search",
+      "propose_action"
+    ],
+    "proposes_writes": true
+  },
+  {
+    "folder": "agents/pos_rewards_support",
+    "name": "pos_rewards_support_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Chat assistant for a POS GMO CLIENT (not staff) asking about their own loyalty points balance and history from the Rewards Dashboard — advisory only, always scoped to the clientId in the turn's context, never another client's data.",
+    "tools": [
+      "get_reward_balance",
+      "get_reward_transactions",
+      "hybrid_search"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/product_extraction",
+    "name": "product_extraction_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads photos of a physical product (front/back label) via Gemini vision and extracts brand, name, variant, description, barcode, net content and expiration to pre-fill the POS Nuevo Producto form — never guesses an illegible value and never creates a product itself.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/recommendation",
+    "name": "recommendation_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Suggests an alternative amount/rate/term combination with a higher approval probability, grounded in the borrower's real loans, dashboard, and the Risk Agent's prior assessment.",
+    "tools": [
+      "get_client_loans",
+      "get_client_dashboard"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/risk",
+    "name": "risk_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads a borrower's real credit score and recommends a risk tier and interest rate adjustment — never negotiates directly, only assesses.",
+    "tools": [
+      "get_credit_score"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/support",
+    "name": "support_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Answers a borrower's or lender's questions about their own account (wallet, movements, CLABE, loans, cuotas), their digital contracts (contrato + pagaré), and general legal orientation (GUÍA).",
+    "tools": [
+      "get_client_loans",
+      "get_wallet_balance",
+      "get_wallet_movements",
+      "get_bank_accounts",
+      "get_installment_schedule",
+      "get_client_contracts",
+      "get_my_offers"
+    ],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/ticket_extraction",
+    "name": "ticket_extraction_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads a photo of an expense ticket/receipt via Gemini vision and extracts merchant, date, total, type of payment and per-product line items to pre-fill the Nuevo Egreso form — never guesses an illegible value and never creates or edits an expense itself.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/whatsapp_reservations",
+    "name": "whatsapp_reservations_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "WhatsApp assistant for a business's customers — reservations (catalog services + real free slots; PROPOSES, the backend books after \"sí\"), opening hours, the promotions the POS applies, business info and FAQs, the sender's own reward points, and handing off to a person (REQUEST_HUMAN). Answers business facts only from tools.",
+    "tools": [
+      "get_reservation_services",
+      "get_reservation_hours",
+      "get_available_slots",
+      "get_promotions",
+      "get_business_info",
+      "get_faqs",
+      "get_my_reward_points",
+      "propose_action"
+    ],
+    "proposes_writes": true
+  }
+]

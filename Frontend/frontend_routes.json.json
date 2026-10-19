@@ -1,127 +1,671 @@
 [
   {
     "path": "/login",
-    "component": "src/pages/Authentication/Login.tsx",
+    "component": "src/pages/authentication/Login.tsx",
     "authenticated": false,
-    "rolesAllowed": ["*"],
-    "description": "Gateway screen for initial session provisioning."
+    "rolesAllowed": [
+      "*"
+    ],
+    "description": "Gateway screen for initial session provisioning.",
+    "feature": null
   },
   {
     "path": "/pos",
     "component": "src/pages/POS.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Cashier"],
-    "description": "Point-of-Sale module viewport containing core product list items and direct cart assignments."
+    "rolesAllowed": [
+      "Admin",
+      "Cashier"
+    ],
+    "description": "Point-of-Sale module viewport containing core product list items and direct cart assignments.",
+    "stale": true
   },
   {
     "path": "/cart",
-    "component": "src/pages/CartPage/CartPage.tsx",
+    "component": "src/pages/cart/CartPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Cashier"],
-    "description": "Checkout screen parsing detailed options, managing client definitions, coupons, and processing operations."
+    "rolesAllowed": [
+      "Admin",
+      "Cashier"
+    ],
+    "description": "Checkout screen parsing detailed options, managing client definitions, coupons, and processing operations.",
+    "feature": null
   },
   {
     "path": "/products",
     "component": "src/pages/products/ProductListPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Main items overview pane displaying deep modification tables."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Main items overview pane displaying deep modification tables.",
+    "stale": true
   },
   {
     "path": "/products/:productId",
     "component": "src/pages/products/ProductDetailPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Granular dynamic configuration target for specific items."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Granular dynamic configuration target for specific items.",
+    "feature": null
   },
   {
     "path": "/incomes",
     "component": "src/pages/IncomesPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin"],
-    "description": "Auditing viewport detailing income transactions, analytics diagrams, and deletion permissions."
+    "rolesAllowed": [
+      "Admin"
+    ],
+    "description": "Auditing viewport detailing income transactions, analytics diagrams, and deletion permissions.",
+    "stale": true
   },
   {
     "path": "/expenses",
     "component": "src/pages/ExpensesPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin"],
-    "description": "Outflow balancing workspace tracking payments made to service operators or vendors."
+    "rolesAllowed": [
+      "Admin"
+    ],
+    "description": "Outflow balancing workspace tracking payments made to service operators or vendors.",
+    "stale": true
   },
   {
     "path": "/clients",
-    "component": "src/pages/ClientsPage.tsx",
+    "component": "ClientsPage",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Staff-run client onboarding wizard: Cliente, Código QR, Documento, Captura (liveness), Verificación, Contrato, Cuenta de Pagos (Stripe Connect + saved card)."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Staff-run client onboarding wizard: Cliente, Código QR, Documento, Captura (liveness), Verificación, Contrato, Cuenta de Pagos (Stripe Connect + saved card).",
+    "feature": "clients"
   },
   {
     "path": "/clientFaceRecognitions",
-    "component": "src/pages/ClientFaceRecognitionPage.tsx",
+    "component": "src/pages/clients/ClientFaceRecognitionPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager", "Cashier"],
-    "description": "Client-facing self-serve mirror of the ClientsPage onboarding wizard (same KYC/biometric/Stripe steps)."
+    "rolesAllowed": [
+      "Admin",
+      "Manager",
+      "Cashier"
+    ],
+    "description": "Client-facing self-serve mirror of the ClientsPage onboarding wizard (same KYC/biometric/Stripe steps).",
+    "feature": null
   },
   {
     "path": "/loans",
-    "component": "src/pages/LoanPage.tsx",
+    "component": "src/pages/loans/LoanPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Loan list/management for the P2P lending core."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Loan list/management for the P2P lending core.",
+    "feature": "loans"
   },
   {
     "path": "/p2p-lending",
-    "component": "src/pages/P2PLendingPage.tsx",
+    "component": "src/pages/loans/P2PLendingPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Marketplace of loan offers/proposals; lender proposal acceptance triggers real Stripe Transfer disbursement via wallet reserve/debit. Shows wallet balance + withdraw-to-bank action."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Marketplace of loan offers/proposals; lender proposal acceptance triggers real Stripe Transfer disbursement via wallet reserve/debit. Shows wallet balance + withdraw-to-bank action.",
+    "feature": null
   },
   {
     "path": "/loan-chat/:conversationId",
-    "component": "src/pages/LoanChatPage.tsx",
+    "component": "src/pages/loans/LoanChatPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Negotiation chat thread between lender and borrower for a specific loan proposal."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Negotiation chat thread between lender and borrower for a specific loan proposal.",
+    "feature": null
   },
   {
     "path": "/payment",
-    "component": "src/pages/LoanPaymentPage.tsx",
+    "component": "src/pages/loans/LoanPaymentPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Manual loan repayment entry; submit is gated behind the biometric device lock confirm."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Manual loan repayment entry; submit is gated behind the biometric device lock confirm.",
+    "feature": null
   },
   {
     "path": "/client-dashboard/:clientId",
-    "component": "src/pages/ClientDashboardPage.tsx",
+    "component": "src/pages/clients/ClientDashboardPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Borrower-facing dashboard: onboarding status, embedded Stripe Connect onboarding, saved card, wallet."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Borrower-facing dashboard: onboarding status, embedded Stripe Connect onboarding, saved card, wallet.",
+    "feature": null
   },
   {
     "path": "/lender-dashboard/:clientId",
-    "component": "src/pages/LenderDashboardPage.tsx",
+    "component": "src/pages/clients/LenderDashboardPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Lender-facing dashboard: wallet balance, active loans, withdraw-to-bank action."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Lender-facing dashboard: wallet balance, active loans, withdraw-to-bank action.",
+    "feature": null
   },
   {
     "path": "/client-expediente/:clientId",
-    "component": "src/pages/ExpedienteDigitalPage.tsx",
+    "component": "src/pages/clients/ExpedienteDigitalPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Digital case file: contract/pagaré, presence capture, signature match, legal case history for a client."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Digital case file: contract/pagaré, presence capture, signature match, legal case history for a client.",
+    "feature": null
   },
   {
     "path": "/client-followup/:clientId",
-    "component": "src/pages/ClientFollowUpPage.tsx",
+    "component": "src/pages/clients/ClientFollowUpPage.tsx",
     "authenticated": true,
-    "rolesAllowed": ["Admin", "Manager"],
-    "description": "Staff follow-up view for onboarding completeness and reminder history."
+    "rolesAllowed": [
+      "Admin",
+      "Manager"
+    ],
+    "description": "Staff follow-up view for onboarding completeness and reminder history.",
+    "feature": null
   },
   {
     "path": "*",
     "fallbackRewrite": "/index.html",
-    "excludeAssetExtensions": [".css", ".js", ".png", ".jpg", ".svg", ".ico", ".json"],
-    "description": "Static web navigation fallback rules configuration state mapping directly to host specifications."
+    "excludeAssetExtensions": [
+      ".css",
+      ".js",
+      ".png",
+      ".jpg",
+      ".svg",
+      ".ico",
+      ".json"
+    ],
+    "description": "Static web navigation fallback rules configuration state mapping directly to host specifications.",
+    "stale": true
+  },
+  {
+    "path": "/",
+    "component": null,
+    "authenticated": false,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/accounting",
+    "component": "src/pages/finance/AccountingPage.tsx",
+    "authenticated": true,
+    "feature": "accounting",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/alerts",
+    "component": "src/pages/messaging/AlertsPage.tsx",
+    "authenticated": true,
+    "feature": "alerts",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade",
+    "component": "src/pages/game/ArcadePage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/blackjack",
+    "component": "src/pages/game/BlackjackPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/boliche",
+    "component": "src/pages/game/BowlingPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/dados",
+    "component": "src/pages/game/DicePage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/mayor-menor",
+    "component": "src/pages/game/HigherLowerPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/minas",
+    "component": "src/pages/game/MinesPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/mole",
+    "component": "src/pages/game/MolePage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/penales",
+    "component": "src/pages/game/PenaltyPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/raspadito",
+    "component": "src/pages/game/ScratchPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/ruleta",
+    "component": "src/pages/game/WheelPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/tienda",
+    "component": "src/pages/game/ChipStorePage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/arcade/volado",
+    "component": "src/pages/game/CoinflipPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/borrower-onboarding",
+    "component": "src/pages/loans/BorrowerOnboardingPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/categories",
+    "component": "src/pages/category/CategoriesPage.tsx",
+    "authenticated": true,
+    "feature": "categories",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/category",
+    "component": "redirect",
+    "authenticated": false,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/client-login",
+    "component": "src/pages/authentication/ClientLogin.tsx",
+    "authenticated": false,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/clients-map",
+    "component": "src/pages/clients/ClientsMapPage.tsx",
+    "authenticated": true,
+    "feature": "clients",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/create-account",
+    "component": "src/pages/authentication/CreateAccount.tsx",
+    "authenticated": false,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/dashboard",
+    "component": "src/pages/dashboard/Dashboard.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/egresos",
+    "component": "src/pages/finance/ExpensesPage.tsx",
+    "authenticated": true,
+    "feature": "egresos",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/egresos/detalle",
+    "component": "src/pages/finance/ExpensesDetailPage.tsx",
+    "authenticated": true,
+    "feature": "egresos",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/egresos/nuevo",
+    "component": "src/pages/finance/NewExpensePage.tsx",
+    "authenticated": true,
+    "feature": "egresos",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/egresos/resumen",
+    "component": "src/pages/finance/OperationReviewPage.tsx",
+    "authenticated": true,
+    "feature": "egresos",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/emails",
+    "component": "src/pages/messaging/EmailsPage.tsx",
+    "authenticated": true,
+    "feature": "emails",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/employees",
+    "component": "src/pages/admin/EmployeesPage.tsx",
+    "authenticated": true,
+    "feature": "employees",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/enroll/:product",
+    "component": "src/pages/enrollment/EnrollmentPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/expense-cart",
+    "component": "src/pages/cart/CartPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/expense-categories",
+    "component": "src/pages/category/CategoryPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/expense-products/:categoryId",
+    "component": "src/pages/products/ProductListPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/factory-dashboard/:clientId",
+    "component": "src/pages/factory/FactoryDashboardPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/forgot-password",
+    "component": "src/pages/authentication/ForgotPassword.tsx",
+    "authenticated": false,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/game/mission-clean-room",
+    "component": "MissionCleanRoomPage",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/ingresos",
+    "component": "src/pages/finance/IncomesPage.tsx",
+    "authenticated": true,
+    "feature": "ingresos",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/juridical-dashboard/:clientId",
+    "component": "src/pages/juridical/JuridicalDashboardPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/led-status",
+    "component": "src/pages/iot/LedStatusPage.tsx",
+    "authenticated": true,
+    "feature": "iot",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/loan-chats",
+    "component": "src/pages/loans/LoanChatListPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/loan-detail/:loanId",
+    "component": "src/pages/loans/LoanDetailPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/manufacturing",
+    "component": "src/pages/manufacturing/ManufacturingPage.tsx",
+    "authenticated": true,
+    "feature": "manufacturing",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/monthly-summary",
+    "component": "src/pages/dashboard/MonthlySummaryPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/movements",
+    "component": "src/pages/finance/MovementsPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/my-loans",
+    "component": "src/pages/loans/MyLoansPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/my-loans/:clientId",
+    "component": "src/pages/loans/MyLoansPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/my-qr",
+    "component": "src/pages/clients/MyQrPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/notification-dispatch-log",
+    "component": "src/pages/messaging/NotificationDispatchLogPage.tsx",
+    "authenticated": true,
+    "feature": "notificationDispatchLog",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/notifications",
+    "component": "src/pages/messaging/NotificationsInboxPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/notifications/detail/:pushNotificationId?",
+    "component": "src/pages/messaging/NotificationDetailPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/p2p-lending/:clientId",
+    "component": "src/pages/loans/P2PLendingPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/pos-rewards",
+    "component": "src/pages/pos/PosRewardsPage.tsx",
+    "authenticated": true,
+    "feature": "posRewards",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/pos-support/:topic?",
+    "component": "src/pages/support/PosSupportChatPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/product",
+    "component": "src/pages/products/ProductListPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/product/:categoryId",
+    "component": "src/pages/products/ProductListPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/products-management",
+    "component": "src/pages/products/ProductsManagementPage.tsx",
+    "authenticated": true,
+    "feature": "products",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/profile",
+    "component": "src/pages/profile/ProfilePage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/pushNotifications",
+    "component": "src/pages/messaging/PushNotificationPage.tsx",
+    "authenticated": true,
+    "feature": "pushNotifications",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/receipt",
+    "component": "src/pages/receipt/ReceiptPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/receipt/:incomeId",
+    "component": "src/pages/receipt/ReceiptPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/rewards",
+    "component": "src/pages/finance/RewardsPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/rewards-dashboard/:clientId",
+    "component": "src/pages/clients/RewardsDashboardPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/services",
+    "component": "src/pages/admin/ServicePage.tsx",
+    "authenticated": true,
+    "feature": "services",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/setting",
+    "component": "src/pages/system/Setting.tsx",
+    "authenticated": true,
+    "feature": "settings",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/suppliers",
+    "component": "src/pages/admin/SupplierPage.tsx",
+    "authenticated": true,
+    "feature": "suppliers",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/users",
+    "component": "src/pages/admin/UsersPage.tsx",
+    "authenticated": true,
+    "feature": "users",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/water-tanks",
+    "component": "src/pages/iot/WaterTanksPage.tsx",
+    "authenticated": true,
+    "feature": "iot",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/water-tanks-history/:tankId",
+    "component": "src/pages/iot/WaterTanksHistoryPage.tsx",
+    "authenticated": true,
+    "feature": "iot",
+    "source": "knowledge_sync"
   }
 ]

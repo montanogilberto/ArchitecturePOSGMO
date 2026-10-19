@@ -1,0 +1,697 @@
+[
+  {
+    "file": "src/api/arcadeApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/arcadeStoreApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/bankingApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      }
+    ]
+  },
+  {
+    "file": "src/api/cartApi.ts",
+    "functions": [
+      {
+        "name": "submitOrder",
+        "method": "POST",
+        "path": "/orders"
+      }
+    ]
+  },
+  {
+    "file": "src/api/cashRegisterAgentApi.ts",
+    "functions": [
+      {
+        "name": "reviewCashRegisterCloseout",
+        "method": "POST",
+        "path": "/cash-register/review-closeout"
+      }
+    ]
+  },
+  {
+    "file": "src/api/cashRegisterApi.ts",
+    "functions": [
+      {
+        "name": "postCashRegister",
+        "method": "POST",
+        "path": "/cashRegister"
+      }
+    ]
+  },
+  {
+    "file": "src/api/categoriesApi.ts",
+    "functions": [
+      {
+        "name": "createCategory",
+        "method": "POST",
+        "path": "/product_categories"
+      },
+      {
+        "name": "updateCategory",
+        "method": "POST",
+        "path": "/product_categories"
+      },
+      {
+        "name": "deleteCategory",
+        "method": "POST",
+        "path": "/product_categories"
+      }
+    ]
+  },
+  {
+    "file": "src/api/chartOfAccountsApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      }
+    ]
+  },
+  {
+    "file": "src/api/clientCapabilitiesApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": "/clientCapabilities"
+      }
+    ]
+  },
+  {
+    "file": "src/api/clientDashboardApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/clientFaceRecognitionApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/clientFollowUpAgentApi.ts",
+    "functions": [
+      {
+        "name": "getFollowUpSuggestion",
+        "method": "POST",
+        "path": "/clients/follow-up-suggestion"
+      }
+    ]
+  },
+  {
+    "file": "src/api/clientFollowUpApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/clientLoginApi.ts",
+    "functions": [
+      {
+        "name": "sendClientLoginCode",
+        "method": "POST",
+        "path": "/send_client_login_code"
+      },
+      {
+        "name": "verifyClientLoginCode",
+        "method": "POST",
+        "path": "/verify_client_login_code"
+      },
+      {
+        "name": "setClientPassword",
+        "method": "POST",
+        "path": "/set_client_password"
+      },
+      {
+        "name": "verifyClientPassword",
+        "method": "POST",
+        "path": "/verify_client_password"
+      }
+    ]
+  },
+  {
+    "file": "src/api/clientsApi.ts",
+    "functions": [
+      {
+        "name": "createOrUpdateClient",
+        "method": "POST",
+        "path": "/clients"
+      },
+      {
+        "name": "deleteClient",
+        "method": "POST",
+        "path": "/clients"
+      },
+      {
+        "name": "setClientActive",
+        "method": "POST",
+        "path": "/clients"
+      },
+      {
+        "name": "getAllClients",
+        "method": "GET",
+        "path": "/all_clients"
+      },
+      {
+        "name": "uploadClientQr",
+        "method": "POST",
+        "path": "/clients/upload-qr"
+      },
+      {
+        "name": "getOneClient",
+        "method": "POST",
+        "path": "/one_clients"
+      }
+    ]
+  },
+  {
+    "file": "src/api/commissionTerminalsApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      },
+      {
+        "name": "getAllCommissionTerminals",
+        "method": "GET",
+        "path": "/all_commissionTerminals"
+      }
+    ]
+  },
+  {
+    "file": "src/api/companiesApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      },
+      {
+        "name": "getAllCompanies",
+        "method": "GET",
+        "path": "/all_companies"
+      }
+    ]
+  },
+  {
+    "file": "src/api/companyTokensApi.ts",
+    "functions": [
+      {
+        "name": "fetchTokenBalance",
+        "method": "POST",
+        "path": "/company_tokens/balance"
+      }
+    ]
+  },
+  {
+    "file": "src/api/digitalContractsApi.ts",
+    "functions": [
+      {
+        "name": "createLoanContract",
+        "method": "POST",
+        "path": "/digitalContracts"
+      },
+      {
+        "name": "listContractsForClient",
+        "method": "POST",
+        "path": "/digitalContracts"
+      }
+    ]
+  },
+  {
+    "file": "src/api/employeesApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      },
+      {
+        "name": null,
+        "method": "GET",
+        "path": null
+      }
+    ]
+  },
+  {
+    "file": "src/api/expenseAgentApi.ts",
+    "functions": [
+      {
+        "name": "categorizeExpense",
+        "method": "POST",
+        "path": "/expenses/categorize"
+      },
+      {
+        "name": "extractTicket",
+        "method": "POST",
+        "path": "/expenses/extract-ticket"
+      }
+    ]
+  },
+  {
+    "file": "src/api/expensesApi.ts",
+    "functions": [
+      {
+        "name": "fetchMonthlyExpenses",
+        "method": "POST",
+        "path": "/monthly_expense"
+      },
+      {
+        "name": "uploadExpenseReceiptImage",
+        "method": "POST",
+        "path": "/expenses/upload-image"
+      },
+      {
+        "name": "createExpense",
+        "method": "POST",
+        "path": "/expense"
+      }
+    ]
+  },
+  {
+    "file": "src/api/faceValidationApi.ts",
+    "functions": [
+      {
+        "name": "validateFaceSession",
+        "method": "POST",
+        "path": "/validate-face"
+      }
+    ]
+  },
+  {
+    "file": "src/api/gameEventsApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/incomeApi.ts",
+    "functions": [
+      {
+        "name": "postIncome",
+        "method": "POST",
+        "path": "/income"
+      },
+      {
+        "name": "postIncomeAction",
+        "method": "POST",
+        "path": "/income"
+      }
+    ]
+  },
+  {
+    "file": "src/api/installmentsApi.ts",
+    "functions": [
+      {
+        "name": "fetchInstallmentSchedule",
+        "method": "POST",
+        "path": "/automated-payments/schedule"
+      },
+      {
+        "name": "payInstallmentSpei",
+        "method": "POST",
+        "path": "/automated-payments/pay-spei"
+      }
+    ]
+  },
+  {
+    "file": "src/api/journalEntriesApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      }
+    ]
+  },
+  {
+    "file": "src/api/laundryApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/loanAnalysisApi.ts",
+    "functions": [
+      {
+        "name": "analyzeProposal",
+        "method": "POST",
+        "path": "/analyze-proposal"
+      }
+    ]
+  },
+  {
+    "file": "src/api/loanApi.ts",
+    "functions": [
+      {
+        "name": "getAllLoans",
+        "method": "POST",
+        "path": "/all_loans"
+      },
+      {
+        "name": "generateInstallmentSchedule",
+        "method": "POST",
+        "path": "/automated-payments/generate-schedule"
+      }
+    ]
+  },
+  {
+    "file": "src/api/loanChatApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": "/loanChat"
+      },
+      {
+        "name": "getChatConfig",
+        "method": "GET",
+        "path": "/loanChat/config"
+      }
+    ]
+  },
+  {
+    "file": "src/api/loanMarketplaceApi.ts",
+    "functions": [
+      {
+        "name": "fetchLoanProposals",
+        "method": "POST",
+        "path": "/all_loanProposals"
+      },
+      {
+        "name": "fetchActiveLoanOffers",
+        "method": "POST",
+        "path": "/all_loanOffers"
+      },
+      {
+        "name": "updateLoanOffer",
+        "method": "POST",
+        "path": "/loanOffers"
+      }
+    ]
+  },
+  {
+    "file": "src/api/myNotificationsApi.ts",
+    "functions": [
+      {
+        "name": "fetchMyNotifications",
+        "method": "POST",
+        "path": "/myNotifications"
+      },
+      {
+        "name": "markNotificationsRead",
+        "method": "POST",
+        "path": "/myNotifications/markRead"
+      }
+    ]
+  },
+  {
+    "file": "src/api/notificationDispatchApi.ts",
+    "functions": [
+      {
+        "name": "dispatchNotification",
+        "method": "POST",
+        "path": "/notificationDispatch/dispatch"
+      },
+      {
+        "name": "confirmNotification",
+        "method": "POST",
+        "path": "/notificationDispatch/confirm"
+      },
+      {
+        "name": "getAllNotificationDispatches",
+        "method": "POST",
+        "path": "/all_notificationDispatches"
+      },
+      {
+        "name": "getOneNotificationDispatch",
+        "method": "POST",
+        "path": "/one_notificationDispatches"
+      },
+      {
+        "name": "fetchNotificationUsage",
+        "method": "GET",
+        "path": "/notifications/usage"
+      }
+    ]
+  },
+  {
+    "file": "src/api/orderAgentApi.ts",
+    "functions": [
+      {
+        "name": "getOrderTriageSummary",
+        "method": "POST",
+        "path": "/orders/triage-summary"
+      }
+    ]
+  },
+  {
+    "file": "src/api/ordersApi.ts",
+    "functions": [
+      {
+        "name": "fetchOrders",
+        "method": "GET",
+        "path": "/list_orders"
+      },
+      {
+        "name": "fetchCommands",
+        "method": "GET",
+        "path": "/all_commands"
+      },
+      {
+        "name": "fetchOrderProductDetails",
+        "method": "POST",
+        "path": "/one_products_orders"
+      },
+      {
+        "name": "updateOrderStatus",
+        "method": "POST",
+        "path": "/tracking_status_orders"
+      }
+    ]
+  },
+  {
+    "file": "src/api/posRewardsApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
+      }
+    ]
+  },
+  {
+    "file": "src/api/posSupportChatApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": "/posSupportChat"
+      }
+    ]
+  },
+  {
+    "file": "src/api/productAgentApi.ts",
+    "functions": [
+      {
+        "name": "extractProductLabel",
+        "method": "POST",
+        "path": "/products/extract-label"
+      }
+    ]
+  },
+  {
+    "file": "src/api/productsApi.ts",
+    "functions": [
+      {
+        "name": "createOrUpdateProduct",
+        "method": "POST",
+        "path": "/products"
+      },
+      {
+        "name": "getAllProducts",
+        "method": "GET",
+        "path": "/all_products"
+      },
+      {
+        "name": "getOneProduct",
+        "method": "POST",
+        "path": "/one_products"
+      },
+      {
+        "name": "uploadProductImage",
+        "method": "POST",
+        "path": "/products/upload-image"
+      }
+    ]
+  },
+  {
+    "file": "src/api/pushNotificationsApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/reservationsApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": "/reservations"
+      }
+    ]
+  },
+  {
+    "file": "src/api/rewardBenefitsApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/rewardsApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": "/rewards"
+      }
+    ]
+  },
+  {
+    "file": "src/api/rolesApi.ts",
+    "functions": [
+      {
+        "name": "fetchRoleCatalog",
+        "method": "GET",
+        "path": "/roles"
+      }
+    ]
+  },
+  {
+    "file": "src/api/saveImageApi.ts",
+    "functions": [
+      {
+        "name": "saveImage",
+        "method": "POST",
+        "path": "/save_image"
+      }
+    ]
+  },
+  {
+    "file": "src/api/serviceApi.ts",
+    "functions": [
+      {
+        "name": "getAllServices",
+        "method": "POST",
+        "path": "/all_services"
+      },
+      {
+        "name": "getAllServices",
+        "method": "POST",
+        "path": "/services"
+      }
+    ]
+  },
+  {
+    "file": "src/api/stripeApi.ts",
+    "functions": []
+  },
+  {
+    "file": "src/api/supplierApi.ts",
+    "functions": [
+      {
+        "name": "getAllSuppliers",
+        "method": "POST",
+        "path": "/all_suppliers"
+      },
+      {
+        "name": "getAllSuppliers",
+        "method": "POST",
+        "path": "/suppliers"
+      }
+    ]
+  },
+  {
+    "file": "src/api/ticketApi.ts",
+    "functions": [
+      {
+        "name": "fetchTicket",
+        "method": "POST",
+        "path": "/one_tickets"
+      }
+    ]
+  },
+  {
+    "file": "src/api/transferEvidenceAgentApi.ts",
+    "functions": [
+      {
+        "name": "validateTransferEvidence",
+        "method": "POST",
+        "path": "/validate-transfer-evidence"
+      }
+    ]
+  },
+  {
+    "file": "src/api/usersApi.ts",
+    "functions": [
+      {
+        "name": "createUser",
+        "method": "POST",
+        "path": "/users"
+      },
+      {
+        "name": "updateUser",
+        "method": "POST",
+        "path": "/users"
+      },
+      {
+        "name": "saveProfileImage",
+        "method": "POST",
+        "path": "/users"
+      },
+      {
+        "name": "checkContact",
+        "method": "POST",
+        "path": "/check_contact"
+      },
+      {
+        "name": "checkUsername",
+        "method": "POST",
+        "path": "/check_username"
+      },
+      {
+        "name": "sendVerificationCode",
+        "method": "POST",
+        "path": "/send_verification_code"
+      },
+      {
+        "name": "sendAccountCreated",
+        "method": "POST",
+        "path": "/send_account_created"
+      },
+      {
+        "name": "verifyCode",
+        "method": "POST",
+        "path": "/verify_code"
+      },
+      {
+        "name": "postLogin",
+        "method": "POST",
+        "path": "/login"
+      },
+      {
+        "name": "getOneUser",
+        "method": "POST",
+        "path": "/one_users"
+      }
+    ]
+  },
+  {
+    "file": "src/api/waterTanksApi.ts",
+    "functions": [
+      {
+        "name": "fetchWaterTanks",
+        "method": "GET",
+        "path": "/all_tankWaters"
+      }
+    ]
+  }
+]

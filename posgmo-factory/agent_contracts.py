@@ -86,7 +86,9 @@ CONTRACTS: list[AgentContract] = [
     AgentContract("frontend_agent", expected_artifact_key="frontend_artifacts",
                   artifact_ok=lambda v: isinstance(v, dict)
                   and _nonempty_str(v.get("api_file", {}), "content")
-                  and _nonempty_str(v.get("page_file", {}), "content")),
+                  and _nonempty_str(v.get("page_file", {}), "content")
+                  and _nonempty_str(v.get("view_file", {}), "content")
+                  and _nonempty_str(v.get("logic_file", {}), "content")),
     AgentContract("reviewer_agent", expected_tool="run_review",
                   expected_artifact_key="review_result",
                   artifact_ok=lambda v: isinstance(v, dict) and "scores" in v),

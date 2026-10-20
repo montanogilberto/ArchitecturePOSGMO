@@ -169,8 +169,11 @@ def has_specification(raw) -> bool:
 
 
 def has_frontend_files(raw) -> bool:
-    """frontend_artifacts is usable when page + api files carry content
-    (Step 1 evidence: factoryRunUsage run, frontend_agent returned nothing
-    with no error event at all -- a silent empty turn)."""
+    """frontend_artifacts is usable when every MVVM code file carries content —
+    shell, View, Logic and api (Step 1 evidence: factoryRunUsage run,
+    frontend_agent returned nothing with no error event at all -- a silent
+    empty turn). An old-style single page (no View/Logic) is retried too."""
+    from frontend_layout import CODE_KEYS
+
     data = parse_json_object(raw)
-    return all(str((data.get(k) or {}).get("content", "")).strip() for k in ("page_file", "api_file"))
+    return all(str((data.get(k) or {}).get("content", "")).strip() for k in CODE_KEYS)

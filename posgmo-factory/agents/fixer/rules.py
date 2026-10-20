@@ -526,17 +526,20 @@ def _ensure_ionic_imports(tsx: str, fixes: list[str]) -> str:
 
 
 def fix_frontend(frontend_artifacts: dict, gate_result: dict) -> tuple[dict, list[str]]:
+    """Deterministic TS/TSX fixes. Runs on every code file the frontend agent
+    returns — the MVVM View/Logic files as well as the shell/api — so a fix
+    reaches the file the code actually lives in."""
     all_fixes: list[str] = []
 
     for key in ("page_file", "api_file"):
         if not isinstance(frontend_artifacts.get(key), dict):
             frontend_artifacts[key] = {"content": ""}
-    page_content = frontend_artifacts["page_file"].get("content") or ""
-    api_content  = frontend_artifacts["api_file"].get("content") or ""
+    code_keys = [k for k in ("page_file", "view_file", "logic_file", "api_file")
+                 if isinstance(frontend_artifacts.get(k), dict)]
 
     # 1. catch (err: any) → catch (err)
-    for attr, content in [("page_file", page_content), ("api_file", api_content)]:
-        fixed, fixes = _fix_catch_any(content)
+    for attr in code_keys:
+        fixed, fixes = _fix_catch_any(frontend_artifacts[attr].get("content") or "")
         frontend_artifacts[attr]["content"] = fixed
         all_fixes.extend(fixes)
 
@@ -546,23 +549,23 @@ def fix_frontend(frontend_artifacts: dict, gate_result: dict) -> tuple[dict, lis
     frontend_artifacts["api_file"]["content"] = fixed
     all_fixes.extend(fixes)
 
-    # 3. CustomEvent<any> → typed
-    page_content = frontend_artifacts["page_file"]["content"]
-    fixed, fixes = _fix_custom_event_any(page_content)
-    all_fixes.extend(fixes)
+    for attr in (k for k in code_keys if k != "api_file"):
+        # 3. CustomEvent<any> → typed
+        fixed, fixes = _fix_custom_event_any(frontend_artifacts[attr]["content"])
+        all_fixes.extend(fixes)
 
-    # 4. Bare CustomEvent (no generic). Component-specific typing FIRST:
-    # the generic fallback below types any remaining bare CustomEvent as
-    # <void>, which would make `event.detail.complete()` on an IonRefresher
-    # handler a TypeScript error while still passing review.
-    fixed, f3 = _fix_bare_refresher_event(fixed)
-    all_fixes.extend(f3)
-    fixed, f2 = _fix_bare_custom_event(fixed)
-    all_fixes.extend(f2)
+        # 4. Bare CustomEvent (no generic). Component-specific typing FIRST:
+        # the generic fallback below types any remaining bare CustomEvent as
+        # <void>, which would make `event.detail.complete()` on an IonRefresher
+        # handler a TypeScript error while still passing review.
+        fixed, f3 = _fix_bare_refresher_event(fixed)
+        all_fixes.extend(f3)
+        fixed, f2 = _fix_bare_custom_event(fixed)
+        all_fixes.extend(f2)
 
-    # 5. Ensure imports are present for any new types
-    fixed = _ensure_ionic_imports(fixed, all_fixes)
-    frontend_artifacts["page_file"]["content"] = fixed
+        # 5. Ensure imports are present for any new types
+        fixed = _ensure_ionic_imports(fixed, all_fixes)
+        frontend_artifacts[attr]["content"] = fixed
 
     return frontend_artifacts, all_fixes
 

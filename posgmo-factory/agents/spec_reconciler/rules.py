@@ -51,5 +51,17 @@ def reconcile_specification(state: dict, lookup=live_table_columns) -> tuple[dic
     return new_spec, record
 
 
+def normalize_frontend_paths(state: dict) -> tuple[dict | None, dict | None]:
+    """MVVM frontend layout (frontend_layout.py) applied to specification.
+    Returns (spec or None when unchanged, {field: {from, to}} or None)."""
+    from frontend_layout import normalize_spec_frontend
+
+    spec = _safe_load(state.get("specification"))
+    if not spec:
+        return None, None
+    spec, changed = normalize_spec_frontend(spec)
+    return (spec if changed else None), changed
+
+
 def to_state_json(spec: dict) -> str:
     return json.dumps(spec)

@@ -39,13 +39,13 @@ def sp_names(plural: str) -> dict[str, str]:
     }
 
 # File path rules
+from frontend_layout import layout as _frontend_layout, resolve_area as _resolve_area  # noqa: E402
+
 def file_paths(module: str, plural: str) -> dict[str, str]:
     """Return canonical file paths for a module."""
-    Module = module[:1].upper() + module[1:]
     return {
         "module_file": f"modules/{plural}.py",
         "route_file":  f"routes_/{module}.py",
-        "api_file":    f"src/api/{module}Api.ts",
-        "page_file":   f"src/pages/{Module}Page.tsx",
-        "css_file":    f"src/pages/{Module}Page.css",
+        **{k: v for k, v in _frontend_layout(module, _resolve_area(module, None)).items()
+           if k.endswith("_file")},
     }

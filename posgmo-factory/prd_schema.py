@@ -223,9 +223,13 @@ class BackendSpec(BaseModel):
 
 
 class FrontendSpec(BaseModel):
+    # MVVM feature layout — see frontend_layout.py (paths are enforced there).
+    area: str = ""                  # e.g. "admin" — lowercase folder under src/pages
     api_file: str                   # e.g. "src/api/supplierApi.ts"
-    page_file: str                  # e.g. "src/pages/SupplierPage.tsx"
-    css_file: str                   # e.g. "src/pages/SupplierPage.css"
+    page_file: str                  # e.g. "src/pages/admin/SupplierPage.tsx"            (router shell)
+    view_file: str = ""             # e.g. "src/pages/admin/Supplier/SupplierView.tsx"   (JSX only)
+    logic_file: str = ""            # e.g. "src/pages/admin/Supplier/SupplierLogic.ts"   (hook)
+    css_file: str                   # e.g. "src/pages/admin/Supplier/Supplier.css"
     route_path: str                 # e.g. "/suppliers"
     roles: List[str]
     has_list_view: bool
@@ -298,6 +302,10 @@ class SpecificationJSON(BaseModel):
 
         self.backend.module_file = f"modules/{plural}.py"
         self.backend.route_file  = f"routes_/{m}.py"
-        self.frontend.api_file   = f"src/api/{m}Api.ts"
+        # Frontend: MVVM feature layout (area/{Module}Page shell + feature folder)
+        from frontend_layout import layout, resolve_area
+        paths = layout(m, resolve_area(m, self.frontend.area))
+        for key in ("area", "api_file", "page_file", "view_file", "logic_file", "css_file"):
+            setattr(self.frontend, key, paths[key])
 
         return self

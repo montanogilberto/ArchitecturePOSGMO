@@ -156,13 +156,106 @@ API rules (ALL patterns):
 - ACTION_ROUTER: action is a string (`"create"`, `"send_message"`), NOT a number.
 - BUSINESS_LOGIC: body is a flat object, no `{plural}: [...]` envelope.
 
-## React / Ionic rules (src/pages/{Module}Page.tsx)
+## File layout — MVVM feature folder (CRITICAL — automatic review failure if violated)
+POSVending splits every page into a router shell + View + Logic hook (the repo's own
+CLAUDE.md §2; reference features: finance/Expenses, finance/Accounting, admin/Employees).
+Use EXACTLY the paths in specification.frontend (area, page_file, view_file,
+logic_file, css_file) — they are enforced deterministically; never invent others.
+
+```
+src/api/{module}Api.ts                      typed fetch client — the ONLY place fetch() appears
+src/pages/{area}/{Module}Page.tsx           router shell, ~10 lines, nothing else
+src/pages/{area}/{Module}/{Module}View.tsx  JSX only
+src/pages/{area}/{Module}/{Module}Logic.ts  hook: ALL state, effects, handlers, API calls
+src/pages/{area}/{Module}/{Module}.css      styles (imported by the shell)
+```
+
+page_file (shell) — exactly this shape:
+```tsx
+import React from 'react';
+import './{Module}/{Module}.css';
+import {Module}View from './{Module}/{Module}View';
+
+const {Module}Page: React.FC = () => <{Module}View />;
+
+export default {Module}Page;
+```
+
+logic_file — one exported hook owns everything stateful:
+```ts
+import { useCallback, useEffect, useState } from 'react';
+import { useIonViewWillEnter } from '@ionic/react';
+import { useUser } from '../../../contexts/UserContext';
+import { useToast } from '../../../hooks/useToast';
+import { onDataChanged, notifyDataChanged } from '../../../utils/refreshBus';
+import { getAll{Module}s, {Module} } from '../../../api/{module}Api';
+
+export const use{Module} = () => {
+  const { companyId } = useUser();
+  const { showToast, toastProps } = useToast();
+  const [items, setItems] = useState<{Module}[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => { /* setLoading, call the api, catch (err) → showToast((err as Error).message, 'danger') */ }, [companyId]);
+
+  useEffect(() => { load(); }, [load]);
+  useIonViewWillEnter(() => { load(); });             // Ionic keeps pages mounted
+  useEffect(() => onDataChanged(() => load()), [load]);
+  // after every successful mutation: notifyDataChanged('{module}-saved');
+
+  return { items, loading, toastProps, /* every value + handler the View needs */ };
+};
+
+export type {Module}VM = ReturnType<typeof use{Module}>;
+```
+
+view_file — presentation only:
+```tsx
+import React from 'react';
+import { IonPage, IonContent, IonLoading, IonToast } from '@ionic/react';
+import Header from '../../../components/layout/Header';
+import { usePopovers } from '../../../hooks/usePopovers';
+import { use{Module} } from './{Module}Logic';
+
+const {Module}View: React.FC = () => {
+  const vm = use{Module}();
+  const pops = usePopovers();
+  return (
+    <IonPage>
+      <Header screenTitle="MODULE_TITLE" {...pops.headerProps} />
+      <IonContent fullscreen className="{module}-content">
+        {/* JSX reading vm.* only */}
+        <IonToast {...vm.toastProps} />
+        <IonLoading isOpen={vm.loading} message="Cargando..." />
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default {Module}View;
+```
+
+MVVM rules:
+- View: NO useState/useEffect/fetch/business logic — only `const vm = use{Module}()`
+  (plus usePopovers) and JSX. Sub-sections that grow large go in
+  `src/pages/{area}/{Module}/components/` and receive `vm: {Module}VM` as their prop
+  (no hand-maintained prop interfaces).
+- Logic: no JSX. All HTTP goes through src/api/{module}Api.ts (no fetch() here either).
+- Imports from the feature folder go up THREE levels to src/: `'../../../…'`.
+- Every pattern below (wizard modal, chat, infinite scroll, delete confirm) still
+  applies — put its state/handlers in the Logic hook and its JSX in the View.
+- Shared layer first (POSVending CLAUDE.md §3): formatting via
+  `src/utils/format.ts` (fmtMXN, fmtNum, mxDate, toHermosillo — never a local
+  `const fmt =`), EmptyState / StatusBadge from `src/components/ui/`.
+
+## React / Ionic rules (view_file + logic_file)
 
 ### Auth / user context — CRITICAL RULE (automatic review failure if violated)
 NEVER import AuthContext or use useContext(AuthContext).
 This codebase exposes user state through a single hook. ALWAYS use:
-```tsx
-import { useUser } from '../contexts/UserContext';
+```ts
+// in {Module}Logic.ts (feature folder → three levels up to src/)
+import { useUser } from '../../../contexts/UserContext';
 
 const { companyId, userId, roleCode, username } = useUser();
 ```
@@ -190,53 +283,28 @@ native ripple, keyboards, focus and screen-reader support. Structural
   `{saving ? <IonSpinner name="dots"/> : 'Guardar'}` inside the IonButton.
 - Data pages must refetch in `useIonViewWillEnter(...)` in addition to the mount
   effect — Ionic keeps pages mounted, so mount-only loads go stale after navigation.
+- Subscribe with `onDataChanged(load)` and call `notifyDataChanged('<reason>')` after
+  every successful mutation (`src/utils/refreshBus.ts`) — both in the Logic hook.
 
 ### Header — CRITICAL RULE (most common review failure)
-NEVER use IonHeader / IonToolbar / IonTitle directly.
-This codebase uses a shared custom Header component. ALWAYS use:
+NEVER use IonHeader / IonToolbar / IonTitle at page level (IonHeader inside an
+IonModal is fine). Use the shared Header from `components/layout/`, with its
+popovers wired by the `usePopovers` hook — never hand-written popover state:
 ```tsx
-import Header from '../components/Header';
-import AlertPopover from '../components/PopOver/AlertPopover';
-import MailPopover from '../components/PopOver/MailPopover';
+// in {Module}View.tsx
+import Header from '../../../components/layout/Header';
+import { usePopovers } from '../../../hooks/usePopovers';
 
-// Inside component state:
-const [popoverState, setPopoverState] = useState<{
-  showAlertPopover: boolean;
-  showMailPopover: boolean;
-  event?: Event;
-}>({ showAlertPopover: false, showMailPopover: false });
-
-const presentAlertPopover = (e: React.MouseEvent) =>
-  setPopoverState({ ...popoverState, showAlertPopover: true, event: e.nativeEvent });
-const dismissAlertPopover = () =>
-  setPopoverState({ ...popoverState, showAlertPopover: false });
-const presentMailPopover = (e: React.MouseEvent) =>
-  setPopoverState({ ...popoverState, showMailPopover: true, event: e.nativeEvent });
-const dismissMailPopover = () =>
-  setPopoverState({ ...popoverState, showMailPopover: false });
-
-// Inside JSX (replace IonHeader entirely):
-<Header
-  presentAlertPopover=PRESENT_ALERT_FN
-  presentMailPopover=PRESENT_MAIL_FN
-  screenTitle="MODULE_TITLE — POS GMO"
-/>
-<AlertPopover
-  isOpen=SHOW_ALERT_BOOL
-  event=POPOVER_EVENT
-  onDidDismiss=DISMISS_ALERT_FN
-/>
-<MailPopover
-  isOpen=SHOW_MAIL_BOOL
-  event=POPOVER_EVENT
-  onDidDismiss=DISMISS_MAIL_FN
-/>
+const pops = usePopovers();
+<Header screenTitle="MODULE_TITLE" {...pops.headerProps} />
+// optional props, as real pages use them: showBackButton backButtonHref="/dashboard"
 ```
 
-### Shell structure
-- IonPage > Header (custom, see above) + AlertPopover + MailPopover > IonContent
-- Loading: IonLoading isOpen={loading}
-- Errors: IonToast isOpen={!!error} message={error} onDidDismiss={() => setError('')}
+### View structure
+- IonPage > Header (custom, see above) > IonContent
+- Loading: IonLoading isOpen={vm.loading}
+- Errors/success: `const { showToast, toastProps } = useToast()` in the Logic hook,
+  `<IonToast {...vm.toastProps} />` in the View (src/hooks/useToast.ts)
 - Lists: IonList > IonItem. If has_list_view is true: ALWAYS add IonInfiniteScroll — do not
   skip it based on expected record count. Exact pattern:
   ```typescript
@@ -508,24 +576,21 @@ Chat rules:
 - Message bubbles: own messages `.lc-bubble-own`, other's `.lc-bubble-other` — CSS handles alignment.
 - Proposal/offer messages rendered as a card sub-component (not plain text bubble).
 - Chat pages use `IonHeader`/`IonToolbar` directly (not the shared Header component) — they are full-screen routes, not tabs.
-- State: useState for data, loading, error, search text, modal open flag.
+- State: useState for data, loading, search text, modal open flag — in the Logic hook.
 - UTC-7 date conversion is MANDATORY for every date field displayed in the UI.
-  Always include this helper at the top of the TSX file:
+  Import the shared helper — never redefine it locally:
   ```typescript
-  const toHermosillo = (utc: string | undefined): string => {
-    if (!utc) return '';
-    const d = new Date(utc.includes('Z') ? utc : utc + 'Z');
-    return new Date(d.getTime() - 7 * 60 * 60 * 1000).toLocaleString();
-  };
+  import { toHermosillo, fmtMXN } from '../../../utils/format';
   ```
-  Never display raw date strings directly — always pass through toHermosillo().
+  Never display raw date strings directly — always pass through toHermosillo()
+  (or mxDate() for date-only). Money: fmtMXN().
 - IVA = 0 always. Never compute tax.
-- useEffect on mount: fetch list, handle errors.
+- Mount effect + useIonViewWillEnter in the Logic hook: fetch list, handle errors.
 - TypeScript catch blocks: NEVER use `catch (err: any)` — TypeScript does not allow
   typed catch parameters. Always use:
   ```typescript
   } catch (err) {
-    setError((err as Error).message ?? 'Error desconocido');
+    showToast((err as Error).message ?? 'Error desconocido', 'danger');
   }
   ```
   Same rule applies in API files (supplierApi.ts).
@@ -543,7 +608,7 @@ Chat rules:
     - NEVER use `CustomEvent<any>` — `any` is forbidden, use the specific detail type above.
 - No inline styles — all styling goes in the CSS file.
 
-## CSS rules (src/pages/{Module}Page.css)
+## CSS rules (css_file: src/pages/{area}/{Module}/{Module}.css, imported by the shell)
 - Scoped class names: .{module}-page, .{module}-list, .{module}-card, etc.
 - Match the visual density and spacing of existing POS GMO pages.
 - No global selector overrides.
@@ -610,7 +675,7 @@ App.tsx uses this structure (excerpts):
 
 ```tsx
 // === IMPORT SECTION (after last page import) ===
-import SupplierPage from './pages/SupplierPage';   // ← add this
+import SupplierPage from './pages/admin/SupplierPage';   // ← add this (shell, area folder)
 
 // === IonRouterOutlet inside IonTabs (PrivateRoute section) ===
 // <PrivateRoute exact path="/suppliers" component=COMPONENT_NAME />   ← add this
@@ -626,7 +691,7 @@ import SupplierPage from './pages/SupplierPage';   // ← add this
 ```
 
 Rules for App.tsx patches:
-- import_line: `import {Module}Page from './pages/{Module}Page';`
+- import_line: `import {Module}Page from './pages/{area}/{Module}Page';` (the shell — page_file)
 - route_path: use the plural, e.g. `/suppliers`
 - private_route: `<PrivateRoute exact path="/{plural}" component={{Module}Page} />`
 - canAccess key: use the plural in lowercase, e.g. `'suppliers'`
@@ -648,11 +713,13 @@ Rules for App.tsx patches:
 ## Output format
 Respond with ONLY a JSON object — no prose, no markdown fences:
 {
-  "api_file":  { "path": "src/api/{module}Api.ts",     "content": "<full TS source>" },
-  "page_file": { "path": "src/pages/{Module}Page.tsx", "content": "<full TSX source>" },
-  "css_file":  { "path": "src/pages/{Module}Page.css", "content": "<full CSS source>" },
+  "api_file":   { "path": "<specification.frontend.api_file>",   "content": "<full TS source>" },
+  "page_file":  { "path": "<specification.frontend.page_file>",  "content": "<router shell TSX>" },
+  "view_file":  { "path": "<specification.frontend.view_file>",  "content": "<full View TSX — JSX only>" },
+  "logic_file": { "path": "<specification.frontend.logic_file>", "content": "<full use{Module} hook TS>" },
+  "css_file":   { "path": "<specification.frontend.css_file>",   "content": "<full CSS source>" },
   "app_patches": {
-    "import_line":    "import {Module}Page from './pages/{Module}Page';",
+    "import_line":    "import {Module}Page from './pages/{area}/{Module}Page';",
     "private_route":  "<PrivateRoute exact path=\"/{plural}\" component={{Module}Page} />",
     "menu_item":      "<full IonMenuToggle JSX block with canAccess guard, IonIcon using the chosen icon variable, and IonLabel with the Spanish label>",
     "menu_section":   "Catálogo",

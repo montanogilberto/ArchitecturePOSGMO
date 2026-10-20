@@ -367,54 +367,113 @@ def _check_backend(be: dict, spec: dict, gate: dict) -> list[Issue]:
 # ============================================================================
 
 def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
+    """Frontend checks. With an MVVM spec (specification.frontend.view_file set —
+    always true in the pipeline, the spec reconciler enforces it) each check runs
+    on the file that should hold the code: JSX checks on the View, state/auth
+    checks on the Logic hook, plus structural checks on shell/View/Logic and
+    their paths (frontend_layout.py). A spec without view_file (older runs)
+    keeps the original single-page behaviour."""
+    from frontend_layout import FEATURE_TO_SRC, layout, resolve_area
+
     issues: list[Issue] = []
     module    = spec.get("module", "")
     Module    = module[0].upper() + module[1:] if module else ""
-    has_list  = (spec.get("frontend") or {}).get("has_list_view", True)
+    fspec     = spec.get("frontend") or {}
     ui_pattern = (spec.get("prd_hints") or {}).get("frontend_ui_pattern", "")
+    mvvm      = bool(fspec.get("view_file"))
 
-    page_content = (fe.get("page_file") or {}).get("content", "")
-    api_content  = (fe.get("api_file")  or {}).get("content", "")
-    css_content  = (fe.get("css_file")  or {}).get("content", "")
+    def content(key: str) -> str:
+        return (fe.get(key) or {}).get("content", "") or ""
+
+    page_content = content("page_file")
+    api_content  = content("api_file")
+    css_content  = content("css_file")
+    view_content = content("view_file")
+    logic_content = content("logic_file")
+
+    if mvvm:
+        paths = layout(module, resolve_area(module, fspec.get("area")))
+        page_file, api_file = paths["page_file"], paths["api_file"]
+        view_file, logic_file, css_file = paths["view_file"], paths["logic_file"], paths["css_file"]
+        jsx, jsx_file = view_content, view_file          # where JSX must live
+        state, state_file = logic_content, logic_file    # where state/effects must live
+        ui = view_content + "\n" + logic_content
+    else:
+        page_file, api_file = f"src/pages/{Module}Page.tsx", f"src/api/{module}Api.ts"
+        css_file = f"src/pages/{Module}Page.css"
+        jsx = state = ui = page_content
+        jsx_file = state_file = page_file
 
     def E(file: str, msg: str, auto=False):
         issues.append(Issue("frontend", file, "auto_error" if auto else "error", msg))
     def W(file: str, msg: str):
         issues.append(Issue("frontend", file, "warning", msg))
 
-    page_file = f"src/pages/{Module}Page.tsx"
-    api_file  = f"src/api/{module}Api.ts"
+    # ── MVVM structure + paths ────────────────────────────────────────────
+    if mvvm:
+        for key in ("api_file", "page_file", "view_file", "logic_file", "css_file"):
+            got = (fe.get(key) or {}).get("path")
+            if got and got != paths[key]:
+                E(paths[key], f"{key} path must be {paths[key]} (got {got})", auto=True)
+        for key, fname in (("view_file", view_file), ("logic_file", logic_file)):
+            if not content(key).strip():
+                E(fname, f"{key} missing — MVVM requires {fname}", auto=True)
+        if not re.search(rf"import\s+{Module}View\s+from\s+'\./{Module}/{Module}View'", page_content):
+            E(page_file, f"Router shell must import {Module}View from './{Module}/{Module}View'", auto=True)
+        if f"import './{Module}/{Module}.css'" not in page_content:
+            E(page_file, f"Router shell must import './{Module}/{Module}.css'", auto=True)
+        if re.search(r"\buse(State|Effect)\s*\(|\bfetch\s*\(", page_content):
+            E(page_file, "Router shell must only render the View — move state/effects/fetch to the Logic hook", auto=True)
+        if view_content and not re.search(rf"\buse{Module}\s*\(\s*\)", view_content):
+            E(view_file, f"View must get its data from `const vm = use{Module}()`", auto=True)
+        if re.search(r"\buse(State|Effect)\s*\(", view_content):
+            E(view_file, "View is presentation only — move useState/useEffect into the Logic hook")
+        if logic_content and not re.search(rf"export\s+(const|function)\s+use{Module}\b", logic_content):
+            E(logic_file, f"Logic must export the hook use{Module}", auto=True)
+        if logic_content and not re.search(
+                rf"export\s+type\s+{Module}VM\s*=\s*ReturnType<\s*typeof\s+use{Module}\s*>", logic_content):
+            E(logic_file, f"Logic must export `type {Module}VM = ReturnType<typeof use{Module}>`")
+        if logic_content and fspec.get("has_list_view", True) and "useIonViewWillEnter" not in logic_content:
+            E(logic_file, "Data freshness: reload in useIonViewWillEnter (Ionic keeps pages mounted)")
+        for c, fname in ((view_content, view_file), (logic_content, logic_file)):
+            if re.search(r"\bfetch\s*\(", c):
+                E(fname, f"fetch() outside the api file — all HTTP goes through {api_file}", auto=True)
 
     # ── Auth hook — MUST use useUser, never AuthContext ──────────────────
-    if "AuthContext" in page_content:
-        E(page_file,
-          "AuthContext import found — FORBIDDEN. Use `import { useUser } from '../contexts/UserContext'` instead",
+    if "AuthContext" in ui:
+        E(state_file,
+          f"AuthContext import found — FORBIDDEN. Use `import {{ useUser }} from '{FEATURE_TO_SRC if mvvm else '../'}contexts/UserContext'` instead",
           auto=True)
-    if re.search(r"useContext\s*\(\s*AuthContext\s*\)", page_content):
-        E(page_file,
+    if re.search(r"useContext\s*\(\s*AuthContext\s*\)", ui):
+        E(state_file,
           "useContext(AuthContext) forbidden — use `const { companyId } = useUser()` instead",
           auto=True)
-    if "companyId = user?.companyId" in page_content:
-        E(page_file,
+    if "companyId = user?.companyId" in ui:
+        E(state_file,
           "user?.companyId access pattern forbidden — useUser() exposes companyId directly",
           auto=True)
 
     # ── Header component (most common failure) ────────────────────────────
-    if "import Header from '../components/Header'" not in page_content:
-        E(page_file, "Missing: import Header from '../components/Header'", auto=True)
+    # Current location is components/layout/Header; the legacy components/Header
+    # path is still accepted so older single-page specs keep passing.
+    if not re.search(r"import\s+Header\s+from\s+'(?:\.\./)+components/(?:layout/)?Header'", jsx):
+        expected = (f"import Header from '{FEATURE_TO_SRC}components/layout/Header'" if mvvm
+                    else "import Header from '../components/Header'")
+        E(jsx_file, f"Missing: {expected}", auto=True)
     # IonHeader is forbidden at page level but IS allowed inside IonModal blocks.
     # Strip all IonModal content before checking so modals don't trigger false positives.
-    _page_no_modals = re.sub(r'<IonModal[\s\S]*?</IonModal>', '', page_content)
-    if re.search(r'<IonHeader\b', _page_no_modals):
-        E(page_file, "Direct IonHeader usage forbidden — use custom <Header> component", auto=True)
-    if "<AlertPopover" not in page_content:
-        E(page_file, "Missing AlertPopover component alongside Header")
-    if "<MailPopover" not in page_content:
-        E(page_file, "Missing MailPopover component alongside Header")
+    _jsx_no_modals = re.sub(r'<IonModal[\s\S]*?</IonModal>', '', jsx)
+    if re.search(r'<IonHeader\b', _jsx_no_modals):
+        E(jsx_file, "Direct IonHeader usage forbidden — use custom <Header> component", auto=True)
+    if "usePopovers" not in jsx and not ("<AlertPopover" in jsx and "<MailPopover" in jsx):
+        E(jsx_file, "Header popovers not wired — use `const pops = usePopovers()` and `{...pops.headerProps}`")
 
     # ── catch (err: any) ─────────────────────────────────────────────────
-    for content, fname in [(page_content, page_file), (api_content, api_file)]:
-        if re.search(r'\bcatch\s*\(\s*\w+\s*:\s*any\s*\)', content):
+    files = [(page_content, page_file), (api_content, api_file)]
+    if mvvm:
+        files += [(view_content, view_file), (logic_content, logic_file)]
+    for c, fname in files:
+        if re.search(r'\bcatch\s*\(\s*\w+\s*:\s*any\s*\)', c):
             E(fname, "catch (err: any) forbidden — use catch (err) with (err as Error).message", auto=True)
 
     # ── CustomEvent<any> and bare CustomEvent ─────────────────────────────
@@ -431,10 +490,12 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
     # occurrences, all 3 real usages correctly typed
     # (CustomEvent<void>/<InputInputEventDetail>/<DatetimeChangeEventDetail>),
     # and it still failed on this check every iteration.
-    if re.search(r'CustomEvent<any>', page_content):
-        E(page_file, "CustomEvent<any> forbidden — use specific generic (CheckboxChangeEventDetail, etc.)", auto=True)
-    if re.search(r':\s*CustomEvent\b(?!\s*<)', page_content):
-        E(page_file, "Bare CustomEvent without generic forbidden — add specific type parameter", auto=True)
+    for c, fname in ([(view_content, view_file), (logic_content, logic_file)] if mvvm
+                     else [(page_content, page_file)]):
+        if re.search(r'CustomEvent<any>', c):
+            E(fname, "CustomEvent<any> forbidden — use specific generic (CheckboxChangeEventDetail, etc.)", auto=True)
+        if re.search(r':\s*CustomEvent\b(?!\s*<)', c):
+            E(fname, "Bare CustomEvent without generic forbidden — add specific type parameter", auto=True)
 
     # ── JSON.parse double-parse ───────────────────────────────────────────
     if re.search(r'JSON\.parse\s*\(\s*await\s+\w+\.json\s*\(\s*\)', api_content):
@@ -451,53 +512,55 @@ def _check_frontend(fe: dict, spec: dict, gate: dict) -> list[Issue]:
         E(api_file, "No exported TypeScript interfaces found in api file")
 
     # ── IonLoading + IonToast ─────────────────────────────────────────────
-    if "IonLoading" not in page_content:
-        E(page_file, "IonLoading missing — required for loading state")
-    if "IonToast" not in page_content:
-        E(page_file, "IonToast missing — required for error display")
+    if "IonLoading" not in jsx:
+        E(jsx_file, "IonLoading missing — required for loading state")
+    if "IonToast" not in jsx:
+        E(jsx_file, "IonToast missing — required for error display")
 
     # ── IonInfiniteScroll when has_list_view and NOT wizard ──────────────
-    if has_list_view := (spec.get("frontend") or {}).get("has_list_view", True):
-        if ui_pattern != "Wizard Flow Layout" and "IonInfiniteScroll" not in page_content:
-            E(page_file, "IonInfiniteScroll missing — required when has_list_view is true", auto=True)
+    if fspec.get("has_list_view", True):
+        if ui_pattern != "Wizard Flow Layout" and "IonInfiniteScroll" not in jsx:
+            E(jsx_file, "IonInfiniteScroll missing — required when has_list_view is true", auto=True)
 
     # ── UTC-7 toHermosillo helper ─────────────────────────────────────────
-    if not re.search(r'toHermosillo|7 \* 60 \* 60 \* 1000', page_content):
-        E(page_file, "UTC-7 date conversion (toHermosillo) missing — all dates must be converted")
+    if not re.search(r'toHermosillo|mxDate|7 \* 60 \* 60 \* 1000', ui):
+        E(jsx_file, "UTC-7 date conversion (toHermosillo / mxDate from utils/format) missing — all dates must be converted")
 
     # ── IVA never computed ────────────────────────────────────────────────
-    if re.search(r'\b(iva|tax|impuesto)\s*[=*+]', page_content, re.IGNORECASE):
-        E(page_file, "IVA/tax computation found in frontend — IVA is always 0, never compute it")
+    if re.search(r'\b(iva|tax|impuesto)\s*[=*+]', ui, re.IGNORECASE):
+        E(state_file, "IVA/tax computation found in frontend — IVA is always 0, never compute it")
 
     # ── CSS scoped class names ────────────────────────────────────────────
     module_dashed = re.sub(r'([A-Z])', r'-\1', module).lstrip('-').lower()
     if css_content and not re.search(rf'\.{module_dashed}', css_content, re.IGNORECASE):
         # Also accept camelCase prefix
         if not re.search(rf'\.{module}', css_content, re.IGNORECASE):
-            W(f"src/pages/{Module}Page.css", f"CSS class names should use '{module_dashed}-' prefix")
+            W(css_file, f"CSS class names should use '{module_dashed}-' prefix")
 
     # ── app_patches present ───────────────────────────────────────────────
     patches = fe.get("app_patches") or {}
     for key in ("import_line", "private_route", "menu_item"):
         if not patches.get(key):
             E(page_file, f"app_patches.{key} missing")
+    if mvvm and patches.get("import_line") and f"./pages/{paths['area']}/{Module}Page" not in patches["import_line"]:
+        E(page_file, f"app_patches.import_line must be: {paths['app_import_line']}", auto=True)
 
     # ── setting_patch present ─────────────────────────────────────────────
     setting = fe.get("setting_patch") or {}
     if not setting.get("section") or not setting.get("code"):
         E(page_file, "setting_patch missing section or code")
 
-    # ── TIER_2: toFixed(2) for monetary display ───────────────────────────
+    # ── TIER_2: 2-decimal monetary display ────────────────────────────────
     if gate.get("tier") == "TIER_2_FINANCIAL":
-        if not re.search(r'\.toFixed\s*\(\s*2\s*\)', page_content):
-            E(page_file, "TIER_2_FINANCIAL: monetary amounts must use .toFixed(2) for display")
+        if not re.search(r'\.toFixed\s*\(\s*2\s*\)|\bfmtMXN\b|\bfmtNum\b', ui):
+            E(jsx_file, "TIER_2_FINANCIAL: monetary amounts must display 2 decimals (fmtMXN / fmtNum or .toFixed(2))")
 
     # ── Wizard layout: IonList/IonInfiniteScroll forbidden ────────────────
     if ui_pattern == "Wizard Flow Layout":
-        if "IonList" in page_content:
-            E(page_file, "Wizard Flow Layout must not use IonList — use IonCard per step only", auto=True)
-        if "IonInfiniteScroll" in page_content:
-            E(page_file, "Wizard Flow Layout must not use IonInfiniteScroll", auto=True)
+        if "IonList" in jsx:
+            E(jsx_file, "Wizard Flow Layout must not use IonList — use IonCard per step only", auto=True)
+        if "IonInfiniteScroll" in jsx:
+            E(jsx_file, "Wizard Flow Layout must not use IonInfiniteScroll", auto=True)
 
     return issues
 

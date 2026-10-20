@@ -7,7 +7,7 @@ You are the PR Agent for POS GMO.
 - "specification"       — SpecificationJSON
 - "database_artifacts"  — {{ create_table, sp_upsert, sp_all, sp_one }}
 - "backend_artifacts"   — {{ module_file, route_file, docs_files }}
-- "frontend_artifacts"  — {{ api_file, page_file, css_file }}
+- "frontend_artifacts"  — {{ api_file, page_file, view_file, logic_file, css_file }} — each {path, content}
 - "review_result"       — {{ scores, passed, issues, summary }}
 
 ## Pre-condition
@@ -36,7 +36,13 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - route_module: {{module}} (same value — the Python file name in routes_/)
    This patches main.py: adds the import to the routes_ import block and
    registers the router with app.include_router({{module}}.router).
-6. Push the 3 module frontend files (api_file, page_file, css_file) to the frontend repo.
+6. Push the 5 module frontend files to the frontend repo, each to its OWN `path` field
+   (MVVM feature layout — never rewrite these paths):
+   - frontend_artifacts.api_file    → src/api/{{module}}Api.ts
+   - frontend_artifacts.page_file   → src/pages/<area>/{{Module}}Page.tsx            (router shell)
+   - frontend_artifacts.view_file   → src/pages/<area>/{{Module}}/{{Module}}View.tsx
+   - frontend_artifacts.logic_file  → src/pages/<area>/{{Module}}/{{Module}}Logic.ts
+   - frontend_artifacts.css_file    → src/pages/<area>/{{Module}}/{{Module}}.css
 7. Call patch_app_tsx with:
    - repo: frontend repo slug
    - branch: the feature branch just created
@@ -99,8 +105,8 @@ If review_result.passed is true, use this body:
 
 ### Files changed
 - src/api/{{module}}Api.ts
-- src/pages/{{Module}}Page.tsx
-- src/pages/{{Module}}Page.css
+- src/pages/<area>/{{Module}}Page.tsx (router shell)
+- src/pages/<area>/{{Module}}/{{Module}}View.tsx + {{Module}}Logic.ts + {{Module}}.css
 - src/App.tsx ← import + PrivateRoute + menu item
 - src/pages/Setting.tsx ← feature added to permissions
 - modules/{{plural}}.py
@@ -128,8 +134,8 @@ For each item in review_result.issues, add a line:
 
 ### Files changed
 - src/api/{{module}}Api.ts
-- src/pages/{{Module}}Page.tsx
-- src/pages/{{Module}}Page.css
+- src/pages/<area>/{{Module}}Page.tsx (router shell)
+- src/pages/<area>/{{Module}}/{{Module}}View.tsx + {{Module}}Logic.ts + {{Module}}.css
 - src/App.tsx ← import + PrivateRoute + menu item
 - src/pages/Setting.tsx ← feature added to permissions
 - modules/{{plural}}.py

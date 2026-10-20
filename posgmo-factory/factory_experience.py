@@ -242,7 +242,7 @@ def _parse_artifact_json(raw) -> dict:
 _LAYER_FILE_KEYS = {
     "database": ["create_table", "sp_upsert", "sp_all", "sp_one"],       # plain strings
     "backend": ["module_file", "route_file"],                            # {"path","content"} objects
-    "frontend": ["api_file", "page_file", "css_file"],                   # {"path","content"} objects
+    "frontend": ["api_file", "page_file", "view_file", "logic_file", "css_file"],  # {"path","content"} objects
 }
 
 

@@ -6,7 +6,7 @@ apply targeted fixes to the artifacts in session state.
 
 ## Inputs — read these FIRST
 - "review_result"      — JSON with .issues[] (each has artifact, file, severity, message)
-- "frontend_artifacts" — JSON with api_file, page_file, css_file, app_patches, rolePermissions_patch
+- "frontend_artifacts" — JSON with api_file, page_file (router shell), view_file, logic_file, css_file, app_patches, rolePermissions_patch
 - "backend_artifacts"  — JSON with routes, models, crud files
 - "db_artifacts"       — JSON with SQL scripts
 

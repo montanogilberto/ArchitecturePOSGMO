@@ -98,12 +98,15 @@ Three-layer pipeline:
 
 ## Frontend Architecture
 
-New modules follow this file pattern:
+New modules follow the **MVVM feature layout** (POSVending's own CLAUDE.md §2; reference features `finance/Expenses`, `finance/Accounting`, `admin/Employees`). Paths come from `posgmo-factory/frontend_layout.py` — the single source of truth, enforced on every spec by `spec_reconciler` and checked by the reviewer:
 ```
-src/api/{module}Api.ts          # fetch-based API client with TypeScript interfaces
-src/pages/{Module}Page.tsx      # IonPage → IonHeader/IonToolbar/IonContent shell
-src/pages/{Module}Page.css
+src/api/{module}Api.ts                      # fetch-based API client with TypeScript interfaces — the only place fetch() appears
+src/pages/{area}/{Module}Page.tsx           # router shell: imports the CSS + View, nothing else
+src/pages/{area}/{Module}/{Module}View.tsx  # JSX only — const vm = use{Module}(); Header from components/layout + usePopovers
+src/pages/{area}/{Module}/{Module}Logic.ts  # hook: all state/effects/API calls; exports type {Module}VM; useIonViewWillEnter + refreshBus
+src/pages/{area}/{Module}/{Module}.css
 ```
+`area` is an existing lowercase folder under `src/pages` (admin, finance, products, …), chosen by the architect.
 
 Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` only.
 
@@ -215,7 +218,7 @@ The generation pipeline is: **PRD → Architect Agent → Specification JSON →
 src/
 ├── api/          # {module}Api.ts — fetch-based clients with TypeScript interfaces
 ├── components/
-├── pages/        # {Module}Page.tsx + {Module}Page.css
+├── pages/        # {area}/{Module}Page.tsx shell + {area}/{Module}/ (View, Logic, .css)
 ├── contexts/
 ├── hooks/
 ├── utils/

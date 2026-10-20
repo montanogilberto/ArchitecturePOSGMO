@@ -132,6 +132,20 @@ def _fix_bare_custom_event(content: str) -> str:
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _frontend_key_for(frontend: dict, file: str) -> str:
+    """Artifact key whose path matches an issue's file (page_file if none)."""
+    for key in ("view_file", "logic_file", "page_file", "api_file", "css_file"):
+        art = frontend.get(key)
+        if isinstance(art, dict) and file and art.get("path") == file and art.get("content"):
+            return key
+    if file:  # artifact paths may be missing/wrong — match by the MVVM file suffix
+        for suffix, key in (("View.tsx", "view_file"), ("Logic.ts", "logic_file"),
+                            ("Api.ts", "api_file"), ("Page.tsx", "page_file")):
+            if file.endswith(suffix) and (frontend.get(key) or {}).get("content"):
+                return key
+    return "page_file"
+
+
 def apply_review_fixes(tool_context: ToolContext) -> dict:
     """
     Reads review_result.issues, applies deterministic fixes to artifacts,
@@ -163,10 +177,21 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
         msg_lo   = message.lower()
 
         if artifact == "frontend":
-            page = frontend.get("page_file", {})
+            # Wrong MVVM path: the expected path is in the message — set it.
+            path_fix = re.match(r"(\w+_file) path must be (\S+)", message)
+            if path_fix and isinstance(frontend.get(path_fix.group(1)), dict):
+                frontend[path_fix.group(1)]["path"] = path_fix.group(2)
+                fe_dirty = True
+                fixed.append(f"[frontend] {message}")
+                continue
+
+            # Edit the file the issue names (MVVM: View / Logic / shell / api),
+            # falling back to page_file for older single-page artifacts.
+            key = _frontend_key_for(frontend, issue.get("file", ""))
+            page = frontend.get(key, {})
             content = page.get("content", "")
             if not content:
-                skipped.append(f"[frontend] no page_file content — {message}")
+                skipped.append(f"[frontend] no {key} content — {message}")
                 continue
 
             original = content
@@ -195,7 +220,7 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
                 content = _ensure_ionic_imports(content, applied)
 
             if content != original:
-                frontend["page_file"]["content"] = content
+                frontend[key]["content"] = content
                 fe_dirty = True
                 fixed.append(f"[frontend] {message}")
             else:

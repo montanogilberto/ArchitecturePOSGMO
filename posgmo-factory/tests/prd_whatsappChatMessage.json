@@ -1,0 +1,196 @@
+{
+  "module": "whatsappChatMessage",
+  "description": "Company-scoped transcript of every WhatsApp conversation between a customer and a business (e.g. Lavandería, companyId 1) through its WhatsApp channel: what the customer wrote, what the AI agent (reservations bot) answered, what staff replied from the WhatsApp Business app, and the BAJA/ALTA keyword confirmations. Today the only durable copy is the legacy dbo.whatsapp_messages (sp_whatsapp_messages, shared with the old Twilio webhook): it stores phone/body/direction/status but NO companyId, channel or client, and has no read action, so the POS cannot show what a customer said. The agent's own session history (LoanAgents ADK) is in memory only, and dbo.integrationLogs holds per-call metadata, not message text — neither is a chat store. This module is a NEW table (the legacy table is left untouched, the Twilio path keeps using it). WRITE PATH (no public route): the existing modules/whatsappCloud.py webhook calls this module's record function in-process for (1) every inbound message in _handle_message, right after the channel is resolved, direction=inbound; (2) every agent/keyword reply after send_text succeeds, direction=agent or system; (3) every staff echo in _pause_bot_on_staff_replies (field smb_message_echoes), direction=staff. companyId on writes comes from the resolved whatsappChannels row (channel['companyId']) because the Meta webhook has no user session; on reads it comes from the authenticated session as usual. Recording must never break the webhook: wrap in try/except, log with the observability package (log_audit on insert, no message body and no full phone in logs — redactor enforces), and keep the existing legacy log_message_to_database call during transition. Meta retries webhooks, so the insert is idempotent on waMessageId (UNIQUE filtered index WHERE waMessageId IS NOT NULL; a duplicate is a silent no-op, not an error). The existing delivery-status handler (_log_statuses) also updates deliveryStatus for agent/staff rows by waMessageId. History before this table: an optional one-time backfill from dbo.whatsapp_messages may resolve companyId by matching the last 10 phone digits against dbo.clients.cellphone; rows matching zero or several companies are skipped — this is a follow-up, not part of generation.",
+  "fields": [
+    {
+      "name": "channelId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "whatsappChannels",
+      "fk_column": "channelId",
+      "description": "Business WhatsApp number the conversation happened on (dbo.whatsappChannels, which also gives companyId/branchId)."
+    },
+    {
+      "name": "customerPhone",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Customer number in E.164 as whatsappCloud normalizes it ('+52' + 10 digits, normalize_mx_number). Conversation key together with companyId + channelId. Index (companyId, customerPhone, sentAt)."
+    },
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "POS client resolved at write time by matching the last 10 digits of customerPhone against dbo.clients.cellphone WITHIN the same companyId (same match sp_whatsappCustomerRewards uses). NULL for people who are not registered clients yet (e.g. a new customer asking prices) — those conversations must still appear."
+    },
+    {
+      "name": "contactName",
+      "type": "string",
+      "required": false,
+      "max_length": 120,
+      "description": "WhatsApp profile name Meta sends in value.contacts[].profile.name (inbound only). Display fallback when clientId is NULL."
+    },
+    {
+      "name": "direction",
+      "type": "string",
+      "required": true,
+      "max_length": 10,
+      "description": "inbound (customer -> business) | agent (AI agent reply) | staff (employee replied from the WhatsApp Business app, smb_message_echoes) | system (fixed BAJA/ALTA keyword confirmations)."
+    },
+    {
+      "name": "messageType",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Meta message type: text | button | interactive | image | audio | video | document | location | sticker | template. Non-text media is stored as a placeholder body like '[image]' (media download is out of scope)."
+    },
+    {
+      "name": "body",
+      "type": "text",
+      "required": true,
+      "description": "Message text as shown to the customer / as the customer wrote it (button/list replies store the title). nvarchar(MAX). Never written to log tables."
+    },
+    {
+      "name": "waMessageId",
+      "type": "string",
+      "required": false,
+      "max_length": 128,
+      "description": "Meta message id (wamid). Inbound: msg.id; outbound: messages[0].id from the send response. UNIQUE filtered index WHERE waMessageId IS NOT NULL — makes Meta webhook retries a no-op and lets delivery receipts find the row."
+    },
+    {
+      "name": "deliveryStatus",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Outbound rows only (agent/staff/system): sent | delivered | read | failed, updated from the webhook statuses by waMessageId. NULL for inbound. A 200 from Meta means accepted, not delivered — only the status webhook moves this past 'sent'."
+    },
+    {
+      "name": "errorCode",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Meta error code when deliveryStatus = failed (e.g. 131047 outside the 24h window)."
+    },
+    {
+      "name": "topic",
+      "type": "string",
+      "required": false,
+      "max_length": 30,
+      "description": "Inbound rows only: what the customer wants, ONE value from a fixed list so it can be counted: precios | horarios | ubicacion | servicios (qué lavan, edredones, tintorería, planchado) | reservacion | estado_pedido (¿ya está mi ropa?) | entrega_domicilio | pagos (métodos, factura) | puntos_promociones | queja | saludo | confirmacion (sí/no/gracias/menu choice that continues the previous topic) | baja_alta | otro — the exact list is LoanAgents agents/whatsapp_topic/prompt.py TOPICS. Set from the `topic` field LoanAgents /support/whatsapp-reservations now returns in WhatsAppReservationsResponse (a small classifier runs in parallel with the reply, so no added latency; null when it fails). modules/whatsappReservations.reply_to must pass it back to whatsappCloud so it is stored on the inbound row. BAJA/ALTA keywords are tagged baja_alta by the backend; messages that never reach the agent (bot off) stay NULL and count as 'sin clasificar'. Index (companyId, topic, sentAt)."
+    },
+    {
+      "name": "answeredBy",
+      "type": "string",
+      "required": false,
+      "max_length": 10,
+      "description": "Inbound rows only: agent | staff | system — who answered it first; NULL = not answered yet. When an outbound row is recorded, the record SP sets answeredBy/answeredAt on every still-unanswered inbound row of the same (companyId, channelId, customerPhone) with sentAt <= the reply. A later staff reply does not overwrite an agent answer."
+    },
+    {
+      "name": "answeredAt",
+      "type": "datetime",
+      "required": false,
+      "description": "Inbound rows only: UTC of the first reply. Response time = answeredAt - sentAt (used for avg/median response time)."
+    },
+    {
+      "name": "sentAt",
+      "type": "datetime",
+      "required": true,
+      "description": "UTC moment of the message: Meta's message timestamp for inbound/echoes, send time for agent/system replies. Thread order key. UI shows it in Hermosillo time (mxChatDate/mxChatTime)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId. Reads: injected by the SPs from the authenticated session. Writes: passed by the webhook from the resolved whatsappChannels row."
+    },
+    {
+      "parentModule": "whatsappChannels",
+      "cardinality": "N:1",
+      "notes": "Every message belongs to the business number it was sent to/from."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "N:1",
+      "notes": "Optional: NULL for non-registered senders."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/whatsapp-chats",
+    "allowedRoles": [
+      "Admin",
+      "Manager"
+    ],
+    "uiPattern": "Read-only inbox in area 'messaging' (src/pages/messaging/WhatsAppChatsPage.tsx + WhatsAppChats/ MVVM folder), title 'Conversaciones WhatsApp'. Two panes on desktop (chat list left, thread right); on phone width the list is a full screen and tapping a chat opens the thread with a back button. Chat list: IonSearchbar (name or phone), one IonItem button per conversation with IonAvatar initials, display name (client name -> contactName -> phone), last message preview, mxChatDate/Time, and an IonChip 'Espera respuesta' when the last message is inbound. Thread: bubbles aligned by direction — customer left; agent right with an 'Agente' label; staff right with a 'Personal' label in a different color; system centered and muted; outbound bubbles show deliveryStatus (enviado / entregado / leído / falló + errorCode). 'Cargar anteriores' button pages older messages. Page load shows a centered IonSpinner + 'Cargando conversaciones…' (never an empty state before the first response); EmptyState component when there are none. Data freshness: useIonViewWillEnter(load) + onDataChanged(load); IonRefresher pull-to-refresh. Read-only: no reply box in this version (replying is done from the WhatsApp Business app). An IonSegment at the top switches 'Conversaciones' / 'Resumen'. Resumen tab (POST /whatsappChatMessages/insights, period selector 7/30/90 días): KPI tiles — mensajes recibidos, respondidos (% + agente vs personal), sin responder, tiempo de respuesta promedio; 'Lo que más preguntan' = horizontal bar list of topics with count + % (es-MX labels: Precios, Horarios, Ubicación, Servicios, Reservación, Estado de mi pedido, Entrega a domicilio, Pagos, Puntos y promociones, Quejas, Saludo, Confirmación, Baja/Alta, Otro, Sin clasificar; Confirmación and Saludo are shown last/collapsed since they are not real questions), tapping a topic shows its sample messages; 'Preguntas repetidas' list (text × count); 'Sin responder' list that opens the conversation. Button '¿Qué quieren mis clientes? (IA)' calls insightsSummary — disabled + IonSpinner with 'Analizando mensajes…' while waiting (measured ~20 s for 20 messages; backend httpx timeout 60 s for this call), then shows summary, top dudas with the suggested answer, and unmet needs. API in src/api/whatsappChatMessagesApi.ts. No inline styles; Ionic components only. UI copy es-MX.",
+    "components": [
+      {
+        "step": 1,
+        "name": "ChatList",
+        "description": "Searchable conversation list for the session's company, newest activity first, from POST /whatsappChatMessages/conversations."
+      },
+      {
+        "step": 2,
+        "name": "ChatThread",
+        "description": "Message bubbles for the selected customerPhone from POST /whatsappChatMessages/thread, oldest at top, auto-scroll to newest, 'Cargar anteriores' with IonSpinner while loading (button disabled in flight)."
+      },
+      {
+        "step": 3,
+        "name": "ChatInsights",
+        "description": "Resumen tab: KPI tiles, topic bars, repeated questions, unanswered list, and the on-demand AI summary card."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/whatsappChatMessages/conversations",
+        "method": "POST",
+        "description": "One row per (channelId, customerPhone) for the session's companyId: channelId, displayPhoneNumber (from whatsappChannels), customerPhone, clientId, displayName (clients first_name + last_name, else latest non-null contactName, else customerPhone), lastBody (first 120 chars), lastDirection, lastAt, messageCount, awaitingReply (lastDirection = 'inbound'). Optional filters: search (name/phone LIKE), channelId, startDate/endDate (Hermosillo days). Ordered by lastAt DESC, paged (limit default 50, offset).",
+        "requestSchema": "{ \"whatsappChatMessages\": [{ \"companyId\": int, \"search\"?: string, \"channelId\"?: int, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\", \"limit\"?: int, \"offset\"?: int }] }",
+        "responseSchema": "{ \"result\": [{ \"channelId\", \"displayPhoneNumber\", \"customerPhone\", \"clientId\", \"displayName\", \"lastBody\", \"lastDirection\", \"lastAt\", \"messageCount\", \"awaitingReply\" }] }"
+      },
+      {
+        "path": "/whatsappChatMessages/thread",
+        "method": "POST",
+        "description": "Messages of one conversation (companyId from session + channelId + customerPhone), newest page first then returned in ascending sentAt for display: whatsappChatMessageId, direction, messageType, body, deliveryStatus, errorCode, sentAt, contactName. Cursor paging: beforeId (load older), limit default 50. Must never return rows of another companyId even if the phone matches.",
+        "requestSchema": "{ \"whatsappChatMessages\": [{ \"companyId\": int, \"channelId\": int, \"customerPhone\": string, \"beforeId\"?: int, \"limit\"?: int }] }",
+        "responseSchema": "{ \"result\": [{ \"whatsappChatMessageId\", \"direction\", \"messageType\", \"body\", \"deliveryStatus\", \"errorCode\", \"sentAt\", \"contactName\" }], \"hasMore\": bool }"
+      },
+      {
+        "path": "/whatsappChatMessages/insights",
+        "method": "POST",
+        "description": "Read-only stats for the session's companyId over a period of Hermosillo days (default last 30): totals { inboundMessages, conversations, customers, answered, answeredByAgent, answeredByStaff, answeredBySystem, unanswered, answerRatePct, avgResponseSeconds, medianResponseSeconds }; topics [{ topic, count, pct, samples: up to 3 recent short bodies (<=120 chars) }] ordered by count DESC, NULL topic reported as 'sin_clasificar'; topQuestions [{ text, count }] = the 10 most repeated inbound texts after normalizing (lower, trim, collapse spaces, strip punctuation/accents, length >= 4, count >= 2) — catches literal repeats like 'precio', 'a qué hora cierran'; daily [{ date, inbound, answered, unanswered }]; unansweredRecent [{ channelId, customerPhone, displayName, lastBody, lastAt }] (up to 20). All money-free, no PII beyond what the inbox already shows.",
+        "requestSchema": "{ \"whatsappChatMessages\": [{ \"companyId\": int, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\", \"channelId\"?: int }] }",
+        "responseSchema": "{ \"result\": [{ \"period\", \"totals\", \"topics\", \"topQuestions\", \"daily\", \"unansweredRecent\" }] }"
+      },
+      {
+        "path": "/whatsappChatMessages/insightsSummary",
+        "method": "POST",
+        "description": "On-demand AI summary ('¿Qué quieren mis clientes?'): the backend reads up to 500 inbound bodies of the period for the session's companyId (via sp_whatsappChatInsights), strips phone numbers/emails, and calls LoanAgents POST /support/whatsapp-insights (already built; timed_integration('loanagents_smartloans','whatsapp_insights')) with { companyId, startDate, endDate, topicCounts: [{topic, count}] (from the insights SP), messages: [string] newest first } — it returns { summary: 3-5 sentences es-MX, commonDoubts: [{ question, count, suggestion }] (top 5 recurring doubts, count approximate — label it 'aprox.' in the UI with a suggested FAQ answer or business action, e.g. 'publicar horario en el perfil'), unmetNeeds: [string] (things customers ask for that the business does not offer) }. Advisory only, never stored, never sent to customers. Only called when the user taps the button (it costs an LLM call).",
+        "requestSchema": "{ \"whatsappChatMessages\": [{ \"companyId\": int, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\" }] }",
+        "responseSchema": "{ \"result\": [{ \"summary\": string, \"commonDoubts\": [{ \"question\", \"count\", \"suggestion\" }], \"unmetNeeds\": [string], \"messagesAnalyzed\": int }] }"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.whatsappChatMessages"
+    ],
+    "storedProcedures": [
+      "dbo.sp_whatsappChatMessages",
+      "dbo.sp_whatsappChatMessages_all",
+      "dbo.sp_whatsappChatMessages_one",
+      "dbo.sp_whatsappChatConversations",
+      "dbo.sp_whatsappChatThread",
+      "dbo.sp_whatsappChatInsights"
+    ]
+  }
+}

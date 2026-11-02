@@ -1335,6 +1335,16 @@ dbo,productCategories,name,varchar,50,NO,NO,NO
 dbo,productCategories,image,varchar,50,YES,NO,NO
 dbo,productCategories,companyId,int,10,YES,NO,NO
 dbo,productCategories,parentCategoryId,int,10,YES,NO,YES
+dbo,productConsumptions,productConsumptionId,int,10,NO,YES,NO
+dbo,productConsumptions,companyId,int,10,NO,NO,YES
+dbo,productConsumptions,productId,int,10,NO,NO,YES
+dbo,productConsumptions,productOptionChoiceId,int,10,YES,NO,YES
+dbo,productConsumptions,componentProductId,int,10,NO,NO,YES
+dbo,productConsumptions,componentProductOptionChoiceId,int,10,YES,NO,YES
+dbo,productConsumptions,quantity,decimal,10,NO,NO,NO
+dbo,productConsumptions,isActive,bit,NULL,NO,NO,NO
+dbo,productConsumptions,created_At,datetime,NULL,NO,NO,NO
+dbo,productConsumptions,updated_at,datetime,NULL,YES,NO,NO
 dbo,productDetails,productDetailId,int,10,NO,YES,NO
 dbo,productDetails,productId,int,10,NO,NO,NO
 dbo,productDetails,stockQuantity,int,10,NO,NO,NO
@@ -1393,6 +1403,7 @@ dbo,productOptionChoices,updatedAt,datetime,NULL,YES,NO,NO
 dbo,productOptionChoices,description,varchar,255,YES,NO,NO
 dbo,productOptionChoices,quantity,decimal,10,YES,NO,NO
 dbo,productOptionChoices,measurementId,int,10,YES,NO,YES
+dbo,productOptionChoices,isActive,bit,NULL,NO,NO,NO
 dbo,productOptions,productOptionId,int,10,NO,YES,NO
 dbo,productOptions,productId,int,10,NO,NO,NO
 dbo,productOptions,optionKey,nvarchar,50,YES,NO,NO
@@ -1401,6 +1412,7 @@ dbo,productOptions,type,nvarchar,20,YES,NO,NO
 dbo,productOptions,createdAt,datetime,NULL,YES,NO,NO
 dbo,productOptions,updatedAt,datetime,NULL,YES,NO,NO
 dbo,productOptions,isRequired,bit,NULL,NO,NO,NO
+dbo,productOptions,isActive,bit,NULL,NO,NO,NO
 dbo,products,productId,int,10,NO,YES,NO
 dbo,products,name,nvarchar,255,NO,NO,NO
 dbo,products,code,varchar,100,YES,NO,NO
@@ -1419,9 +1431,11 @@ dbo,products,unitOfMeasure,varchar,10,YES,NO,NO
 dbo,products,referencePrice,decimal,10,YES,NO,NO
 dbo,products,isActive,bit,NULL,NO,NO,NO
 dbo,products,trackInventory,bit,NULL,NO,NO,NO
+dbo,products,imageUrl,nvarchar,500,YES,NO,NO
+dbo,products,stockUnit,varchar,10,NO,NO,NO
 dbo,productsDescription,productDescriptionId,int,10,NO,YES,NO
 dbo,productsDescription,productId,int,10,NO,NO,NO
-dbo,productsDescription,Dosage,varchar,50,YES,NO,NO
+dbo,productsDescription,Dosage,nvarchar,500,YES,NO,NO
 dbo,productsDescription,measurementId,int,10,YES,NO,NO
 dbo,productsDescription,is_principal,varchar,1,YES,NO,NO
 dbo,productsDescription,activeIngredientId,int,10,YES,NO,NO
@@ -1518,6 +1532,7 @@ dbo,reservations,confirmedAt,datetime2,NULL,YES,NO,NO
 dbo,reservations,created_At,datetime2,NULL,NO,NO,NO
 dbo,reservations,updated_At,datetime2,NULL,YES,NO,NO
 dbo,reservations,reservationServiceId,int,10,YES,NO,NO
+dbo,reservations,source,nvarchar,20,YES,NO,NO
 dbo,reservationServices,reservationServiceId,int,10,NO,YES,NO
 dbo,reservationServices,companyId,int,10,NO,NO,NO
 dbo,reservationServices,name,nvarchar,60,NO,NO,NO

@@ -1,0 +1,193 @@
+{
+  "module": "notificationCampaign",
+  "description": "Groups customer notifications (WhatsApp, SMS, Push) under a business objective so the Notification Center can measure delivery, interaction and cost per campaign instead of per message (Fase 2 of the Notification Center plan). A campaign is either ALWAYS-ON (tags transactional sends that already happen, e.g. every income_created receipt that carries the rewards balance becomes the 'Beneficios por compra' campaign) or BROADCAST (a one-off send to a client segment, e.g. inactive clients). It does NOT send or store messages itself: every message is still one dbo.notificationDispatches row (the single operational source), linked back through notificationDispatches.campaignId -- no second message table, no second sending system. Conversion / sales attribution / recovered clients are Fase 3 and are NOT computed here; this module only stores the attributionWindowDays and catalogItemId that Fase 3 will need.",
+  "fields": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "max_length": 120,
+      "description": "Human name shown in the campaigns table, e.g. 'Clientes inactivos octubre', 'Beneficios por compra'. Unique per company among non-cancelled campaigns."
+    },
+    {
+      "name": "objective",
+      "type": "string",
+      "required": true,
+      "max_length": 30,
+      "description": "Business goal; FK to notificationCampaigns_objective.objectiveCode. Seed values: purchase_benefits (incentivar nuevas visitas), inactive_recovery (recuperar clientes), promotion (2x1 y similares), service_reminder (recordatorio de servicio), rewards_program (fidelidad), operational (informacion operativa). Selects the campaign's primary KPI in the UI; it does not change sending behavior."
+    },
+    {
+      "name": "campaignType",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "always_on | broadcast. always_on campaigns are attached to a notificationDispatch eventName (see eventName) and tag those transactional sends while status=running. broadcast campaigns are sent once to an audience via POST /notificationCampaigns/send."
+    },
+    {
+      "name": "eventName",
+      "type": "string",
+      "required": false,
+      "max_length": 40,
+      "fk_table": "notificationDispatchPolicy",
+      "fk_column": "eventName",
+      "description": "always_on: the transactional event whose dispatches this campaign tags (e.g. income_created). broadcast: the cascade policy used for the send (a new policy row, e.g. campaign_broadcast, whose channel_list_json is push -> whatsapp and allow_sms_fallback = 0 by default because SMS is the expensive channel). At most ONE running always_on campaign per (companyId, eventName) -- enforced in sp_notificationCampaigns, otherwise a dispatch could belong to two campaigns."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "draft -> scheduled -> running -> completed, or cancelled. FK to notificationCampaigns_status.statusCode. Only draft campaigns can be edited; only running always_on campaigns tag new dispatches."
+    },
+    {
+      "name": "startAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC. always_on: dispatches created before this are not tagged. broadcast: when the send is scheduled (NULL = send immediately on /send)."
+    },
+    {
+      "name": "endAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC. always_on: stops tagging after this instant. Also the end of the reporting window shown on the campaign card."
+    },
+    {
+      "name": "audienceJson",
+      "type": "text",
+      "required": false,
+      "description": "broadcast only. Declarative segment, never a list of phones: {\"segment\": \"inactive\", \"inactiveDays\": 30} (clients whose last income.paymentDate is older than N days), {\"segment\": \"all_active\"} (clients.isActive = 1), or {\"segment\": \"clientIds\", \"clientIds\": [..]} (max 500). Resolved server-side, always filtered by the caller's companyId and by clientContactPreferences (clients who opted out of marketing are excluded and counted as 'excludedOptOut')."
+    },
+    {
+      "name": "audienceSize",
+      "type": "integer",
+      "required": false,
+      "description": "Clients selected when the broadcast was resolved (after opt-out exclusion). Snapshot so the card can show 'Clientes seleccionados' even if clients change later."
+    },
+    {
+      "name": "whatsappTemplateName",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "broadcast only. Approved Meta template (category MARKETING or UTILITY) used for the WhatsApp hop. Required whenever the policy includes whatsapp: business-initiated WhatsApp outside the 24 h window is rejected without a template (131047 / 63016)."
+    },
+    {
+      "name": "pushTitle",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "broadcast only. Push title (es-MX)."
+    },
+    {
+      "name": "messageText",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "broadcast only. Push body / SMS text (es-MX). WhatsApp uses the template instead. No PII placeholders other than the client's first name."
+    },
+    {
+      "name": "catalogItemId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "posRewardCatalogItems",
+      "fk_column": "catalogItemId",
+      "description": "Optional reward/coupon the campaign promotes (e.g. the 2X1 coupon_b2g1 item). income.promotionId already points at posRewardCatalogItems, so Fase 3 can count redemptions per campaign without new columns."
+    },
+    {
+      "name": "attributionWindowDays",
+      "type": "integer",
+      "required": true,
+      "description": "Days after a confirmed delivery during which a client's purchase may be attributed to this campaign in Fase 3. Default 7. Stored now so the rule is fixed per campaign before results exist (avoids moving the goalposts after the fact)."
+    },
+    {
+      "name": "createdByUserId",
+      "type": "integer",
+      "required": true,
+      "description": "Admin/Manager who created the campaign (from the authenticated session, never from the body). Plain INT, no FK constraint: dbo.users has no primary key in the live DB (0 FKs reference it), so any FK to users.userId fails with error 1776."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId, injected by the stored procedures from the authenticated session. Every _all/_one/performance SP filters by it."
+    },
+    {
+      "parentModule": "notificationDispatch",
+      "cardinality": "1:N",
+      "notes": "notificationDispatches.campaignId -> notificationCampaigns.notificationCampaignId (nullable FK, added by prd_notificationDispatch.json). Messages stay in notificationDispatches."
+    },
+    {
+      "parentModule": "posRewardCatalogItems",
+      "cardinality": "N:1",
+      "notes": "Optional promoted reward/coupon (catalogItemId)."
+    },
+    {
+      "parentModule": "clientContactPreference",
+      "cardinality": "N:M",
+      "notes": "Broadcast audiences exclude clients with marketingOptIn = 0 (prd_clientContactPreference.json). Must be deployed before /send is enabled."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/notification-dispatch-log",
+    "allowedRoles": [
+      "Admin",
+      "Manager"
+    ],
+    "uiPattern": "New 'Campañas' tab inside the existing Notification Center (src/pages/messaging/NotificationDispatchLog/, MVVM) -- NOT a new page. Reuse CenterTabs, PeriodSegment, StatusBadge (+ a NOTIFICATION_CAMPAIGN_STATUS map in components/ui/statusMaps.ts), EmptyState, useToast, fmtInt/fmtMXN from utils/format.ts. API calls go in src/api/notificationCampaignsApi.ts.",
+    "components": [
+      {
+        "step": 1,
+        "name": "CampaignsTable",
+        "description": "Searchable list of campaigns for the selected period. Columns: Campaña, Objetivo, Fechas, Audiencia, Canales, Entregados, Interacciones, Costo, Estado. Conversiones and Ingresos atribuidos columns are shown with '—' and a tooltip 'Disponible en Fase 3' -- never a fake 0. Row click opens CampaignDetail. 'Nueva campaña' IonButton (Admin/Manager)."
+      },
+      {
+        "step": 2,
+        "name": "CampaignDetail",
+        "description": "Ficha de campaña (drawer on desktop, modal on phone): nombre/objetivo/fechas, audiencia (seleccionados, excluidos por baja), mensajes por canal (enviados / entregados / fallidos / leídos), interacciones (WhatsApp leídos + respuestas, Push abiertos), costo por canal with its source (proveedor vs estimado), evolución diaria (same stacked status chart as Resumen › Actividad). 'Ver mensajes' opens Historial filtered by campaignId."
+      },
+      {
+        "step": 3,
+        "name": "CampaignForm",
+        "description": "Create/edit a draft: name, objective (IonSelect from the objective lookup), type always_on|broadcast. always_on: pick eventName. broadcast: audience builder (inactivos N días / todos los activos), template name, push title/text, preview of audienceSize + excludedOptOut + estimated cost BEFORE sending. 'Enviar' requires a confirmation alert stating audience size and estimated cost; button shows IonSpinner and is disabled while sending (double-send = double cost)."
+      },
+      {
+        "step": 4,
+        "name": "ChannelComparisonByCampaign",
+        "description": "Extends Resumen › Rendimiento por canal with a campaign filter (IonSelect). Push keeps 'Aceptados' and never shows a delivery rate (Notification Hub has no per-device receipt)."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/notificationCampaigns/send",
+        "method": "POST",
+        "description": "Body: { notificationCampaignId }. Only for broadcast campaigns in status draft|scheduled. Resolves audienceJson server-side (companyId from the authenticated session), excludes opted-out clients, writes audienceSize, sets status=running, then calls the EXISTING notificationDispatch cascade once per client with sourceType='campaign', sourceId=notificationCampaignId, campaignId=notificationCampaignId, eventName=campaign.eventName. Idempotent per (campaign, client) through the dispatch idempotency key (see prd_notificationDispatch.json) -- re-calling /send after a crash only sends to clients without a row. Rate-limited sends (batch of 20, small delay) to stay under Meta/Twilio throughput limits. When every client has a dispatch row, status=completed. Wrap in workflow_step(workflow_name='notification_campaign') and log_audit(who sent, audienceSize). Refuses (400) if the policy includes whatsapp and whatsappTemplateName is empty."
+      },
+      {
+        "path": "/notificationCampaigns/performance",
+        "method": "POST",
+        "description": "Body: { notificationCampaignId? , from, to } (UTC). Read-only aggregate from dbo.notificationDispatches WHERE companyId = session company AND campaignId = X (or all campaigns in range). Returns per campaign and per channel: total, delivered (deliveryState rules: a later delivery receipt wins over an earlier failure), failed, awaiting, read (readAt NOT NULL, WhatsApp only), opened (openedAt NOT NULL, push only), replied (distinct clients with an inbound dbo.whatsappMessages row from the client's phone within 24 h after sentAt), uniqueClientsReached, cost {amount, currency, providerCount, estimatedCount}, and a daily series. Implemented as sp_notificationCampaigns_performance (@pjsonfile); no raw SQL in the route. Conversions/revenue are NOT returned (Fase 3)."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.notificationCampaigns",
+      "dbo.notificationCampaigns_status",
+      "dbo.notificationCampaigns_objective"
+    ],
+    "storedProcedures": [
+      "dbo.sp_notificationCampaigns",
+      "dbo.sp_notificationCampaigns_all",
+      "dbo.sp_notificationCampaigns_one",
+      "dbo.sp_notificationCampaigns_performance"
+    ]
+  }
+}

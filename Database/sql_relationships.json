@@ -121,6 +121,12 @@
   },
   {
     "parent_table": "companies",
+    "child_table": "productConsumptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productConsumptions_companies_companyId"
+  },
+  {
+    "parent_table": "companies",
     "child_table": "Services",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK__Services__compan__0D05CC91"
@@ -330,10 +336,34 @@
     "fk_constraint_name": "fk_FK_products_productCategories"
   },
   {
+    "parent_table": "productOptionChoices",
+    "child_table": "productConsumptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productConsumptions_productOptionChoices_componentProductOptionChoiceId"
+  },
+  {
+    "parent_table": "productOptionChoices",
+    "child_table": "productConsumptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productConsumptions_productOptionChoices_productOptionChoiceId"
+  },
+  {
     "parent_table": "productOptions",
     "child_table": "productOptionChoices",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK__productOp__produ__1975C517"
+  },
+  {
+    "parent_table": "products",
+    "child_table": "productConsumptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productConsumptions_products_componentProductId"
+  },
+  {
+    "parent_table": "products",
+    "child_table": "productConsumptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productConsumptions_products_productId"
   },
   {
     "parent_table": "promotions",

@@ -15,7 +15,7 @@
   ],
   "relationships": [
     { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
-    { "parentModule": "products", "cardinality": "1:N", "notes": "A product has 0..N images; deleting a product deletes its image rows (sp_products_save action=3 must also clean dbo.productImages)." }
+    { "parentModule": "products", "cardinality": "1:N", "notes": "A product has 0..N images; deleting a product deletes its image rows (sp_products action=3 must also clean dbo.productImages)." }
   ],
   "roles_allowed": ["Admin", "Manager"],
   "has_list_view": false,

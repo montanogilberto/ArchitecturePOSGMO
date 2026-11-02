@@ -1,27 +1,27 @@
 {
   "scanner": "knowledge_sync/1.0.0",
-  "ranAt": "2026-10-19T22:37:03+00:00",
+  "ranAt": "2026-10-29T18:49:32+00:00",
   "repos": {
     "frontend": {
       "path": "/Users/apple12/PycharmProjects/POSVendingV2/POSVending",
-      "commit": "9ab98af7",
-      "branch": "fix/dev-csp-localhost",
-      "commitDate": "2026-10-19T14:56:28-07:00"
+      "commit": "0cd990fe",
+      "branch": "development",
+      "commitDate": "2026-10-29T11:43:17-07:00"
     },
     "backend": {
       "path": "/Users/apple12/PycharmProjects/pythonProject/smartloans_backend",
-      "commit": "7761bca",
+      "commit": "4930ea6",
       "branch": "development",
-      "commitDate": "2026-10-19T15:15:51-07:00"
+      "commitDate": "2026-10-26T13:24:41-07:00"
     },
     "agents": {
       "path": "/Users/apple12/LoanAgents_SmartLoans",
-      "commit": "c435984",
+      "commit": "b3c3105",
       "branch": "development",
-      "commitDate": "2026-10-17T23:47:47-07:00"
+      "commitDate": "2026-10-26T15:18:28-07:00"
     }
   },
   "written": [
-    "Conventions/repo_conventions.json"
+    "Backend/backend_stored_procedures.json.json"
   ]
 }

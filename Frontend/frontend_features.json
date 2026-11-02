@@ -9,6 +9,14 @@
   },
   {
     "area": "clients",
+    "feature": "ClientDashboardPOS",
+    "folder": "src/pages/clients/ClientDashboardPOS",
+    "pageShell": "src/pages/clients/ClientDashboardPOSPage.tsx",
+    "mvvm": true,
+    "fileCount": 12
+  },
+  {
+    "area": "clients",
     "feature": "ClientsMap",
     "folder": "src/pages/clients/ClientsMap",
     "pageShell": "src/pages/clients/ClientsMapPage.tsx",
@@ -213,7 +221,7 @@
     "folder": "src/pages/messaging/NotificationDispatchLog",
     "pageShell": "src/pages/messaging/NotificationDispatchLogPage.tsx",
     "mvvm": true,
-    "fileCount": 19
+    "fileCount": 23
   },
   {
     "area": "messaging",

@@ -499,6 +499,11 @@
         "name": "extractProductLabel",
         "method": "POST",
         "path": "/products/extract-label"
+      },
+      {
+        "name": "lookupProductOnWeb",
+        "method": "POST",
+        "path": "/products/web-lookup"
       }
     ]
   },
@@ -519,6 +524,11 @@
         "name": "getOneProduct",
         "method": "POST",
         "path": "/one_products"
+      },
+      {
+        "name": "setProductActive",
+        "method": "POST",
+        "path": "/products"
       },
       {
         "name": "uploadProductImage",
@@ -691,6 +701,16 @@
         "name": "fetchWaterTanks",
         "method": "GET",
         "path": "/all_tankWaters"
+      }
+    ]
+  },
+  {
+    "file": "src/api/whatsappAgentApi.ts",
+    "functions": [
+      {
+        "name": "whatsappAgentApi",
+        "method": "POST",
+        "path": "/whatsapp/agentDashboard"
       }
     ]
   }

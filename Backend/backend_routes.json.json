@@ -4683,6 +4683,76 @@
         "whatsapp_status_callback"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_factoryRunUsages",
+      "file": "routes_/factoryRunUsage.py",
+      "tags": [
+        "factoryRunUsage"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_factoryRunUsages"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/factoryRunUsages",
+      "file": "routes_/factoryRunUsage.py",
+      "tags": [
+        "factoryRunUsage"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "factoryRunUsages"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices/quote",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_device_quote"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_factoryRunUsage",
+      "file": "routes_/factoryRunUsage.py",
+      "tags": [
+        "factoryRunUsage"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_factoryRunUsage"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/agentDashboard",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_agent_dashboard_route"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

@@ -1629,5 +1629,60 @@
     "type": "ui",
     "reusable": true,
     "source": "knowledge_sync"
+  },
+  {
+    "componentName": "ProductWebSearch",
+    "filePath": "src/components/pos/productWizard/ProductWebSearch.tsx",
+    "folder": "pos/productWizard",
+    "props": [
+      {
+        "name": "companyId",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "barCode",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "onApply",
+        "type": "(result: WebProductLookup) => string[]",
+        "required": true
+      }
+    ],
+    "type": "pos/productWizard",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "PageLoading",
+    "filePath": "src/components/ui/PageLoading.tsx",
+    "folder": "ui",
+    "props": [
+      {
+        "name": "text",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "className",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
   }
 ]

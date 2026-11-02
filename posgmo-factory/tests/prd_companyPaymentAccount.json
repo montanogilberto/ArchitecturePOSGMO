@@ -1,0 +1,179 @@
+{
+  "module": "companyPaymentAccount",
+  "description": "Receiving accounts that belong to a COMPANY (not to a client), so money paid by its customers lands in the company's own account and never in SmartLoans' (architecture D1; RFC-009/RFC-010 in POSVending docs/rfcs). First use: GMO Lavanderia (companyId 1) prepaid-wallet top-ups -- card top-ups are a Stripe direct charge on the company's connected account, and SPEI top-ups are transfers to the company's CLABE that a staff member confirms. dbo.bankAccounts and dbo.stripeConnectedAccounts are per client (clientId NOT NULL) and cannot hold this. One row per (companyId, purpose, accountType) can be ACTIVE at a time. Changing where customers send money is the classic fraud vector, so rows are versioned like RFC-001 (never UPDATE the CLABE or account id; a new row starts PENDING_VERIFICATION, becomes ACTIVE only when a second Admin confirms it, and the previous ACTIVE row becomes ARCHIVED in the same transaction), every change is audited, and the app shows clients the holder name so they can verify it before transferring (D17). The CLABE of a receiving account is shown to every customer, so it is stored in clear, validated (18 digits + mod-10 check digit, bank code in the ABM catalog) and also hashed (clabeHash) to block reusing a client's personal CLABE.",
+  "fields": [
+    {
+      "name": "purpose",
+      "type": "string",
+      "required": true,
+      "max_length": 30,
+      "description": "What the account receives. Today only laundry_topup (prepaid-wallet top-ups, RFC-010). Kept generic so other company flows (e.g. vending, arcade store) can add their own purpose later."
+    },
+    {
+      "name": "accountType",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "spei (bank CLABE, transfers confirmed by staff with transferEvidence) | stripe_connect (the company's Stripe connected account, card top-ups as direct charges)."
+    },
+    {
+      "name": "accountStatus",
+      "type": "string",
+      "required": true,
+      "max_length": 22,
+      "description": "PENDING_VERIFICATION (new row, not shown to customers) -> ACTIVE (confirmed by a second Admin; the only status customers ever see) -> ARCHIVED (replaced or disabled; read-only forever). Never deleted."
+    },
+    {
+      "name": "clabe",
+      "type": "string",
+      "required": false,
+      "max_length": 18,
+      "description": "spei only. 18 digits, mod-10 check digit (weights 3,7,1), first 3 digits must be a bank in the ABM catalog. Immutable: a different CLABE is a new row."
+    },
+    {
+      "name": "clabeHash",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "SHA-256 of the CLABE. Rejects a CLABE already registered as a client's personal bankAccounts.clabeHash (a company must not receive into an individual's account) and duplicates across companies."
+    },
+    {
+      "name": "bankCode",
+      "type": "string",
+      "required": false,
+      "max_length": 5,
+      "description": "spei only. ABM bank code derived from the CLABE (first 3 digits)."
+    },
+    {
+      "name": "bankName",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "spei only. Bank name from the ABM catalog, shown to customers."
+    },
+    {
+      "name": "holderName",
+      "type": "string",
+      "required": true,
+      "max_length": 255,
+      "description": "Legal name of the account holder (the company or its owner). Shown to customers before they transfer so they can check that their bank shows the same name (D17)."
+    },
+    {
+      "name": "rfc",
+      "type": "string",
+      "required": false,
+      "max_length": 13,
+      "description": "RFC of the holder, for invoices and reconciliation."
+    },
+    {
+      "name": "stripeConnectedAccountId",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "stripe_connect only. The company's Stripe connected account (acct_...). Card top-ups are created with stripe_account=<this id> so Stripe pays out to the company directly."
+    },
+    {
+      "name": "chargesEnabled",
+      "type": "boolean",
+      "required": false,
+      "description": "stripe_connect only. Mirror of Stripe's charges_enabled (refreshed from the account.updated webhook). A stripe_connect row can only become ACTIVE when this is 1."
+    },
+    {
+      "name": "createdByUserId",
+      "type": "integer",
+      "required": true,
+      "description": "Admin who registered the row. Plain INT, no FK: dbo.users has no primary key in the live DB (FK fails with error 1776)."
+    },
+    {
+      "name": "verifiedByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Second Admin who confirmed it (must differ from createdByUserId). Plain INT, no FK (same reason)."
+    },
+    {
+      "name": "verifiedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC when it became ACTIVE."
+    },
+    {
+      "name": "archivedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC when it was replaced or disabled."
+    },
+    {
+      "name": "notes",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Free text, e.g. 'Cuenta BBVA de la sucursal centro'."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId, injected by the stored procedures. At most one ACTIVE row per (companyId, purpose, accountType): filtered unique index WHERE accountStatus = 'ACTIVE'."
+    }
+  ],
+  "roles_allowed": [
+    "Admin"
+  ],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/company-payment-accounts",
+    "allowedRoles": [
+      "Admin"
+    ],
+    "uiPattern": "Admin-only settings page 'Cuentas de cobro': one card per purpose (Recargas de lavandería) with its ACTIVE SPEI account (bank, holder, CLABE masked except last 4 in the list) and its Stripe account (status chips: cobros habilitados / pendiente de verificación). Buttons: 'Registrar nueva CLABE' (IonModal with live CLABE validation), 'Conectar Stripe' (opens the onboarding link), and on PENDING rows 'Confirmar' (only visible to an Admin other than the creator). Every action shows an IonSpinner in the button and disables it while in flight; first load shows a centered spinner, never an empty state before the request finishes. API in src/api/companyPaymentAccountsApi.ts.",
+    "components": [
+      {
+        "step": 1,
+        "name": "CompanyPaymentAccountsPage",
+        "description": "List grouped by purpose; ARCHIVED rows collapsed under 'Historial'. Pull-to-refresh."
+      },
+      {
+        "step": 2,
+        "name": "NewClabeModal",
+        "description": "CLABE input with live 18-digit + check-digit validation, auto-filled bank name, holder name, RFC. Saves as PENDING_VERIFICATION and explains that another Admin must confirm it."
+      },
+      {
+        "step": 3,
+        "name": "ConfirmAccountSheet",
+        "description": "Shows the full CLABE / Stripe account and holder, asks the confirming Admin to compare it against the bank's document, then activates it (archives the previous ACTIVE row)."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/companyPaymentAccounts/active",
+        "method": "POST",
+        "description": "Read-only, for the client app and POS: { companyId, purpose } -> the ACTIVE spei (bankName, holderName, full CLABE) and whether card top-ups are available (an ACTIVE stripe_connect with chargesEnabled = 1). Never returns PENDING or ARCHIVED rows, the Stripe account id, or createdBy/verifiedBy."
+      },
+      {
+        "path": "/companyPaymentAccounts/confirm",
+        "method": "POST",
+        "description": "Admin only, Depends(require_worker_key) until real auth exists: { companyPaymentAccountId, verifiedByUserId } -> PENDING_VERIFICATION to ACTIVE when verifiedByUserId != createdByUserId (and chargesEnabled = 1 for stripe_connect); archives the previous ACTIVE row of the same (companyId, purpose, accountType) in one transaction. Writes auditLogs."
+      },
+      {
+        "path": "/companyPaymentAccounts/stripe/onboarding-link",
+        "method": "POST",
+        "description": "Admin only (worker key): creates or reuses the company's Stripe connected account (hand-written in modules/stripe_payments.py, the existing Connect code, keyed by companyId instead of clientId), stores a PENDING_VERIFICATION stripe_connect row, and returns the Stripe onboarding URL. The account.updated webhook refreshes chargesEnabled."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.companyPaymentAccounts"
+    ],
+    "storedProcedures": [
+      "dbo.sp_companyPaymentAccounts",
+      "dbo.sp_companyPaymentAccounts_all",
+      "dbo.sp_companyPaymentAccounts_one",
+      "dbo.sp_companyPaymentAccounts_active"
+    ]
+  }
+}

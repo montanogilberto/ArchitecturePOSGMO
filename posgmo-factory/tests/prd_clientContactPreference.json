@@ -1,0 +1,106 @@
+{
+  "module": "clientContactPreference",
+  "description": "Per-client, per-channel consent for MARKETING notifications (campaigns), required before any notificationCampaigns broadcast can be sent. dbo.clients has no consent field today, and Meta requires opt-in for marketing templates plus an easy opt-out; sending promotions to someone who asked to stop also costs money and reputation (quality rating -> lower WhatsApp limits). Scope is marketing only: transactional messages (purchase receipts, ticket ready, operational notices) are never blocked by this table. One row per (companyId, clientId, channel); absence of a row means 'unknown' and is treated as NOT opted in for whatsapp/sms marketing and as opted in for push (the app's own OS permission is the push consent).",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "Client this preference belongs to. UNIQUE (companyId, clientId, channel)."
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "whatsapp | sms | push."
+    },
+    {
+      "name": "marketingOptIn",
+      "type": "boolean",
+      "required": true,
+      "description": "1 = the client agreed to receive promotions on this channel; 0 = declined or opted out. Campaign audiences include only clients with 1 for at least one channel of the campaign policy, and the cascade skips channels with 0 for that client."
+    },
+    {
+      "name": "source",
+      "type": "string",
+      "required": true,
+      "max_length": 30,
+      "description": "How the consent was captured: pos_checkout (cashier asked, checkbox at sale), client_app (Rewards app settings), whatsapp_keyword (client replied BAJA/STOP or ALTA), admin (manual change, audited). Required so every opt-in can be explained if Meta or a client asks."
+    },
+    {
+      "name": "optedInAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC of the latest opt-in."
+    },
+    {
+      "name": "optedOutAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC of the latest opt-out. An opt-out always wins over an older opt-in."
+    },
+    {
+      "name": "updatedByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Staff user who changed it (pos_checkout/admin). NULL when the client changed it themselves. Plain INT, no FK constraint: dbo.users has no primary key in the live DB (0 FKs reference it), so any FK to users.userId fails with error 1776."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId, injected by the stored procedures from the authenticated session."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "N:1",
+      "notes": "One row per channel per client."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager",
+    "Cashier"
+  ],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/clients",
+    "allowedRoles": [
+      "Admin",
+      "Manager",
+      "Cashier"
+    ],
+    "uiPattern": "No new page. A 'Promociones' section in the existing client profile (IonToggle per channel with source + date), and an IonCheckbox 'Acepta recibir promociones por WhatsApp' at POS checkout when the client has no row yet. API in src/api/clientContactPreferencesApi.ts.",
+    "components": [
+      {
+        "step": 1,
+        "name": "ClientMarketingConsent",
+        "description": "Client profile section: one IonToggle per channel (WhatsApp, SMS, Push) showing state, source and date (mxDate). Changing it calls the CRUD endpoint with source=admin; toggle disabled + IonSpinner while saving; useToast on error."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/clientContactPreferences/keyword",
+        "method": "POST",
+        "description": "Internal hook called from the existing WhatsApp inbound webhook (modules/whatsappCloud.py) BEFORE the agent handles the message: if the trimmed, upper-cased body is BAJA, STOP, ALTO or CANCELAR, upsert marketingOptIn=0 for (client resolved by phone within the channel's company, 'whatsapp'), source=whatsapp_keyword, and reply with a fixed confirmation ('Listo, ya no te enviaremos promociones. Responde ALTA para volver a recibirlas.'); ALTA re-opts in. Never echoes the phone in logs (observability redaction)."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.clientContactPreferences"
+    ],
+    "storedProcedures": [
+      "dbo.sp_clientContactPreferences",
+      "dbo.sp_clientContactPreferences_all",
+      "dbo.sp_clientContactPreferences_one"
+    ]
+  }
+}

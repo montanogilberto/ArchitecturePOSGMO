@@ -1741,7 +1741,7 @@
     },
     {
       "name": "sp_products",
-      "module_binding": null,
+      "module_binding": "modules/products.py",
       "parameters": [
         "@pjsonfile"
       ],
@@ -1803,11 +1803,13 @@
     },
     {
       "name": "sp_products_save",
-      "module_binding": "modules/products.py",
+      "module_binding": null,
       "parameters": [
         "@pjsonfile"
       ],
-      "source": "knowledge_sync"
+      "source": "knowledge_sync",
+      "deprecated": "alias of sp_products; drop via 2026-10-26b_drop_sp_products_save.sql",
+      "stale": true
     },
     {
       "name": "sp_profitabilitySnapshots",
@@ -2325,6 +2327,70 @@
     },
     {
       "name": "sp_workflowLog",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_laundryClientQrs_list",
+      "module_binding": "modules/laundryDevices.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_whatsappAgentDashboard",
+      "module_binding": "modules/whatsappAssistant.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_productConsumptions",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_productConsumptions_all",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_productConsumptions_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientContactPreferences",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientContactPreferences_all",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_clientContactPreferences_one",
       "module_binding": null,
       "parameters": [
         "@pjsonfile"

@@ -226,6 +226,17 @@
     "proposes_writes": false
   },
   {
+    "folder": "agents/product_web_lookup",
+    "name": "product_web_lookup_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Searches the web for the retail product behind a purchase-ticket line (store item code + abbreviated description) and returns its full name, brand, net content and pieces per pack to pre-fill a new product — only what a source states, and never creates the product itself.",
+    "tools": [
+      "google_search"
+    ],
+    "proposes_writes": false
+  },
+  {
     "folder": "agents/recommendation",
     "name": "recommendation_agent",
     "kind": "Agent",
@@ -279,7 +290,7 @@
     "name": "whatsapp_reservations_agent",
     "kind": "Agent",
     "model": "gemini-2.5-flash",
-    "description": "WhatsApp assistant for a business's customers — reservations (catalog services + real free slots; PROPOSES, the backend books after \"sí\"), opening hours, the promotions the POS applies, business info and FAQs, the sender's own reward points, and handing off to a person (REQUEST_HUMAN). Answers business facts only from tools.",
+    "description": "WhatsApp assistant for a business's customers — reservations (catalog services + real free slots; PROPOSES, the backend books after \"sí\"), opening hours, the promotions the POS applies, business info and FAQs, the sender's own reward points and client QR (SEND_CLIENT_QR), and handing off to a person (REQUEST_HUMAN). Answers business facts only from tools.",
     "tools": [
       "get_reservation_services",
       "get_reservation_hours",

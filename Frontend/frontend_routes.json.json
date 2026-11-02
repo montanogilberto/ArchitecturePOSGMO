@@ -667,5 +667,19 @@
     "authenticated": true,
     "feature": "iot",
     "source": "knowledge_sync"
+  },
+  {
+    "path": "/client-pos/:clientId",
+    "component": "src/pages/clients/ClientDashboardPOSPage.tsx",
+    "authenticated": true,
+    "feature": "clients",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/whatsapp-agent",
+    "component": "src/pages/messaging/WhatsAppAgentPage.tsx",
+    "authenticated": true,
+    "feature": "notificationDispatchLog",
+    "source": "knowledge_sync"
   }
 ]

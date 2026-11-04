@@ -13,7 +13,7 @@
     "folder": "src/pages/clients/ClientDashboardPOS",
     "pageShell": "src/pages/clients/ClientDashboardPOSPage.tsx",
     "mvvm": true,
-    "fileCount": 12
+    "fileCount": 14
   },
   {
     "area": "clients",
@@ -33,11 +33,19 @@
   },
   {
     "area": "clients",
+    "feature": "MyQr",
+    "folder": "src/pages/clients/MyQr",
+    "pageShell": "src/pages/clients/MyQrPage.tsx",
+    "mvvm": true,
+    "fileCount": 5
+  },
+  {
+    "area": "clients",
     "feature": "RewardsDashboard",
     "folder": "src/pages/clients/RewardsDashboard",
     "pageShell": "src/pages/clients/RewardsDashboardPage.tsx",
     "mvvm": true,
-    "fileCount": 12
+    "fileCount": 13
   },
   {
     "area": "enrollment",
@@ -184,6 +192,14 @@
     "fileCount": 1
   },
   {
+    "area": "iot",
+    "feature": "IotDashboard",
+    "folder": "src/pages/iot/IotDashboard",
+    "pageShell": "src/pages/iot/IotDashboardPage.tsx",
+    "mvvm": true,
+    "fileCount": 8
+  },
+  {
     "area": "juridical",
     "feature": "JuridicalDashboard",
     "folder": "src/pages/juridical/JuridicalDashboard",
@@ -230,6 +246,30 @@
     "pageShell": null,
     "mvvm": true,
     "fileCount": 15
+  },
+  {
+    "area": "messaging",
+    "feature": "WhatsAppAgent",
+    "folder": "src/pages/messaging/WhatsAppAgent",
+    "pageShell": "src/pages/messaging/WhatsAppAgentPage.tsx",
+    "mvvm": false,
+    "fileCount": 7
+  },
+  {
+    "area": "messaging",
+    "feature": "WhatsAppConversations",
+    "folder": "src/pages/messaging/WhatsAppConversations",
+    "pageShell": "src/pages/messaging/WhatsAppConversationsPage.tsx",
+    "mvvm": true,
+    "fileCount": 5
+  },
+  {
+    "area": "messaging",
+    "feature": "WhatsAppSetup",
+    "folder": "src/pages/messaging/WhatsAppSetup",
+    "pageShell": "src/pages/messaging/WhatsAppSetupPage.tsx",
+    "mvvm": true,
+    "fileCount": 12
   },
   {
     "area": "pos",

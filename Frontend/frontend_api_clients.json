@@ -163,6 +163,11 @@
         "path": "/clients/upload-qr"
       },
       {
+        "name": "fetchClientQr",
+        "method": "POST",
+        "path": "/laundryDevices/clientQr"
+      },
+      {
         "name": "getOneClient",
         "method": "POST",
         "path": "/one_clients"
@@ -331,6 +336,31 @@
   {
     "file": "src/api/laundryApi.ts",
     "functions": []
+  },
+  {
+    "file": "src/api/laundryDevicesApi.ts",
+    "functions": [
+      {
+        "name": "MAX_DEVICE_USES",
+        "method": "POST",
+        "path": null
+      }
+    ]
+  },
+  {
+    "file": "src/api/laundryWalletApi.ts",
+    "functions": [
+      {
+        "name": "createLaundryTopUpIntent",
+        "method": "POST",
+        "path": "/stripe/payment-intents"
+      },
+      {
+        "name": "confirmLaundryTopUp",
+        "method": "POST",
+        "path": "/stripe/payment-intents/confirm"
+      }
+    ]
   },
   {
     "file": "src/api/loanAnalysisApi.ts",
@@ -711,6 +741,31 @@
         "name": "whatsappAgentApi",
         "method": "POST",
         "path": "/whatsapp/agentDashboard"
+      },
+      {
+        "name": "whatsappAgentApi",
+        "method": "POST",
+        "path": "/whatsapp/agentInsights"
+      },
+      {
+        "name": "whatsappAgentApi",
+        "method": "POST",
+        "path": "/whatsapp/agentConversations"
+      },
+      {
+        "name": "sendWhatsAppStaffReply",
+        "method": "POST",
+        "path": "/whatsapp/staffReply"
+      }
+    ]
+  },
+  {
+    "file": "src/api/whatsappSetupApi.ts",
+    "functions": [
+      {
+        "name": null,
+        "method": "POST",
+        "path": null
       }
     ]
   }

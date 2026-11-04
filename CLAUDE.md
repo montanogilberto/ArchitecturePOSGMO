@@ -123,12 +123,14 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 |---|---|
 | POS & Cash Operations | `cashRegister`, `tickets`, `income`, `expenses` |
 | Marketplace Aggregator | `unifiedProducts`, `productMatches`, `marketplaceOrders`, `opportunities`, `sellListings` |
-| IoT & Automation | `IOT`, `vending`, `laundry`, `waterTanks` |
+| IoT & Laundry Machines | `IOT` (LED status, water tanks), `vending`, `laundry`, `laundryDevices`, `maintenancePredictor`; firmware in `esp32/` |
+| Inventory & Recipes | `products`; ledger is database-first (see **Inventory**), no dedicated module yet |
+| WhatsApp Assistant & Follow-up | `whatsappAssistant`, `whatsappCloud`, `whatsappReservations`, `whatsappChannels`, `whatsapp`, `clientContactPreferences` |
 | ERP / HR | `employees`, `contractors`, `departaments`, `projects`, `employeeProjectAssignments` |
 | P2P Lending Core | `loans`, `loanOffers`, `loanProposals`, `loanChat`, `creditScore` |
 | Stripe Payments, Wallets & Automated Collection | `stripe_payments`, `automatedPayments`, `walletBalance`, `onboardingReminders`, `disbursement` (legacy/dormant) |
 | SPEI Banking Rail (primary money-out) | `bankAccounts`, `transfers`, `stpProvider`, `walletTransactions` |
-| Push Notifications & Client Comms | `pushNotifications`, `azure_notifications`, `ticket_notifications`, `contact_email` |
+| Push Notifications & Client Comms | `pushNotifications`, `notificationDispatch`, `notificationPush`, `notificationUsage`, `azure_notifications`, `ticket_notifications`, `contact_email` |
 | KYC, Biometric Verification & Legal Recovery | `clientFaceRecognitions`, `document_intelligence`, `signatureMatching`, `geocoding`, `digitalContracts`, `legalCases` |
 
 ## AI Features
@@ -147,6 +149,20 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 - `income` + `incomeDetails` + `incomeDetailOptions` form the sales receipt hierarchy.
 - `unifiedProducts` is the master catalog; `productMatches` links marketplace listings to it.
 - `tickets` stores receipt blobs (Azure Blob) and tracks WhatsApp/SMS delivery status.
+
+## Inventory
+
+`inventoryStock` (balance) + `inventoryMovements` (ledger) are the only stock; `productDetails.stockQuantity` is frozen. `sp_inventory_post` is the one write path. Triggers post sales and purchases by themselves (`trg_incomeDetails_inventory`, `trg_expenseDetails_inventory`), and `trg_incomeDetails_consumption` / `trg_incomeDetailOptions_consumption` apply recipes from `productConsumptions`, so **writing those tables has side effects** (`get_db_programmability`). Only `products.trackInventory = 1` moves. Never write `inventoryStock` directly; `sp_inventory_list` and `sp_inventory_adjust` are unused and don't fit the `@pjsonfile` shape. Remaining work: `posgmo-factory/plans/plan-2026-10-inventory.json`; design in POSVending `docs/inventory-portions-design.md`.
+
+## IoT & Laundry Machines
+
+ESP32 controllers with a QR reader and Nextion screen (`smartloans_backend/esp32/`, catalog in `get_firmware_catalog`) call `/laundryDevices/heartbeat`, `quote`, `balance` and `authorize`. `quote` and `balance` never charge; `authorize` charges idempotently on `deviceId + requestId` and creates a ticket with `paymentMethod` `monedero`. The client QR is `GMO1.<companyId>.<clientId>.<firma>`, HMAC-signed server-side only (`/laundryDevices/clientQr`). Firmware is already on machines, so these endpoints must stay backward compatible. `esp32/config.py` holds real keys: git-ignored, never read or copy it.
+
+**Open:** RFC-009/010 (approved) require a separate `laundryWalletEntries` ledger; it doesn't exist yet and usage still debits `walletTransactions`.
+
+## WhatsApp Assistant
+
+`whatsapp_reservations` answers customers; `whatsapp_topic` and `whatsapp_insights` feed the POS dashboard. The agent is never paused; it keeps answering after a hand-off. Empty business data must reach the agent as `NO REGISTRADO`, never null (Gemini invented an address from a null in production). A 200 from Meta means accepted, not delivered.
 
 ## Payments & Money Rails (2026-08)
 
@@ -275,6 +291,9 @@ New modules follow: `sql/sp_{module}.sql` → `modules/{module}.py` (imports `da
 | `Frontend/frontend_api_contracts.json.json` | Request/response contracts |
 | `Database/structure_database.csv` + `Database/sql_relationships.json` | **Live source of truth for DB schema** — read together by the `get_database_schema` MCP tool (format: schema,table,column,type,length,nullable,pk,fk) |
 | `Database/ER_Diagram.csv` | Entity relationships |
+| `Backend/backend_modules.json` | Every `modules/*.py`: route files, SPs, observability, size — **generated** (`get_backend_modules`) |
+| `Backend/backend_firmware.json` | ESP32 firmware files and the endpoints each calls — **generated** (`get_firmware_catalog`) |
+| `Database/db_programmability.json` | Live triggers and functions — **generated** (`get_db_programmability`) |
 | `Frontend/frontend_api_clients.json` | Every `src/api/*.ts` client, its functions and the backend path each calls — **generated by `knowledge_sync`** |
 | `Frontend/frontend_features.json` | `src/pages/{area}/{Feature}/` folders and whether each is MVVM — **generated** |
 | `Agents/agents_catalog.json` | LoanAgents_SmartLoans agents: model, tools, PROPOSE vs read-only — **generated** |
@@ -283,4 +302,4 @@ New modules follow: `sql/sp_{module}.sql` → `modules/{module}.py` (imports `da
 
 **Knowledge sync:** `posgmo-factory/knowledge_sync/` keeps the files above current. Backend routes, SPs, schema CSV, relationships, frontend routes and components are refreshed from the repos/live DB: curated fields (descriptions, tags, roles) are preserved, moved files are tracked, and removed entries are marked `"stale": true` (MCP tools filter them out) rather than deleted. Don't hand-edit the generated files — fix the extractor instead. `knowledge_sync/manifest.json` records which repo commits the knowledge reflects.
 
-Note: `Database/sql_tables.json` exists on disk but is **not read by any MCP tool** (`structure_database.csv` is canonical instead) — do not rely on it being current; `Backend/backend_modules.json.json` referenced in earlier versions of this table does not exist as a file.
+Note: `Database/sql_tables.json` exists on disk but is **not read by any MCP tool** (`structure_database.csv` is canonical instead) — do not rely on it being current.

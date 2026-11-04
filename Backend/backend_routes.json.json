@@ -4753,6 +4753,104 @@
         "whatsapp_agent_dashboard_route"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_clientContactPreferences",
+      "file": "routes_/clientContactPreferences.py",
+      "tags": [
+        "clientContactPreferences"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_clientContactPreferences"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/clientContactPreferences",
+      "file": "routes_/clientContactPreferences.py",
+      "tags": [
+        "clientContactPreferences"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "clientContactPreferences"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/laundryDevices/balance",
+      "file": "routes_/laundryDevices.py",
+      "tags": [
+        "Laundry Devices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "laundry_device_balance"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_clientContactPreferences",
+      "file": "routes_/clientContactPreferences.py",
+      "tags": [
+        "clientContactPreferences"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_clientContactPreferences"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/agentConversations",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_agent_conversations_route"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/agentInsights",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_agent_insights_route"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/whatsapp/staffReply",
+      "file": "routes_/whatsappAssistant.py",
+      "tags": [
+        "whatsappAssistant"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "whatsapp_staff_reply_route"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

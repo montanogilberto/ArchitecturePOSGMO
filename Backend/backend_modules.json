@@ -1,0 +1,1561 @@
+[
+  {
+    "module": "IOT",
+    "file": "modules/IOT.py",
+    "routeFiles": [
+      "routes_/IOT.py"
+    ],
+    "storedProcedures": [
+      "sp_led_status",
+      "sp_tankWater_all",
+      "sp_tankWaters"
+    ],
+    "observable": false,
+    "lines": 82
+  },
+  {
+    "module": "alertDispatcher",
+    "file": "modules/alertDispatcher.py",
+    "routeFiles": [
+      "routes_/manufacturing.py"
+    ],
+    "storedProcedures": [
+      "sp_productionOrders",
+      "sp_pushNotifications",
+      "sp_whatsapp"
+    ],
+    "observable": false,
+    "lines": 171
+  },
+  {
+    "module": "api_gpt",
+    "file": "modules/api_gpt.py",
+    "routeFiles": [
+      "routes_/symptoms.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 50
+  },
+  {
+    "module": "arcade",
+    "file": "modules/arcade.py",
+    "routeFiles": [
+      "routes_/arcade.py"
+    ],
+    "storedProcedures": [
+      "sp_arcadeGames_all",
+      "sp_arcadeRounds_all",
+      "sp_arcadeRounds_double",
+      "sp_arcadeRounds_liveWins",
+      "sp_arcadeRounds_one",
+      "sp_arcadeRounds_open",
+      "sp_arcadeRounds_settle",
+      "sp_arcadeRounds_state",
+      "sp_arcadeRounds_void",
+      "sp_arcadeTransactions_all",
+      "sp_arcadeWallets_dailyBonus",
+      "sp_arcadeWallets_one",
+      "sp_name"
+    ],
+    "observable": true,
+    "lines": 845
+  },
+  {
+    "module": "arcadeFair",
+    "file": "modules/arcadeFair.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 77
+  },
+  {
+    "module": "arcadeGames",
+    "file": "modules/arcadeGames.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 639
+  },
+  {
+    "module": "arcadeStore",
+    "file": "modules/arcadeStore.py",
+    "routeFiles": [
+      "routes_/arcadeStore.py"
+    ],
+    "storedProcedures": [
+      "sp_arcadeChipOrders_all",
+      "sp_arcadeChipOrders_confirm",
+      "sp_arcadeChipOrders_create",
+      "sp_arcadeChipOrders_declare",
+      "sp_arcadeChipPacks_all",
+      "sp_arcadePurchases_all",
+      "sp_arcadePurchases_credit",
+      "sp_arcadePurchases_receipt",
+      "sp_name"
+    ],
+    "observable": true,
+    "lines": 1060
+  },
+  {
+    "module": "arcadeTicket",
+    "file": "modules/arcadeTicket.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": true,
+    "lines": 222
+  },
+  {
+    "module": "automatedPayments",
+    "file": "modules/automatedPayments.py",
+    "routeFiles": [
+      "routes_/automatedPayments.py"
+    ],
+    "storedProcedures": [
+      "sp_loanInstallments",
+      "sp_loanInstallments_one",
+      "sp_savedPaymentMethods"
+    ],
+    "observable": true,
+    "lines": 624
+  },
+  {
+    "module": "azure_notifications",
+    "file": "modules/azure_notifications.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 310
+  },
+  {
+    "module": "bankAccountReminders",
+    "file": "modules/bankAccountReminders.py",
+    "routeFiles": [],
+    "storedProcedures": [
+      "sp_onboardingReminders"
+    ],
+    "observable": false,
+    "lines": 67
+  },
+  {
+    "module": "bankAccounts",
+    "file": "modules/bankAccounts.py",
+    "routeFiles": [
+      "routes_/bankAccounts.py"
+    ],
+    "storedProcedures": [
+      "sp_bankAccounts",
+      "sp_bankAccountsLifecycle",
+      "sp_bankAccounts_all",
+      "sp_bankAccounts_one"
+    ],
+    "observable": false,
+    "lines": 183
+  },
+  {
+    "module": "buyOffers",
+    "file": "modules/buyOffers.py",
+    "routeFiles": [
+      "routes_/buyOffers.py"
+    ],
+    "storedProcedures": [
+      "sp_buyOffers"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "cashRegister",
+    "file": "modules/cashRegister.py",
+    "routeFiles": [
+      "routes_/cashRegister.py"
+    ],
+    "storedProcedures": [
+      "sp_cashRegister"
+    ],
+    "observable": false,
+    "lines": 86
+  },
+  {
+    "module": "chartOfAccounts",
+    "file": "modules/chartOfAccounts.py",
+    "routeFiles": [
+      "routes_/chartOfAccounts.py"
+    ],
+    "storedProcedures": [
+      "sp_chartOfAccounts",
+      "sp_chartOfAccounts_all",
+      "sp_chartOfAccounts_one"
+    ],
+    "observable": false,
+    "lines": 51
+  },
+  {
+    "module": "checks",
+    "file": "modules/checks.py",
+    "routeFiles": [
+      "routes_/checks.py"
+    ],
+    "storedProcedures": [
+      "sp_checks",
+      "sp_checks_all",
+      "sp_checks_one",
+      "sp_checks_today"
+    ],
+    "observable": false,
+    "lines": 97
+  },
+  {
+    "module": "clientCapabilities",
+    "file": "modules/clientCapabilities.py",
+    "routeFiles": [
+      "routes_/clientCapabilities.py"
+    ],
+    "storedProcedures": [
+      "sp_clientCapabilities"
+    ],
+    "observable": false,
+    "lines": 49
+  },
+  {
+    "module": "clientContactPreferences",
+    "file": "modules/clientContactPreferences.py",
+    "routeFiles": [
+      "routes_/clientContactPreferences.py"
+    ],
+    "storedProcedures": [
+      "sp_clientContactPreferences",
+      "sp_clientContactPreferences_all",
+      "sp_clientContactPreferences_one",
+      "sp_name"
+    ],
+    "observable": true,
+    "lines": 123
+  },
+  {
+    "module": "clientDashboards",
+    "file": "modules/clientDashboards.py",
+    "routeFiles": [
+      "routes_/clientDashboards.py"
+    ],
+    "storedProcedures": [
+      "sp_clientDashboards",
+      "sp_clientDashboards_all"
+    ],
+    "observable": false,
+    "lines": 35
+  },
+  {
+    "module": "clientFaceRecognitions",
+    "file": "modules/clientFaceRecognitions.py",
+    "routeFiles": [
+      "routes_/clientFaceRecognition.py"
+    ],
+    "storedProcedures": [
+      "sp_clientFaceRecognitions",
+      "sp_clientFaceRecognitions_all",
+      "sp_clientFaceRecognitions_one",
+      "sp_response"
+    ],
+    "observable": false,
+    "lines": 388
+  },
+  {
+    "module": "clientFollowUps",
+    "file": "modules/clientFollowUps.py",
+    "routeFiles": [
+      "routes_/clientFollowUps.py"
+    ],
+    "storedProcedures": [
+      "sp_clientFollowUps",
+      "sp_clientFollowUps_all",
+      "sp_clientFollowUps_one"
+    ],
+    "observable": false,
+    "lines": 70
+  },
+  {
+    "module": "client_login",
+    "file": "modules/client_login.py",
+    "routeFiles": [
+      "routes_/client_login.py"
+    ],
+    "storedProcedures": [
+      "sp_clientLoginCodes",
+      "sp_users"
+    ],
+    "observable": true,
+    "lines": 312
+  },
+  {
+    "module": "clients",
+    "file": "modules/clients.py",
+    "routeFiles": [
+      "routes_/clients.py"
+    ],
+    "storedProcedures": [
+      "sp_clients",
+      "sp_clients_all",
+      "sp_clients_one",
+      "sp_clients_qr"
+    ],
+    "observable": false,
+    "lines": 145
+  },
+  {
+    "module": "commands",
+    "file": "modules/commands.py",
+    "routeFiles": [
+      "routes_/commands.py"
+    ],
+    "storedProcedures": [
+      "sp_commands_all"
+    ],
+    "observable": false,
+    "lines": 30
+  },
+  {
+    "module": "commissionTerminals",
+    "file": "modules/commissionTerminals.py",
+    "routeFiles": [
+      "routes_/commissionTerminals.py"
+    ],
+    "storedProcedures": [
+      "sp_commissionTerminals",
+      "sp_commissionTerminals_all",
+      "sp_commissionTerminals_one"
+    ],
+    "observable": false,
+    "lines": 51
+  },
+  {
+    "module": "companies",
+    "file": "modules/companies.py",
+    "routeFiles": [
+      "routes_/companies.py"
+    ],
+    "storedProcedures": [
+      "sp_companies",
+      "sp_companies_all",
+      "sp_companies_one"
+    ],
+    "observable": false,
+    "lines": 73
+  },
+  {
+    "module": "companiesBranches",
+    "file": "modules/companiesBranches.py",
+    "routeFiles": [
+      "routes_/companiesBranches.py"
+    ],
+    "storedProcedures": [
+      "sp_companiesBranch_by_company",
+      "sp_companiesBranches",
+      "sp_companiesBranches_all",
+      "sp_companiesBranches_one"
+    ],
+    "observable": false,
+    "lines": 92
+  },
+  {
+    "module": "companyTokens",
+    "file": "modules/companyTokens.py",
+    "routeFiles": [
+      "routes_/companyTokens.py"
+    ],
+    "storedProcedures": [
+      "sp_companyTokens_",
+      "sp_companyTokens_balance",
+      "sp_companyTokens_record",
+      "sp_companyTokens_topup",
+      "sp_name"
+    ],
+    "observable": false,
+    "lines": 41
+  },
+  {
+    "module": "contact_email",
+    "file": "modules/contact_email.py",
+    "routeFiles": [
+      "routes_/contact_email.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 68
+  },
+  {
+    "module": "contractors",
+    "file": "modules/contractors.py",
+    "routeFiles": [
+      "routes_/contractors.py"
+    ],
+    "storedProcedures": [
+      "sp_contractors",
+      "sp_contractors_all",
+      "sp_contractors_one"
+    ],
+    "observable": false,
+    "lines": 71
+  },
+  {
+    "module": "costEngine",
+    "file": "modules/costEngine.py",
+    "routeFiles": [
+      "routes_/manufacturing.py"
+    ],
+    "storedProcedures": [
+      "sp_machines",
+      "sp_productionOrders",
+      "sp_utilityRates"
+    ],
+    "observable": false,
+    "lines": 181
+  },
+  {
+    "module": "costRules",
+    "file": "modules/costRules.py",
+    "routeFiles": [
+      "routes_/costRules.py"
+    ],
+    "storedProcedures": [
+      "sp_costRules"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "creditScore",
+    "file": "modules/creditScore.py",
+    "routeFiles": [
+      "routes_/creditScore.py"
+    ],
+    "storedProcedures": [
+      "sp_clientDashboards",
+      "sp_creditScore_data",
+      "sp_creditScores"
+    ],
+    "observable": false,
+    "lines": 485
+  },
+  {
+    "module": "departaments",
+    "file": "modules/departaments.py",
+    "routeFiles": [
+      "routes_/departaments.py"
+    ],
+    "storedProcedures": [
+      "sp_departaments",
+      "sp_departaments_all",
+      "sp_departaments_one"
+    ],
+    "observable": false,
+    "lines": 71
+  },
+  {
+    "module": "digitalContracts",
+    "file": "modules/digitalContracts.py",
+    "routeFiles": [
+      "routes_/digitalContracts.py"
+    ],
+    "storedProcedures": [
+      "sp_digitalContracts"
+    ],
+    "observable": false,
+    "lines": 64
+  },
+  {
+    "module": "disbursement",
+    "file": "modules/disbursement.py",
+    "routeFiles": [
+      "routes_/disbursement.py"
+    ],
+    "storedProcedures": [
+      "sp_disbursement"
+    ],
+    "observable": false,
+    "lines": 93
+  },
+  {
+    "module": "document_intelligence",
+    "file": "modules/document_intelligence.py",
+    "routeFiles": [
+      "routes_/document_intelligence.py"
+    ],
+    "storedProcedures": [],
+    "observable": true,
+    "lines": 301
+  },
+  {
+    "module": "ebay_auth",
+    "file": "modules/ebay_auth.py",
+    "routeFiles": [
+      "routes_/ebay_proxy.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 37
+  },
+  {
+    "module": "employeeProjectAssignments",
+    "file": "modules/employeeProjectAssignments.py",
+    "routeFiles": [
+      "routes_/employeeProjectAssignments.py"
+    ],
+    "storedProcedures": [
+      "sp_departaments",
+      "sp_employeeProjectAssignments_all",
+      "sp_employeeProjectAssignments_one"
+    ],
+    "observable": false,
+    "lines": 71
+  },
+  {
+    "module": "employees",
+    "file": "modules/employees.py",
+    "routeFiles": [
+      "routes_/employees.py"
+    ],
+    "storedProcedures": [
+      "sp_employees",
+      "sp_employees_all",
+      "sp_employees_one"
+    ],
+    "observable": true,
+    "lines": 72
+  },
+  {
+    "module": "employmentTypes",
+    "file": "modules/employmentTypes.py",
+    "routeFiles": [
+      "routes_/employmentTypes.py"
+    ],
+    "storedProcedures": [
+      "sp_employmentTypes",
+      "sp_employmentTypes_all",
+      "sp_employmentTypes_one"
+    ],
+    "observable": false,
+    "lines": 71
+  },
+  {
+    "module": "exchangeRates",
+    "file": "modules/exchangeRates.py",
+    "routeFiles": [
+      "routes_/exchangeRates.py"
+    ],
+    "storedProcedures": [
+      "sp_exchangeRates",
+      "sp_exchangeRates_by_day"
+    ],
+    "observable": false,
+    "lines": 50
+  },
+  {
+    "module": "expenses",
+    "file": "modules/expenses.py",
+    "routeFiles": [
+      "routes_/expenses.py"
+    ],
+    "storedProcedures": [
+      "sp_expense",
+      "sp_expense_all",
+      "sp_expense_monthly"
+    ],
+    "observable": true,
+    "lines": 207
+  },
+  {
+    "module": "factoryRunUsages",
+    "file": "modules/factoryRunUsages.py",
+    "routeFiles": [
+      "routes_/factoryRunUsage.py"
+    ],
+    "storedProcedures": [
+      "sp_factoryRunUsages",
+      "sp_factoryRunUsages_all",
+      "sp_factoryRunUsages_one"
+    ],
+    "observable": false,
+    "lines": 76
+  },
+  {
+    "module": "featureFlags",
+    "file": "modules/featureFlags.py",
+    "routeFiles": [
+      "routes_/featureFlags.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 42
+  },
+  {
+    "module": "fundingTransactions",
+    "file": "modules/fundingTransactions.py",
+    "routeFiles": [
+      "routes_/fundingTransactions.py"
+    ],
+    "storedProcedures": [
+      "sp_fundingTransactions",
+      "sp_loans",
+      "sp_loans_one",
+      "sp_login",
+      "sp_userCompanies_role",
+      "sp_users"
+    ],
+    "observable": false,
+    "lines": 210
+  },
+  {
+    "module": "geocoding",
+    "file": "modules/geocoding.py",
+    "routeFiles": [
+      "routes_/geocoding.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 35
+  },
+  {
+    "module": "income",
+    "file": "modules/income.py",
+    "routeFiles": [
+      "routes_/income.py",
+      "routes_/tickets.py"
+    ],
+    "storedProcedures": [
+      "sp_clients_one",
+      "sp_income",
+      "sp_income_all",
+      "sp_income_applyCommission",
+      "sp_income_applyDiscounts",
+      "sp_income_clientRequest",
+      "sp_income_monthly",
+      "sp_income_one",
+      "sp_income_reverseOnDelete",
+      "sp_posRewardRedemptions_reverseForIncome"
+    ],
+    "observable": false,
+    "lines": 498
+  },
+  {
+    "module": "incomePayments",
+    "file": "modules/incomePayments.py",
+    "routeFiles": [
+      "routes_/income.py"
+    ],
+    "storedProcedures": [
+      "sp_incomePayments"
+    ],
+    "observable": false,
+    "lines": 60
+  },
+  {
+    "module": "journalEntries",
+    "file": "modules/journalEntries.py",
+    "routeFiles": [
+      "routes_/journalEntries.py"
+    ],
+    "storedProcedures": [
+      "sp_chartOfAccounts_all",
+      "sp_chartOfAccounts_seed",
+      "sp_expense",
+      "sp_expense_one",
+      "sp_income",
+      "sp_income_applyCommission",
+      "sp_journalEntries",
+      "sp_journalEntries_all",
+      "sp_journalEntries_balanceSheet",
+      "sp_journalEntries_byReference",
+      "sp_journalEntries_correctDates",
+      "sp_journalEntries_ledger",
+      "sp_journalEntries_one",
+      "sp_journalEntries_trialBalance"
+    ],
+    "observable": false,
+    "lines": 390
+  },
+  {
+    "module": "laundry",
+    "file": "modules/laundry.py",
+    "routeFiles": [
+      "routes_/laundry.py"
+    ],
+    "storedProcedures": [
+      "sp_pos_laundry",
+      "sp_pos_laundry_all"
+    ],
+    "observable": false,
+    "lines": 60
+  },
+  {
+    "module": "laundryDevices",
+    "file": "modules/laundryDevices.py",
+    "routeFiles": [
+      "routes_/laundryDevices.py"
+    ],
+    "storedProcedures": [
+      "sp_clients_qr",
+      "sp_laundryClientQrs_list",
+      "sp_laundryDeviceUses",
+      "sp_laundryDeviceUses_all",
+      "sp_laundryDevices",
+      "sp_laundryDevices_all"
+    ],
+    "observable": false,
+    "lines": 515
+  },
+  {
+    "module": "legalCases",
+    "file": "modules/legalCases.py",
+    "routeFiles": [
+      "routes_/legalCases.py"
+    ],
+    "storedProcedures": [
+      "sp_legalCases"
+    ],
+    "observable": false,
+    "lines": 81
+  },
+  {
+    "module": "listingDrafts",
+    "file": "modules/listingDrafts.py",
+    "routeFiles": [
+      "routes_/listingDrafts.py"
+    ],
+    "storedProcedures": [
+      "sp_listingDrafts"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "loanChat",
+    "file": "modules/loanChat.py",
+    "routeFiles": [
+      "routes_/loanChat.py"
+    ],
+    "storedProcedures": [
+      "sp_loanChat"
+    ],
+    "observable": false,
+    "lines": 173
+  },
+  {
+    "module": "loanOffers",
+    "file": "modules/loanOffers.py",
+    "routeFiles": [
+      "routes_/loanOffers.py"
+    ],
+    "storedProcedures": [
+      "sp_clients_one",
+      "sp_loanOffers",
+      "sp_loanOffers_all",
+      "sp_loanOffers_one"
+    ],
+    "observable": false,
+    "lines": 187
+  },
+  {
+    "module": "loanProposals",
+    "file": "modules/loanProposals.py",
+    "routeFiles": [
+      "routes_/loanProposals.py"
+    ],
+    "storedProcedures": [
+      "sp_loanProposals",
+      "sp_loanProposals_all",
+      "sp_loanProposals_one"
+    ],
+    "observable": false,
+    "lines": 70
+  },
+  {
+    "module": "loans",
+    "file": "modules/loans.py",
+    "routeFiles": [
+      "routes_/loan.py"
+    ],
+    "storedProcedures": [
+      "sp_loans",
+      "sp_loans_all",
+      "sp_loans_matchLenders",
+      "sp_loans_one"
+    ],
+    "observable": false,
+    "lines": 113
+  },
+  {
+    "module": "login",
+    "file": "modules/login.py",
+    "routeFiles": [
+      "routes_/login.py"
+    ],
+    "storedProcedures": [
+      "sp_login"
+    ],
+    "observable": false,
+    "lines": 65
+  },
+  {
+    "module": "maintenancePredictor",
+    "file": "modules/maintenancePredictor.py",
+    "routeFiles": [
+      "routes_/manufacturing.py"
+    ],
+    "storedProcedures": [
+      "sp_machines",
+      "sp_maintenanceLogs"
+    ],
+    "observable": false,
+    "lines": 140
+  },
+  {
+    "module": "marketplaceOrders",
+    "file": "modules/marketplaceOrders.py",
+    "routeFiles": [
+      "routes_/marketplaceOrders.py"
+    ],
+    "storedProcedures": [
+      "sp_marketplaceOrders"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "mercadolibre",
+    "file": "modules/mercadolibre.py",
+    "routeFiles": [
+      "routes_/mercadolibre.py",
+      "routes_/ml_proxy.py",
+      "routes_/routes_ml_proxy.py"
+    ],
+    "storedProcedures": [
+      "sp_mlOAuthStates",
+      "sp_mlTokens"
+    ],
+    "observable": false,
+    "lines": 269
+  },
+  {
+    "module": "messageTickets",
+    "file": "modules/messageTickets.py",
+    "routeFiles": [
+      "routes_/messageTickets.py",
+      "routes_/opportunities.py"
+    ],
+    "storedProcedures": [
+      "sp_messageTickets"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "mlJobs",
+    "file": "modules/mlJobs.py",
+    "routeFiles": [
+      "routes_/mlJobs.py"
+    ],
+    "storedProcedures": [
+      "sp_ml_jobs"
+    ],
+    "observable": false,
+    "lines": 55
+  },
+  {
+    "module": "mlSearchRuns",
+    "file": "modules/mlSearchRuns.py",
+    "routeFiles": [
+      "routes_/mlSearchRuns.py"
+    ],
+    "storedProcedures": [
+      "sp_ml_search_runs"
+    ],
+    "observable": false,
+    "lines": 55
+  },
+  {
+    "module": "notificationDispatch",
+    "file": "modules/notificationDispatch.py",
+    "routeFiles": [
+      "routes_/notificationDispatch.py",
+      "routes_/whatsapp.py"
+    ],
+    "storedProcedures": [
+      "sp_notificationDispatchPolicy_one",
+      "sp_notificationDispatches",
+      "sp_notificationDispatches_all",
+      "sp_notificationDispatches_lookup",
+      "sp_notificationDispatches_one",
+      "sp_pushNotifications_resolveUsers"
+    ],
+    "observable": true,
+    "lines": 701
+  },
+  {
+    "module": "notificationPush",
+    "file": "modules/notificationPush.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 1
+  },
+  {
+    "module": "notificationUsage",
+    "file": "modules/notificationUsage.py",
+    "routeFiles": [
+      "routes_/notificationUsage.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 109
+  },
+  {
+    "module": "offerReminders",
+    "file": "modules/offerReminders.py",
+    "routeFiles": [],
+    "storedProcedures": [
+      "sp_loanOffers_all"
+    ],
+    "observable": false,
+    "lines": 105
+  },
+  {
+    "module": "onboardingReminders",
+    "file": "modules/onboardingReminders.py",
+    "routeFiles": [
+      "routes_/onboardingReminders.py"
+    ],
+    "storedProcedures": [
+      "sp_onboardingReminders"
+    ],
+    "observable": false,
+    "lines": 115
+  },
+  {
+    "module": "opportunities",
+    "file": "modules/opportunities.py",
+    "routeFiles": [],
+    "storedProcedures": [
+      "sp_opportunities"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "orders",
+    "file": "modules/orders.py",
+    "routeFiles": [
+      "routes_/orders.py"
+    ],
+    "storedProcedures": [
+      "sp_orders",
+      "sp_orders_all",
+      "sp_orders_list",
+      "sp_orders_one",
+      "sp_orders_products_one",
+      "sp_orders_tracking_status"
+    ],
+    "observable": false,
+    "lines": 216
+  },
+  {
+    "module": "paymentHistory",
+    "file": "modules/paymentHistory.py",
+    "routeFiles": [
+      "routes_/paymentHistory.py"
+    ],
+    "storedProcedures": [
+      "sp_fundingTransactions",
+      "sp_paymentHistory_all"
+    ],
+    "observable": false,
+    "lines": 25
+  },
+  {
+    "module": "paymentIntents",
+    "file": "modules/paymentIntents.py",
+    "routeFiles": [
+      "routes_/paymentIntents.py"
+    ],
+    "storedProcedures": [
+      "sp_paymentIntents"
+    ],
+    "observable": false,
+    "lines": 31
+  },
+  {
+    "module": "posRewards",
+    "file": "modules/posRewards.py",
+    "routeFiles": [
+      "routes_/posRewards.py",
+      "routes_/tickets.py"
+    ],
+    "storedProcedures": [
+      "sp_income_applyDiscounts",
+      "sp_income_one",
+      "sp_posReward",
+      "sp_posRewardBalances",
+      "sp_posRewardBalances_dashboardSummary",
+      "sp_posRewardCatalogItems",
+      "sp_posRewardFreeProductStatus",
+      "sp_posRewardProductCounts",
+      "sp_posRewardProductRates",
+      "sp_posRewardRedemptions",
+      "sp_posRewardRedemptions_redeem",
+      "sp_posRewardTransactions",
+      "sp_posRewardTransactions_adjust",
+      "sp_posRewardTransactions_earnFromTicket",
+      "sp_posRewards",
+      "sp_posRewardsDashboard"
+    ],
+    "observable": false,
+    "lines": 386
+  },
+  {
+    "module": "posSupportChat",
+    "file": "modules/posSupportChat.py",
+    "routeFiles": [
+      "routes_/posSupportChat.py"
+    ],
+    "storedProcedures": [
+      "sp_expense",
+      "sp_income",
+      "sp_posSupportChat"
+    ],
+    "observable": true,
+    "lines": 291
+  },
+  {
+    "module": "procurementJobs",
+    "file": "modules/procurementJobs.py",
+    "routeFiles": [
+      "routes_/procurementJobs.py"
+    ],
+    "storedProcedures": [
+      "sp_procurementJobs"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "productCategories",
+    "file": "modules/productCategories.py",
+    "routeFiles": [
+      "routes_/productCategories.py"
+    ],
+    "storedProcedures": [
+      "sp_products_categories",
+      "sp_products_categories_all",
+      "sp_sql"
+    ],
+    "observable": false,
+    "lines": 77
+  },
+  {
+    "module": "productMatches",
+    "file": "modules/productMatches.py",
+    "routeFiles": [
+      "routes_/productMatches.py"
+    ],
+    "storedProcedures": [
+      "sp_productMatches"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "products",
+    "file": "modules/products.py",
+    "routeFiles": [
+      "routes_/products.py"
+    ],
+    "storedProcedures": [
+      "sp_products",
+      "sp_products_all",
+      "sp_products_by_company",
+      "sp_products_categories_food",
+      "sp_products_food",
+      "sp_products_one",
+      "sp_sql"
+    ],
+    "observable": true,
+    "lines": 175
+  },
+  {
+    "module": "profitabilityOptimizer",
+    "file": "modules/profitabilityOptimizer.py",
+    "routeFiles": [
+      "routes_/manufacturing.py"
+    ],
+    "storedProcedures": [
+      "sp_productionOrders",
+      "sp_profitabilitySnapshots"
+    ],
+    "observable": false,
+    "lines": 137
+  },
+  {
+    "module": "projects",
+    "file": "modules/projects.py",
+    "routeFiles": [
+      "routes_/projects.py"
+    ],
+    "storedProcedures": [
+      "sp_projects",
+      "sp_projects_all",
+      "sp_projects_one"
+    ],
+    "observable": false,
+    "lines": 71
+  },
+  {
+    "module": "publishJobs",
+    "file": "modules/publishJobs.py",
+    "routeFiles": [
+      "routes_/publishJobs.py"
+    ],
+    "storedProcedures": [
+      "sp_publishJobs"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "pushNotifications",
+    "file": "modules/pushNotifications.py",
+    "routeFiles": [
+      "routes_/pushNotification.py"
+    ],
+    "storedProcedures": [
+      "sp_payload",
+      "sp_pushNotifications",
+      "sp_pushNotifications_activeUsers",
+      "sp_pushNotifications_all",
+      "sp_pushNotifications_forUser",
+      "sp_pushNotifications_markRead",
+      "sp_pushNotifications_one",
+      "sp_pushNotifications_recordDelivery",
+      "sp_pushNotifications_resolveUsers"
+    ],
+    "observable": false,
+    "lines": 335
+  },
+  {
+    "module": "receiptLinks",
+    "file": "modules/receiptLinks.py",
+    "routeFiles": [
+      "routes_/tickets.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 114
+  },
+  {
+    "module": "registrationReminders",
+    "file": "modules/registrationReminders.py",
+    "routeFiles": [
+      "routes_/registrationReminders.py"
+    ],
+    "storedProcedures": [
+      "sp_registrationReminders"
+    ],
+    "observable": false,
+    "lines": 152
+  },
+  {
+    "module": "reservations",
+    "file": "modules/reservations.py",
+    "routeFiles": [
+      "routes_/reservations.py"
+    ],
+    "storedProcedures": [
+      "sp_reservationHours",
+      "sp_reservationServices",
+      "sp_reservations"
+    ],
+    "observable": false,
+    "lines": 267
+  },
+  {
+    "module": "rewardBenefits",
+    "file": "modules/rewardBenefits.py",
+    "routeFiles": [
+      "routes_/rewardBenefits.py"
+    ],
+    "storedProcedures": [
+      "sp_loanInstallments_one",
+      "sp_name",
+      "sp_rewardBenefits_all",
+      "sp_rewardBenefits_bind",
+      "sp_rewardBenefits_forClient",
+      "sp_rewardBenefits_reserve",
+      "sp_rewards",
+      "sp_rewards_earnOnce"
+    ],
+    "observable": true,
+    "lines": 250
+  },
+  {
+    "module": "rewards",
+    "file": "modules/rewards.py",
+    "routeFiles": [
+      "routes_/rewards.py"
+    ],
+    "storedProcedures": [
+      "sp_rewards"
+    ],
+    "observable": false,
+    "lines": 97
+  },
+  {
+    "module": "roles",
+    "file": "modules/roles.py",
+    "routeFiles": [
+      "routes_/roles.py"
+    ],
+    "storedProcedures": [
+      "sp_login",
+      "sp_roles"
+    ],
+    "observable": false,
+    "lines": 42
+  },
+  {
+    "module": "scannertext",
+    "file": "modules/scannertext.py",
+    "routeFiles": [
+      "routes_/scannertext.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 132
+  },
+  {
+    "module": "sellListings",
+    "file": "modules/sellListings.py",
+    "routeFiles": [
+      "routes_/sellListings.py"
+    ],
+    "storedProcedures": [
+      "sp_sellListings",
+      "sp_sellListings_all",
+      "sp_sellListings_query"
+    ],
+    "observable": false,
+    "lines": 73
+  },
+  {
+    "module": "services",
+    "file": "modules/services.py",
+    "routeFiles": [
+      "routes_/service.py"
+    ],
+    "storedProcedures": [
+      "sp_services",
+      "sp_services_all",
+      "sp_services_one"
+    ],
+    "observable": false,
+    "lines": 60
+  },
+  {
+    "module": "shipments",
+    "file": "modules/shipments.py",
+    "routeFiles": [
+      "routes_/shipments.py"
+    ],
+    "storedProcedures": [
+      "sp_shipments"
+    ],
+    "observable": false,
+    "lines": 29
+  },
+  {
+    "module": "signatureMatching",
+    "file": "modules/signatureMatching.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 176
+  },
+  {
+    "module": "statuses",
+    "file": "modules/statuses.py",
+    "routeFiles": [
+      "routes_/statuses.py"
+    ],
+    "storedProcedures": [
+      "sp_statuses",
+      "sp_statuses_all",
+      "sp_statuses_one"
+    ],
+    "observable": false,
+    "lines": 71
+  },
+  {
+    "module": "stpProvider",
+    "file": "modules/stpProvider.py",
+    "routeFiles": [],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 53
+  },
+  {
+    "module": "stripe_payments",
+    "file": "modules/stripe_payments.py",
+    "routeFiles": [
+      "routes_/stripe_payments.py"
+    ],
+    "storedProcedures": [
+      "sp_clients_one",
+      "sp_connected_accounts",
+      "sp_stripe_connectedAccounts",
+      "sp_stripe_transactions",
+      "sp_transaction",
+      "sp_transactions_list"
+    ],
+    "observable": true,
+    "lines": 1344
+  },
+  {
+    "module": "suppliers",
+    "file": "modules/suppliers.py",
+    "routeFiles": [
+      "routes_/supplier.py"
+    ],
+    "storedProcedures": [
+      "sp_suppliers",
+      "sp_suppliers_all",
+      "sp_suppliers_one"
+    ],
+    "observable": false,
+    "lines": 60
+  },
+  {
+    "module": "ticket_notifications",
+    "file": "modules/ticket_notifications.py",
+    "routeFiles": [
+      "routes_/tickets.py",
+      "routes_/whatsapp.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 190
+  },
+  {
+    "module": "ticket_receipts",
+    "file": "modules/ticket_receipts.py",
+    "routeFiles": [
+      "routes_/tickets.py"
+    ],
+    "storedProcedures": [],
+    "observable": false,
+    "lines": 85
+  },
+  {
+    "module": "tickets",
+    "file": "modules/tickets.py",
+    "routeFiles": [
+      "routes_/tickets.py"
+    ],
+    "storedProcedures": [
+      "sp_sql",
+      "sp_ticket_redirect",
+      "sp_ticket_tracking",
+      "sp_tickets_one"
+    ],
+    "observable": false,
+    "lines": 130
+  },
+  {
+    "module": "transferEvidence",
+    "file": "modules/transferEvidence.py",
+    "routeFiles": [
+      "routes_/transferEvidence.py"
+    ],
+    "storedProcedures": [
+      "sp_transferEvidence"
+    ],
+    "observable": false,
+    "lines": 65
+  },
+  {
+    "module": "transfers",
+    "file": "modules/transfers.py",
+    "routeFiles": [
+      "routes_/transfers.py"
+    ],
+    "storedProcedures": [
+      "sp_bankAccounts_all",
+      "sp_bankAccounts_one",
+      "sp_transfers",
+      "sp_transfers_all",
+      "sp_transfers_one"
+    ],
+    "observable": true,
+    "lines": 189
+  },
+  {
+    "module": "unifiedProducts",
+    "file": "modules/unifiedProducts.py",
+    "routeFiles": [
+      "routes_/unifiedProducts.py"
+    ],
+    "storedProcedures": [
+      "sp_unifiedProducts"
+    ],
+    "observable": false,
+    "lines": 30
+  },
+  {
+    "module": "users",
+    "file": "modules/users.py",
+    "routeFiles": [
+      "routes_/users.py"
+    ],
+    "storedProcedures": [
+      "sp_checkContact",
+      "sp_checkUsername",
+      "sp_users",
+      "sp_users_all",
+      "sp_users_one",
+      "sp_users_one_email"
+    ],
+    "observable": true,
+    "lines": 642
+  },
+  {
+    "module": "utils",
+    "file": "modules/utils.py",
+    "routeFiles": [
+      "routes_/utils.py"
+    ],
+    "storedProcedures": [
+      "sp_database_info_tables",
+      "sp_select_all_tables",
+      "sp_select_one_row",
+      "sp_select_with_one_field_filter"
+    ],
+    "observable": false,
+    "lines": 93
+  },
+  {
+    "module": "vending",
+    "file": "modules/vending.py",
+    "routeFiles": [
+      "routes_/vending_v2.py"
+    ],
+    "storedProcedures": [
+      "sp_vending",
+      "sp_vending_all"
+    ],
+    "observable": false,
+    "lines": 60
+  },
+  {
+    "module": "walletBalance",
+    "file": "modules/walletBalance.py",
+    "routeFiles": [
+      "routes_/walletBalance.py"
+    ],
+    "storedProcedures": [
+      "sp_clientWallets"
+    ],
+    "observable": true,
+    "lines": 208
+  },
+  {
+    "module": "walletTransactions",
+    "file": "modules/walletTransactions.py",
+    "routeFiles": [
+      "routes_/walletTransactions.py"
+    ],
+    "storedProcedures": [
+      "sp_walletTransactions",
+      "sp_walletTransactions_all",
+      "sp_walletTransactions_balance"
+    ],
+    "observable": false,
+    "lines": 85
+  },
+  {
+    "module": "whatsapp",
+    "file": "modules/whatsapp.py",
+    "routeFiles": [
+      "routes_/whatsapp.py"
+    ],
+    "storedProcedures": [
+      "sp_whatsapp_messages"
+    ],
+    "observable": false,
+    "lines": 77
+  },
+  {
+    "module": "whatsappAssistant",
+    "file": "modules/whatsappAssistant.py",
+    "routeFiles": [
+      "routes_/whatsappAssistant.py"
+    ],
+    "storedProcedures": [
+      "sp_businessFaqs",
+      "sp_businessInfo",
+      "sp_promotions",
+      "sp_whatsappAgentConversations",
+      "sp_whatsappAgentDashboard",
+      "sp_whatsappCustomerRewards"
+    ],
+    "observable": true,
+    "lines": 147
+  },
+  {
+    "module": "whatsappChannels",
+    "file": "modules/whatsappChannels.py",
+    "routeFiles": [
+      "routes_/whatsappCloud.py"
+    ],
+    "storedProcedures": [
+      "sp_whatsappChannels",
+      "sp_whatsappConversations"
+    ],
+    "observable": false,
+    "lines": 156
+  },
+  {
+    "module": "whatsappCloud",
+    "file": "modules/whatsappCloud.py",
+    "routeFiles": [
+      "routes_/whatsappAssistant.py",
+      "routes_/whatsappCloud.py"
+    ],
+    "storedProcedures": [
+      "sp_whatsappAgentConversations",
+      "sp_whatsapp_messages"
+    ],
+    "observable": true,
+    "lines": 458
+  },
+  {
+    "module": "whatsappReservations",
+    "file": "modules/whatsappReservations.py",
+    "routeFiles": [],
+    "storedProcedures": [
+      "sp_reservationServices",
+      "sp_whatsappCustomerRewards"
+    ],
+    "observable": true,
+    "lines": 338
+  },
+  {
+    "module": "workflowOrchestrator",
+    "file": "modules/workflowOrchestrator.py",
+    "routeFiles": [
+      "routes_/manufacturing.py"
+    ],
+    "storedProcedures": [
+      "sp_machines",
+      "sp_productionOrders"
+    ],
+    "observable": false,
+    "lines": 179
+  }
+]

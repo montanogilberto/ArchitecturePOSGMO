@@ -1,0 +1,39 @@
+[
+  {
+    "file": "esp32/api.py",
+    "backendCalls": [
+      "POST /laundryDevices/authorize",
+      "POST /laundryDevices/balance",
+      "POST /laundryDevices/heartbeat",
+      "POST /laundryDevices/quote"
+    ]
+  },
+  {
+    "file": "esp32/config.example.py",
+    "backendCalls": []
+  },
+  {
+    "file": "esp32/hw.py",
+    "backendCalls": []
+  },
+  {
+    "file": "esp32/main.py",
+    "backendCalls": []
+  },
+  {
+    "file": "esp32/net.py",
+    "backendCalls": []
+  },
+  {
+    "file": "esp32/nextion.py",
+    "backendCalls": []
+  },
+  {
+    "file": "esp32/nextion_test.py",
+    "backendCalls": []
+  },
+  {
+    "file": "esp32/screen.py",
+    "backendCalls": []
+  }
+]

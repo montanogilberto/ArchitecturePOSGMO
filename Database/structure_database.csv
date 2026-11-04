@@ -208,6 +208,13 @@ dbo,businessInfo,servicesInfo,nvarchar,2000,YES,NO,NO
 dbo,businessInfo,extraInfo,nvarchar,2000,YES,NO,NO
 dbo,businessInfo,createdAt,datetime2,NULL,NO,NO,NO
 dbo,businessInfo,updatedAt,datetime2,NULL,YES,NO,NO
+dbo,businessInfo,pickupPolicy,nvarchar,1000,YES,NO,NO
+dbo,businessInfo,deliveryPolicy,nvarchar,1000,YES,NO,NO
+dbo,businessInfo,whatsappNumber,nvarchar,30,YES,NO,NO
+dbo,businessInfo,street,nvarchar,300,YES,NO,NO
+dbo,businessInfo,city,nvarchar,120,YES,NO,NO
+dbo,businessInfo,postalCode,nvarchar,10,YES,NO,NO
+dbo,businessInfo,websiteUrl,nvarchar,500,YES,NO,NO
 dbo,buyOffers,buyOfferId,bigint,19,NO,YES,NO
 dbo,buyOffers,sourceType,varchar,10,NO,NO,NO
 dbo,buyOffers,sourceName,nvarchar,200,NO,NO,NO
@@ -671,6 +678,10 @@ dbo,journalEntryLines,accountId,int,10,NO,NO,YES
 dbo,journalEntryLines,debit,decimal,12,NO,NO,NO
 dbo,journalEntryLines,credit,decimal,12,NO,NO,NO
 dbo,journalEntryLines,lineDescription,nvarchar,255,YES,NO,NO
+dbo,laundryDeviceProducts,deviceId,int,10,NO,YES,YES
+dbo,laundryDeviceProducts,productId,int,10,NO,YES,NO
+dbo,laundryDeviceProducts,label,nvarchar,30,YES,NO,NO
+dbo,laundryDeviceProducts,sortOrder,int,10,NO,NO,NO
 dbo,laundryDevices,deviceId,int,10,NO,YES,NO
 dbo,laundryDevices,companyId,int,10,NO,NO,NO
 dbo,laundryDevices,branchId,int,10,YES,NO,NO
@@ -1341,10 +1352,11 @@ dbo,productConsumptions,productId,int,10,NO,NO,YES
 dbo,productConsumptions,productOptionChoiceId,int,10,YES,NO,YES
 dbo,productConsumptions,componentProductId,int,10,NO,NO,YES
 dbo,productConsumptions,componentProductOptionChoiceId,int,10,YES,NO,YES
-dbo,productConsumptions,quantity,decimal,10,NO,NO,NO
+dbo,productConsumptions,quantity,decimal,18,NO,NO,NO
 dbo,productConsumptions,isActive,bit,NULL,NO,NO,NO
 dbo,productConsumptions,created_At,datetime,NULL,NO,NO,NO
 dbo,productConsumptions,updated_at,datetime,NULL,YES,NO,NO
+dbo,productConsumptions,measurementId,int,10,YES,NO,YES
 dbo,productDetails,productDetailId,int,10,NO,YES,NO
 dbo,productDetails,productId,int,10,NO,NO,NO
 dbo,productDetails,stockQuantity,int,10,NO,NO,NO

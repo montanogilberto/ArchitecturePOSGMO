@@ -286,21 +286,40 @@
     "proposes_writes": false
   },
   {
+    "folder": "agents/whatsapp_insights",
+    "name": "whatsapp_insights_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads a period of WhatsApp customer messages for one business and summarizes what customers want, their most common doubts and what they ask for that the business doesn't offer. Advisory, read-only, no tools.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
     "folder": "agents/whatsapp_reservations",
     "name": "whatsapp_reservations_agent",
     "kind": "Agent",
     "model": "gemini-2.5-flash",
-    "description": "WhatsApp assistant for a business's customers — reservations (catalog services + real free slots; PROPOSES, the backend books after \"sí\"), opening hours, the promotions the POS applies, business info and FAQs, the sender's own reward points and client QR (SEND_CLIENT_QR), and handing off to a person (REQUEST_HUMAN). Answers business facts only from tools.",
+    "description": "WhatsApp assistant for a business's customers — reservations (catalog services + real free slots; PROPOSES, the backend books after \"sí\"), opening hours, the promotions the POS applies, business info (address + maps link) and FAQs, the sender's own reward points and client QR (SEND_CLIENT_QR), whether the self-service laundry machines are free right now, and handing off to a person (REQUEST_HUMAN)",
     "tools": [
-      "get_reservation_services",
-      "get_reservation_hours",
-      "get_available_slots",
-      "get_promotions",
-      "get_business_info",
-      "get_faqs",
-      "get_my_reward_points",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
       "propose_action"
     ],
     "proposes_writes": true
+  },
+  {
+    "folder": "agents/whatsapp_topic",
+    "name": "whatsapp_topic_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Tags one WhatsApp customer message with what the customer wants, from a fixed topic list, so the POS can count the most frequent questions. No tools, never answers the customer.",
+    "tools": [],
+    "proposes_writes": false
   }
 ]

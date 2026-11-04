@@ -1,0 +1,90 @@
+[
+  {
+    "name": "trg_expenseDetails_inventory",
+    "kind": "trigger",
+    "table": "expenseDetails",
+    "disabled": false,
+    "events": [
+      "DELETE",
+      "INSERT",
+      "UPDATE"
+    ]
+  },
+  {
+    "name": "trg_incomeDetailOptions_consumption",
+    "kind": "trigger",
+    "table": "incomeDetailOptions",
+    "disabled": false,
+    "events": [
+      "DELETE",
+      "INSERT",
+      "UPDATE"
+    ]
+  },
+  {
+    "name": "trg_incomeDetails_consumption",
+    "kind": "trigger",
+    "table": "incomeDetails",
+    "disabled": false,
+    "events": [
+      "DELETE",
+      "INSERT",
+      "UPDATE"
+    ]
+  },
+  {
+    "name": "trg_incomeDetails_inventory",
+    "kind": "trigger",
+    "table": "incomeDetails",
+    "disabled": false,
+    "events": [
+      "DELETE",
+      "INSERT",
+      "UPDATE"
+    ]
+  },
+  {
+    "name": "trg_users_set_qr",
+    "kind": "trigger",
+    "table": "users",
+    "disabled": false,
+    "events": [
+      "INSERT"
+    ]
+  },
+  {
+    "name": "fn_convertQuantity",
+    "kind": "function",
+    "type": "SQL_SCALAR_FUNCTION"
+  },
+  {
+    "name": "fn_diagramobjects",
+    "kind": "function",
+    "type": "SQL_SCALAR_FUNCTION"
+  },
+  {
+    "name": "fn_journalEntries_accountTotals",
+    "kind": "function",
+    "type": "SQL_INLINE_TABLE_VALUED_FUNCTION"
+  },
+  {
+    "name": "fn_posRewardStampStatus",
+    "kind": "function",
+    "type": "SQL_INLINE_TABLE_VALUED_FUNCTION"
+  },
+  {
+    "name": "fn_recipeAvailable",
+    "kind": "function",
+    "type": "SQL_SCALAR_FUNCTION"
+  },
+  {
+    "name": "fn_ruleQuantity",
+    "kind": "function",
+    "type": "SQL_SCALAR_FUNCTION"
+  },
+  {
+    "name": "fn_stockFactor",
+    "kind": "function",
+    "type": "SQL_SCALAR_FUNCTION"
+  }
+]

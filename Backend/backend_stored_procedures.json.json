@@ -2375,7 +2375,7 @@
     },
     {
       "name": "sp_clientContactPreferences",
-      "module_binding": null,
+      "module_binding": "modules/clientContactPreferences.py",
       "parameters": [
         "@pjsonfile"
       ],
@@ -2383,7 +2383,7 @@
     },
     {
       "name": "sp_clientContactPreferences_all",
-      "module_binding": null,
+      "module_binding": "modules/clientContactPreferences.py",
       "parameters": [
         "@pjsonfile"
       ],
@@ -2391,7 +2391,15 @@
     },
     {
       "name": "sp_clientContactPreferences_one",
-      "module_binding": null,
+      "module_binding": "modules/clientContactPreferences.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_whatsappAgentConversations",
+      "module_binding": "modules/whatsappAssistant.py",
       "parameters": [
         "@pjsonfile"
       ],

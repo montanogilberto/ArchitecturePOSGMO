@@ -1684,5 +1684,138 @@
     "type": "ui",
     "reusable": true,
     "source": "knowledge_sync"
+  },
+  {
+    "componentName": "DockChatWindow",
+    "filePath": "src/components/messaging/DockChatWindow.tsx",
+    "folder": "messaging",
+    "props": [
+      {
+        "name": "vm",
+        "type": "WhatsAppDockVM; win: DockWindow }",
+        "required": true
+      },
+      {
+        "name": "showToast",
+        "type": "vm.showToast, onSent: vm.reload,",
+        "required": true
+      }
+    ],
+    "type": "messaging",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "WhatsAppChatListItem",
+    "filePath": "src/components/messaging/WhatsAppChatListItem.tsx",
+    "folder": "messaging",
+    "props": [
+      {
+        "name": "conv",
+        "type": "WhatsAppConversationSummary",
+        "required": true
+      },
+      {
+        "name": "unread",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "compact",
+        "type": "boolean",
+        "required": false
+      },
+      {
+        "name": "onOpen",
+        "type": "(conv: WhatsAppConversationSummary) => void",
+        "required": true
+      }
+    ],
+    "type": "messaging",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "WhatsAppDock",
+    "filePath": "src/components/messaging/WhatsAppDock.tsx",
+    "folder": "messaging",
+    "props": [],
+    "type": "messaging",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "WhatsAppReplyBox",
+    "filePath": "src/components/messaging/WhatsAppReplyBox.tsx",
+    "folder": "messaging",
+    "props": [
+      {
+        "name": "chat",
+        "type": "WhatsAppThreadVM",
+        "required": true
+      },
+      {
+        "name": "compact",
+        "type": "boolean",
+        "required": false
+      }
+    ],
+    "type": "messaging",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "WhatsAppTimeline",
+    "filePath": "src/components/messaging/WhatsAppTimeline.tsx",
+    "folder": "messaging",
+    "props": [],
+    "type": "messaging",
+    "reusable": false,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "StripePaySheet",
+    "filePath": "src/components/payments/StripePaySheet.tsx",
+    "folder": "payments",
+    "props": [
+      {
+        "name": "clientSecret",
+        "type": "string | null",
+        "required": true
+      },
+      {
+        "name": "summaryLabel",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "summaryValue",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "payLabel",
+        "type": "string",
+        "required": false
+      },
+      {
+        "name": "onDone",
+        "type": "(paymentIntentId: string) => Promise<void>",
+        "required": true
+      },
+      {
+        "name": "onDismiss",
+        "type": "() => void",
+        "required": true
+      }
+    ],
+    "type": "payments",
+    "reusable": false,
+    "source": "knowledge_sync"
   }
 ]

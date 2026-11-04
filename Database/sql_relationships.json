@@ -187,6 +187,12 @@
   },
   {
     "parent_table": "laundryDevices",
+    "child_table": "laundryDeviceProducts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_laundryDeviceProducts_device"
+  },
+  {
+    "parent_table": "laundryDevices",
     "child_table": "laundryDeviceUses",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_laundryDeviceUses_device"
@@ -238,6 +244,12 @@
     "child_table": "shipments",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_shipments_orders"
+  },
+  {
+    "parent_table": "measurements",
+    "child_table": "productConsumptions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_productConsumptions_measurements_measurementId"
   },
   {
     "parent_table": "measurements",

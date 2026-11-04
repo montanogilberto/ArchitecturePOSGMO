@@ -681,5 +681,26 @@
     "authenticated": true,
     "feature": "notificationDispatchLog",
     "source": "knowledge_sync"
+  },
+  {
+    "path": "/iot-dashboard",
+    "component": "src/pages/iot/IotDashboardPage.tsx",
+    "authenticated": true,
+    "feature": "iot",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/whatsapp-agent/conversations",
+    "component": "src/pages/messaging/WhatsAppConversationsPage.tsx",
+    "authenticated": true,
+    "feature": "notificationDispatchLog",
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/whatsapp-agent/setup",
+    "component": "src/pages/messaging/WhatsAppSetupPage.tsx",
+    "authenticated": true,
+    "feature": "notificationDispatchLog",
+    "source": "knowledge_sync"
   }
 ]

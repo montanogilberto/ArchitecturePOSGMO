@@ -2,6 +2,7 @@
 deterministic extractors, against tiny fixture repos — no real repo, no DB."""
 from __future__ import annotations
 
+import subprocess
 import textwrap
 from pathlib import Path
 
@@ -171,3 +172,22 @@ def test_agents_catalog_reads_agent_definition(tmp_path):
     [agent] = extractors.agents_catalog(tmp_path)
     assert agent["name"] == "pos_inventory_support_agent"
     assert agent["tools"] == ["get_stock", "propose_action"] and agent["proposes_writes"] is True
+
+
+def test_backend_modules_link_routes_sps_and_observability(backend):
+    _write(backend, "routes_/inventoryRoute.py", "from modules.inventory import adjust\n")
+    _write(backend, "modules/plain.py", "x = 1\n")
+    mods = {m["module"]: m for m in extractors.backend_modules(backend)}
+    assert mods["inventory"]["routeFiles"] == ["routes_/inventoryRoute.py"]
+    assert mods["inventory"]["storedProcedures"] == ["sp_inventory_adjust"]
+    assert mods["plain"]["observable"] is False and mods["plain"]["routeFiles"] == []
+
+
+def test_firmware_catalog_lists_calls_and_never_reads_config(tmp_path):
+    _write(tmp_path, "esp32/api.py", 'net.post("/laundryDevices/quote", {})\nnet.post(\n  "/laundryDevices/balance", {})\n')
+    _write(tmp_path, "esp32/config.py", 'DEVICE_KEY = "secret"\nnet.post("/leak", {})\n')
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "add", "-f", "esp32"], check=True)  # worst case: config tracked
+    catalog = extractors.firmware_catalog(tmp_path)
+    assert catalog == [{"file": "esp32/api.py",
+                        "backendCalls": ["POST /laundryDevices/balance", "POST /laundryDevices/quote"]}]

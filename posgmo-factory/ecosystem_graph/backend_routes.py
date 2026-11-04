@@ -18,7 +18,13 @@ import ast
 import os
 import re
 
-_SP_NAME_RE = re.compile(r"EXEC\s+(?:\[dbo\]\.)?\[?(\w+)\]?", re.IGNORECASE)
+# Accepts EXEC sp_x, EXEC dbo.sp_x and EXEC [dbo].[sp_x]. The name must start
+# with sp_: an unanchored \w+ read `EXEC [dbo].[{procedure}]` (an f-string
+# helper) as an SP called "dbo".
+_SP_NAME_RE = re.compile(r"EXEC\s+(?:\[?dbo\]?\.)?\[?(sp_\w+)\]?", re.IGNORECASE)
+# A bare "sp_x" string in a function is an SP passed to a shared helper
+# (e.g. _call("sp_businessInfo", payload), whose own EXEC is dynamic).
+_SP_LITERAL_RE = re.compile(r"^sp_\w+$")
 _HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
 
 
@@ -72,6 +78,8 @@ def _extract_function_info_from_file(file_path: str) -> dict[str, dict]:
         for n2 in ast.walk(node):
             if isinstance(n2, ast.Constant) and isinstance(n2.value, str):
                 sp_names.update(_SP_NAME_RE.findall(n2.value))
+                if _SP_LITERAL_RE.match(n2.value):
+                    sp_names.add(n2.value)
             elif isinstance(n2, ast.Call) and isinstance(n2.func, ast.Name) and n2.func.id != node.name:
                 calls.add(n2.func.id)
         if sp_names or calls:
@@ -99,7 +107,10 @@ def extract_backend_edges(backend_repo_path: str, modules_in_scope: list[str] | 
     modules_dir = os.path.join(backend_repo_path, "modules")
 
     if modules_in_scope:
+        # A route file can be singular while its module is plural
+        # (routes_/pushNotification.py + modules/pushNotifications.py).
         route_files = [os.path.join(routes_dir, f"{m}.py") for m in modules_in_scope]
+        route_files += [os.path.join(routes_dir, f"{m[:-1]}.py") for m in modules_in_scope if m.endswith("s")]
         module_files = [os.path.join(modules_dir, f"{m}.py") for m in modules_in_scope]
     else:
         route_files = [os.path.join(routes_dir, f) for f in os.listdir(routes_dir) if f.endswith(".py")]

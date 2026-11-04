@@ -241,6 +241,43 @@ def get_frontend_features() -> list:
 
 
 @mcp.tool()
+def get_backend_modules() -> list:
+    """
+    Returns every smartloans_backend modules/*.py: the routes_ files that use it,
+    its stored procedures, whether it is instrumented, and its size.
+
+    Use this to reuse an existing module and to see what a change touches.
+    """
+    return _json("Backend/backend_modules.json")
+
+
+@mcp.tool()
+def get_firmware_catalog() -> list:
+    """
+    Returns the ESP32 machine firmware files in smartloans_backend/esp32/ and the
+    backend endpoints each calls. A change to those endpoints must stay compatible
+    with firmware already installed on the machines.
+    """
+    return _json("Backend/backend_firmware.json")
+
+
+@mcp.tool()
+def get_db_programmability(table_name: str = "") -> list:
+    """
+    Returns live SQL Server triggers and functions. Triggers change data outside
+    the stored procedures: inventory moves through trg_incomeDetails_inventory and
+    trg_expenseDetails_inventory, so a write to those tables has side effects.
+
+    Args:
+        table_name: only this table's triggers; empty returns triggers + functions.
+    """
+    data = _json("Database/db_programmability.json")
+    if not isinstance(data, list) or not table_name:
+        return data
+    return [d for d in data if str(d.get("table", "")).lower() == table_name.lower()]
+
+
+@mcp.tool()
 def get_agents_catalog() -> list:
     """
     Returns every agent in LoanAgents_SmartLoans: name, model, tools, and whether

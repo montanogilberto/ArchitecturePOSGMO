@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import re
+import subprocess
 from pathlib import Path
 
 _HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
@@ -73,6 +74,46 @@ def sp_module_bindings(backend: Path) -> dict[str, str]:
     return bindings
 
 
+def backend_modules(backend: Path) -> list[dict]:
+    """modules/*.py → [{module, file, routeFiles, storedProcedures, observable, lines}]."""
+    route_text = {f"routes_/{f.name}": f.read_text(encoding="utf-8", errors="ignore")
+                  for f in sorted((backend / "routes_").glob("*.py"))}
+    out = []
+    for file in sorted((backend / "modules").glob("*.py")):
+        if file.stem == "__init__":
+            continue
+        text = file.read_text(encoding="utf-8", errors="ignore")
+        imported = re.compile(rf"\bmodules\.{re.escape(file.stem)}\b|from\s+modules\s+import\s[^\n]*\b{re.escape(file.stem)}\b")
+        out.append({
+            "module": file.stem,
+            "file": f"modules/{file.name}",
+            "routeFiles": [r for r, t in route_text.items() if imported.search(t)],
+            "storedProcedures": sorted(set(_SP_NAME_RE.findall(text))),
+            "observable": "log_audit" in text or "timed_integration" in text or "workflow_step" in text,
+            "lines": text.count("\n") + 1,
+        })
+    return out
+
+
+_FIRMWARE_CALL_RE = re.compile(r"""net\.(post|get)\(\s*['"](/[^'"]+)['"]""")
+
+
+def firmware_catalog(backend: Path) -> list[dict]:
+    """esp32/*.py tracked in git → [{file, backendCalls}]. Tracked files only:
+    esp32/config.py holds the real Wi-Fi password and device key, is git-ignored,
+    and must never reach a knowledge file."""
+    listed = subprocess.run(["git", "-C", str(backend), "ls-files", "esp32/*.py"],
+                            capture_output=True, text=True, timeout=10, check=True).stdout.split()
+    out = []
+    for rel in sorted(listed):
+        if Path(rel).name == "config.py" or "/design/" in rel:
+            continue
+        text = (backend / rel).read_text(encoding="utf-8", errors="ignore")
+        calls = sorted({f"{m.upper()} {p}" for m, p in _FIRMWARE_CALL_RE.findall(text)})
+        out.append({"file": rel, "backendCalls": calls})
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Live database (read-only)
 # ---------------------------------------------------------------------------
@@ -119,13 +160,29 @@ ORDER BY p.name, prm.parameter_id
 """
 
 
+_TRIGGER_SQL = """
+SELECT t.name, OBJECT_NAME(t.parent_id) AS tbl, t.is_disabled, e.type_desc
+FROM sys.triggers t
+JOIN sys.trigger_events e ON e.object_id = t.object_id
+WHERE t.parent_class = 1
+ORDER BY tbl, t.name, e.type_desc
+"""
+
+_FUNCTION_SQL = """
+SELECT name, type_desc FROM sys.objects
+WHERE type IN ('FN', 'IF', 'TF') AND schema_id = SCHEMA_ID('dbo')
+ORDER BY name
+"""
+
+
 def _connect():
     from agents.schema_analyst.rules import _connect as connect  # same creds as schema_analyst
     return connect()
 
 
 def live_database() -> dict:
-    """{"columns": [csv rows], "relationships": [...], "procedures": {name: [params]}}."""
+    """{"columns": [csv rows], "relationships": [...], "procedures": {name: [params]},
+    "programmability": [triggers + functions]}."""
     with _connect() as conn:
         cur = conn.cursor()
         columns = [list(map(lambda v: "" if v is None else str(v), r))
@@ -140,7 +197,15 @@ def live_database() -> dict:
             params = procedures.setdefault(name, [])
             if param:
                 params.append(param)
-    return {"columns": columns, "relationships": relationships, "procedures": procedures}
+        triggers: dict[str, dict] = {}
+        for name, table, disabled, event in cur.execute(_TRIGGER_SQL).fetchall():
+            t = triggers.setdefault(name, {"name": name, "kind": "trigger", "table": table,
+                                           "disabled": bool(disabled), "events": []})
+            t["events"].append(event)
+        functions = [{"name": r[0], "kind": "function", "type": r[1]}
+                     for r in cur.execute(_FUNCTION_SQL).fetchall()]
+    return {"columns": columns, "relationships": relationships, "procedures": procedures,
+            "programmability": list(triggers.values()) + functions}
 
 
 # ---------------------------------------------------------------------------

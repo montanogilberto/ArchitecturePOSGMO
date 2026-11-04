@@ -25,7 +25,7 @@ from ecosystem_graph.sql_dependencies import get_sp_table_dependencies
 # version of this code produced it, per the versioning requirement that a
 # graph must know "this describes the repos as of commit X, scanned by
 # scanner version Y".
-SCANNER_VERSION = "ecosystem_graph/0.2.0"
+SCANNER_VERSION = "ecosystem_graph/0.3.0"
 
 
 def _git_info(repo_path: str) -> dict:
@@ -63,6 +63,16 @@ MODULES_IN_SCOPE: dict[str, list[str]] = {
     "income": ["incomeApi.ts"],
     "expenses": ["expensesApi.ts"],
     "rewards": ["rewardsApi.ts"],
+    # Spot-checked 2026-11 against the live DB: laundryDevices reaches
+    # laundryDeviceUses, products reaches inventoryStock, clientQr has no SP.
+    # Known gaps: pushNotificationsApi.ts yields no frontend edges, and
+    # /promotions, /businessInfo, /businessFaqs resolve to no SP.
+    "whatsappAssistant": ["whatsappAgentApi.ts"],
+    "notificationDispatch": ["notificationDispatchApi.ts"],
+    "pushNotifications": ["pushNotificationsApi.ts"],
+    "laundryDevices": ["laundryDevicesApi.ts"],
+    "IOT": ["waterTanksApi.ts"],
+    "products": ["productsApi.ts"],
 }
 
 

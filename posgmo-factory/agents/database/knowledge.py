@@ -35,6 +35,7 @@ def build_database_knowledge(spec_raw) -> dict:
         "sp_patterns": mcp.get_sp_patterns,
         "reference_table.cashRegisterSessions": lambda: mcp.get_table_columns("cashRegisterSessions"),
         "relationships_for_table": lambda: mcp.get_relationships_for_table(table) if table else {},
+        "triggers_and_functions": mcp.get_db_programmability,
         "factory_experience (HISTORICAL EVIDENCE, NOT AUTHORITATIVE)": lambda: mcp.search_factory_experience(
             "CREATE TABLE followed by CREATE OR ALTER PROC stored procedures", 3
         ),

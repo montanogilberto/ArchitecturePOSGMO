@@ -22,13 +22,16 @@ from pathlib import Path
 from knowledge_sync import conventions, extractors
 from knowledge_sync.config import FACTORY_ROOT, KNOWLEDGE_ROOT, repo_paths
 
-SCANNER_VERSION = "knowledge_sync/1.0.0"
+SCANNER_VERSION = "knowledge_sync/1.1.0"
 
 FILES = {
     "backend_routes": "Backend/backend_routes.json.json",
     "stored_procedures": "Backend/backend_stored_procedures.json.json",
     "schema_csv": "Database/structure_database.csv",
     "relationships": "Database/sql_relationships.json",
+    "programmability": "Database/db_programmability.json",
+    "backend_modules": "Backend/backend_modules.json",
+    "firmware": "Backend/backend_firmware.json",
     "frontend_routes": "Frontend/frontend_routes.json.json",
     "components": "Frontend/frontend_components.json.json",
     "api_clients": "Frontend/frontend_api_clients.json",
@@ -243,6 +246,10 @@ def sync_knowledge(check_only: bool = False, verbose: bool = True) -> dict:
             report["errors"][name] = f"{type(e).__name__}: {str(e)[:200]}"
 
     attempt("backend_routes", lambda: _build_backend_routes(paths), ("backend",))
+    attempt("backend_modules", lambda: _build_generated(
+        "backend_modules", extractors.backend_modules(paths["backend"]), lambda e: e["file"]), ("backend",))
+    attempt("firmware", lambda: _build_generated(
+        "firmware", extractors.firmware_catalog(paths["backend"]), lambda e: e["file"]), ("backend",))
 
     try:
         live = extractors.live_database()
@@ -253,6 +260,8 @@ def sync_knowledge(check_only: bool = False, verbose: bool = True) -> dict:
         attempt("stored_procedures", lambda: _build_sps(paths, live), ("backend",))
         attempt("schema_csv", lambda: _build_schema_csv(live))
         attempt("relationships", lambda: _build_relationships(live))
+        attempt("programmability", lambda: _build_generated(
+            "programmability", live["programmability"], lambda e: e["name"]))
 
     attempt("frontend_routes", lambda: _build_frontend_routes(paths), ("frontend",))
     attempt("components", lambda: _build_components(paths), ("frontend",))

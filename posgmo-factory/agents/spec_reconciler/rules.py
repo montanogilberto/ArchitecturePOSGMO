@@ -63,5 +63,20 @@ def normalize_frontend_paths(state: dict) -> tuple[dict | None, dict | None]:
     return (spec if changed else None), changed
 
 
+def forward_database_hints(state: dict) -> tuple[dict | None, int]:
+    """Copy the PRD's database.hints into specification.prd_hints.database_hints
+    straight from prd_raw — forwarding them is not left to the architect.
+    Returns (spec or None when unchanged, number of hints)."""
+    spec = _safe_load(state.get("specification"))
+    hints = (_safe_load(state.get("prd_raw")).get("database") or {}).get("hints") or []
+    if not spec or not hints:
+        return None, 0
+    prd_hints = spec.setdefault("prd_hints", {})
+    if prd_hints.get("database_hints") == hints:
+        return None, len(hints)
+    prd_hints["database_hints"] = hints
+    return spec, len(hints)
+
+
 def to_state_json(spec: dict) -> str:
     return json.dumps(spec)

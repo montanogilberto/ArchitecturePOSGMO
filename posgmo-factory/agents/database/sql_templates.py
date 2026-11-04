@@ -91,6 +91,11 @@ def unsupported_reason(spec: dict, gate: dict) -> Optional[str]:
     reason it can't (recorded on the artifact so fallbacks are visible)."""
     if not spec.get("module") or not spec.get("db", {}).get("columns"):
         return "specification has no module/db.columns"
+    # The template renders standard CRUD and can't read free-text requirements;
+    # taking it here would silently ignore them.
+    hints = (spec.get("prd_hints") or {}).get("database_hints")
+    if hints:
+        return f"PRD has {len(hints)} database hint(s) the CRUD template can't apply"
     pattern = gate.get("backend_pattern", "CRUD_ONLY")
     if pattern not in TEMPLATE_PATTERNS:
         return f"backend_pattern {pattern} is not a CRUD template shape"

@@ -46,18 +46,34 @@ def save_sql_locally(module: str, sql_content: str) -> dict:
     return {"path": str(sql_path)}
 
 
-def github_create_branch(repo: str, branch_name: str, base_branch: str = "main") -> dict:
+# Factory branches and PRs enter at `development` (DEV). qa and main are reached
+# only by promotion PRs, so the Factory never targets them, whatever the caller
+# (an LLM tool call) passes.
+DEFAULT_BASE_BRANCH = "development"
+_PROMOTION_ONLY_BRANCHES = {"main", "qa"}
+
+
+def _refuse_base(base_branch: str) -> dict | None:
+    if base_branch in _PROMOTION_ONLY_BRANCHES:
+        return {"status": "refused",
+                "detail": f"base_branch {base_branch!r} is promotion-only; use {DEFAULT_BASE_BRANCH!r}"}
+    return None
+
+
+def github_create_branch(repo: str, branch_name: str, base_branch: str = DEFAULT_BASE_BRANCH) -> dict:
     """
     Creates a new git branch in the given GitHub repository.
 
     Args:
         repo:        Full repo name, e.g. "{owner}/{repo}" (use the actual repo slug from session state -- never copy this literal placeholder).
         branch_name: Name of the branch to create, e.g. "feat/supplier-module".
-        base_branch: Branch to fork from. Defaults to "main".
+        base_branch: Branch to fork from. Defaults to "development"; main and qa are refused.
 
     Returns:
-        GitHub API response dict with ref and sha.
+        GitHub API response dict with ref and sha, or {"status": "refused", ...}.
     """
+    if refused := _refuse_base(base_branch):
+        return refused
     with httpx.Client() as client:
         # Get base SHA
         r = client.get(f"{_GH_API}/repos/{repo}/git/ref/heads/{base_branch}",
@@ -860,7 +876,7 @@ def patch_main_py(
 
 
 def github_create_pr(repo: str, branch: str, title: str, body: str,
-                     base_branch: str = "main") -> dict:
+                     base_branch: str = DEFAULT_BASE_BRANCH) -> dict:
     """
     Opens a Pull Request on GitHub.
 
@@ -869,11 +885,13 @@ def github_create_pr(repo: str, branch: str, title: str, body: str,
         branch:      Head branch (the feature branch).
         title:       PR title.
         body:        PR description in markdown.
-        base_branch: Target branch. Defaults to "main".
+        base_branch: Target branch. Defaults to "development"; main and qa are refused.
 
     Returns:
-        GitHub API response dict including "html_url" of the PR.
+        GitHub API response dict including "html_url" of the PR, or {"status": "refused", ...}.
     """
+    if refused := _refuse_base(base_branch):
+        return refused
     with httpx.Client() as client:
         r = client.post(
             f"{_GH_API}/repos/{repo}/pulls",

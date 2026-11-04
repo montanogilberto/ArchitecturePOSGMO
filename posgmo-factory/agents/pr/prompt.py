@@ -23,6 +23,8 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - Frontend repo: {{GITHUB_FRONTEND_REPO}}
    - Backend repo:  {{GITHUB_BACKEND_REPO}}
 2. Branch name: "feat/{{module}}-module"
+   Branches and PRs go to `development`, which is the tools' default: do NOT pass
+   base_branch. If a tool returns status "refused", stop and report it.
 3. Call github_create_branch for the frontend repo.
 4. Call github_create_branch for the backend repo.
 5. Push backend files to the backend repo:

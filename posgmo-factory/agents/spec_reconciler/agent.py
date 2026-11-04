@@ -9,7 +9,11 @@ from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event, EventActions
 
-from agents.spec_reconciler.rules import normalize_frontend_paths, reconcile_specification
+from agents.spec_reconciler.rules import (
+    forward_database_hints,
+    normalize_frontend_paths,
+    reconcile_specification,
+)
 
 
 class _SpecReconcilerAgent(BaseAgent):
@@ -20,12 +24,17 @@ class _SpecReconcilerAgent(BaseAgent):
         paths_spec, paths_record = normalize_frontend_paths(state)
         if paths_spec is not None:
             state["specification"] = json.dumps(paths_spec)
-        # 2. Existing live table outranks the spec.
+        # 2. PRD database hints → spec (read by the database stage).
+        hints_spec, hint_count = forward_database_hints(state)
+        if hints_spec is not None:
+            state["specification"] = json.dumps(hints_spec)
+        # 3. Existing live table outranks the spec.
         new_spec, record = reconcile_specification(state)
         record["frontend_paths"] = paths_record
+        record["database_hints"] = hint_count
         print(f"[spec_reconciler] {record}", flush=True)
         delta = {"spec_reconciliation": json.dumps(record)}
-        final = new_spec if new_spec is not None else paths_spec
+        final = new_spec if new_spec is not None else (hints_spec or paths_spec)
         if final is not None:
             delta["specification"] = json.dumps(final)
         yield Event(author=self.name, actions=EventActions(state_delta=delta))

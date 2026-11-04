@@ -139,6 +139,7 @@ If the PRD contains any of these sections, copy them verbatim into `prd_hints`:
 - prd.frontend.components[]     → prd_hints.frontend_components[]
 - prd.database.tables[]         → prd_hints.database_tables[]
 - prd.database.storedProcedures[] → prd_hints.database_sps[]
+(prd.database.hints[] is forwarded to prd_hints.database_hints automatically after you answer.)
 
 If a section is missing from the PRD, leave the corresponding prd_hints field empty.
 Do NOT use prd_hints.database_tables to override the standard table naming conventions —

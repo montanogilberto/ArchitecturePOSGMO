@@ -1,0 +1,96 @@
+diff --git a/Users/apple12/PycharmProjects/pythonProject/smartloans_backend/modules/whatsappCloud.py b/be/modules/whatsappCloud.py
+index 092f9da..3180c0b 100644
+--- a/Users/apple12/PycharmProjects/pythonProject/smartloans_backend/modules/whatsappCloud.py
++++ b/be/modules/whatsappCloud.py
+@@ -39,7 +39,7 @@ import httpx
+ 
+ from fastapi.responses import JSONResponse
+ 
+-from modules import clientContactPreferences, whatsappChannels, whatsappReservations
++from modules import clientContactPreferences, marketingLeadAttributions, whatsappChannels, whatsappReservations
+ from modules.whatsapp import log_message_to_database
+ from modules.whatsappAssistant import _sp as assistant_sp
+ from observability.integrations import timed_integration
+@@ -267,6 +267,8 @@ def _extract_inbound(payload: dict) -> List[Dict[str, Any]]:
+                     "messageId": msg.get("id"),
+                     "type": msg_type,
+                     "text": text,
++                    "referral": msg.get("referral"),
++                    "timestamp": msg.get("timestamp"),
+                 })
+     return out
+ 
+@@ -338,6 +340,44 @@ def _log_staff_echoes(payload: dict) -> None:
+                         logger.exception("[whatsappCloud] failed to log staff echo")
+ 
+ 
++def _sent_at(timestamp: Any) -> str | None:
++    """Meta's epoch seconds as UTC; None lets the SP use the current time."""
++    try:
++        return datetime.fromtimestamp(int(timestamp), timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
++    except (TypeError, ValueError, OverflowError, OSError):
++        return None
++
++
++def _record_ad_referral(channel: dict, phone: str, msg: dict) -> None:
++    """The ad that opened this chat. Meta sends it only on the first message
++    after the click, so it is saved now; a failure must never cost the
++    customer their reply. companyId comes from the channel, never the ad."""
++    referral = msg.get("referral")
++    if not referral:
++        return
++    try:
++        marketingLeadAttributions.record_referral({"marketingLeadAttributions": [{
++            "action": 1,
++            "companyId": channel["companyId"],
++            "provider": "meta",
++            "conversionChannel": "whatsapp",
++            "channelId": channel["channelId"],
++            "customerPhone": phone,
++            "externalEventId": msg["messageId"],
++            "sourceType": referral.get("source_type"),
++            "sourceId": referral.get("source_id"),
++            "ctwaClid": referral.get("ctwa_clid"),
++            "headline": (referral.get("headline") or "")[:255] or None,
++            "body": (referral.get("body") or "")[:1000] or None,
++            "sourceUrl": (referral.get("source_url") or "")[:500] or None,
++            "mediaType": referral.get("media_type"),
++            "rawReferral": referral,
++            "referredAt": _sent_at(msg.get("timestamp")),
++        }]})
++    except Exception:
++        logger.warning("[whatsappCloud] ad referral not recorded | id=%s", msg.get("messageId"))
++
++
+ def _handle_message(msg: dict) -> None:
+     channel = whatsappChannels.get_channel(msg["phoneNumberId"])
+     if not channel:
+@@ -349,6 +389,8 @@ def _handle_message(msg: dict) -> None:
+     logger.info("[whatsappCloud] inbound | channel=%s company=%s branch=%s from=%s type=%s id=%s",
+                 channel["channelId"], channel["companyId"], channel.get("branchId"),
+                 phone, msg["type"], msg["messageId"])
++    # Before the agent runs: it creates the conversation row isNewLead looks for.
++    _record_ad_referral(channel, phone, msg)
+     try:
+         log_message_to_database(phone_number=phone, message_body=msg["text"], response_body="",
+                                 direction="inbound", status="received", action=1)
+diff --git a/Users/apple12/PycharmProjects/pythonProject/smartloans_backend/main.py b/be/main.py
+index b6f0fc1..2533578 100644
+--- a/Users/apple12/PycharmProjects/pythonProject/smartloans_backend/main.py
++++ b/be/main.py
+@@ -73,6 +73,7 @@ from routes_ import (
+     factoryRunUsage,
+     whatsappCloud,
+     whatsappAssistant,
++    marketingLeadAttribution,
+     laundryDevices,
+ )
+ 
+@@ -264,6 +265,7 @@ app.include_router(commissionTerminals.router)
+ app.include_router(factoryRunUsage.router)
+ app.include_router(whatsappCloud.router)
+ app.include_router(whatsappAssistant.router)
++app.include_router(marketingLeadAttribution.router)
+ app.include_router(laundryDevices.router)
+ 
+ # --------------------------------------------------

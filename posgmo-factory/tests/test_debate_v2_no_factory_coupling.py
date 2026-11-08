@@ -37,7 +37,10 @@ def test_root_agent_pipeline_is_unchanged_by_debate_v2():
     (live table outranks the spec, agents/spec_reconciler/). pr_stage wrapping
     pr_agent with a deterministic pass/fail gate was added 2026-09-23 -- LLM
     instruction-following on "only proceed if review passed" was confirmed
-    unreliable live, see agents/pr_gate/. Nothing here comes from debate_v2 —
+    unreliable live, see agents/pr_gate/. feature_registry_agent was added
+    2026-11-07 -- deterministic, emits EXEC sp_uiFeatures_register so every
+    generated module appears in the DB role catalog, see agents/feature_registry/.
+    Nothing here comes from debate_v2 —
     see the import-boundary test above for that guarantee.)"""
     from agents.agent import root_agent
     stage_names = [a.name for a in root_agent.sub_agents]
@@ -45,5 +48,5 @@ def test_root_agent_pipeline_is_unchanged_by_debate_v2():
         "host_architect_agent", "prd_parser_agent", "prd_enricher_agent",
         "schema_analyst_agent", "architect_stage", "decision_gate_agent", "spec_reconciler_agent",
         "generation_stage", "database_executor_agent", "fixer_agent", "frontend_stage",
-        "review_fix_loop", "pr_stage",
+        "feature_registry_agent", "review_fix_loop", "pr_stage",
     ]

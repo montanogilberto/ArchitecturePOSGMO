@@ -85,7 +85,9 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - icon: frontend_artifacts.setting_patch.icon
    This patches src/pages/Setting.tsx: adds the feature to the MODULES permissions matrix.
 9. Push database SQL as "sql_logic/sp_{{module}}.sql" to the backend repo.
-   Combine: create_table + sp_upsert + sp_all + sp_one, each separated by a GO line.
+   Combine: create_table + sp_upsert + sp_all + sp_one + feature_registration, each separated by a GO line.
+   feature_registration (written by the deterministic feature_registry stage) MUST be included
+   verbatim and LAST: it registers the module in dbo.uiFeatures so /setting and GET /roles show it.
 9. Save the same SQL file locally using save_sql_locally.
 10. Create PR on frontend repo.
 11. Create PR on backend repo.

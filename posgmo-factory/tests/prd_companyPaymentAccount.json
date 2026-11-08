@@ -1,13 +1,13 @@
 {
   "module": "companyPaymentAccount",
-  "description": "Receiving accounts that belong to a COMPANY (not to a client), so money paid by its customers lands in the company's own account and never in SmartLoans' (architecture D1; RFC-009/RFC-010 in POSVending docs/rfcs). First use: GMO Lavanderia (companyId 1) prepaid-wallet top-ups -- card top-ups are a Stripe direct charge on the company's connected account, and SPEI top-ups are transfers to the company's CLABE that a staff member confirms. dbo.bankAccounts and dbo.stripeConnectedAccounts are per client (clientId NOT NULL) and cannot hold this. One row per (companyId, purpose, accountType) can be ACTIVE at a time. Changing where customers send money is the classic fraud vector, so rows are versioned like RFC-001 (never UPDATE the CLABE or account id; a new row starts PENDING_VERIFICATION, becomes ACTIVE only when a second Admin confirms it, and the previous ACTIVE row becomes ARCHIVED in the same transaction), every change is audited, and the app shows clients the holder name so they can verify it before transferring (D17). The CLABE of a receiving account is shown to every customer, so it is stored in clear, validated (18 digits + mod-10 check digit, bank code in the ABM catalog) and also hashed (clabeHash) to block reusing a client's personal CLABE.",
+  "description": "Receiving accounts that belong to a COMPANY (not to a client), so money paid by its customers lands in the company's own account and never in SmartLoans' (architecture D1; RFC-009/RFC-010 in POSVending docs/rfcs). First use: prepaid-wallet top-ups of any company -- card top-ups are a Stripe direct charge on the company's connected account, and SPEI top-ups are transfers to the company's CLABE that a staff member confirms. dbo.bankAccounts and dbo.stripeConnectedAccounts are per client (clientId NOT NULL) and cannot hold this. One row per (companyId, purpose, accountType) can be ACTIVE at a time. Changing where customers send money is the classic fraud vector, so rows are versioned like RFC-001 (never UPDATE the CLABE or account id; a new row starts PENDING_VERIFICATION, becomes ACTIVE only when a second Admin confirms it, and the previous ACTIVE row becomes ARCHIVED in the same transaction), every change is audited, and the app shows clients the holder name so they can verify it before transferring (D17). The CLABE of a receiving account is shown to every customer, so it is stored in clear, validated (18 digits + mod-10 check digit, bank code in the ABM catalog) and also hashed (clabeHash) to block reusing a client's personal CLABE.",
   "fields": [
     {
       "name": "purpose",
       "type": "string",
       "required": true,
       "max_length": 30,
-      "description": "What the account receives. Today only laundry_topup (prepaid-wallet top-ups, RFC-010). Kept generic so other company flows (e.g. vending, arcade store) can add their own purpose later."
+      "description": "What the account receives. Today only wallet_topup (prepaid-wallet top-ups of any company, RFC-010). Kept generic so other company flows (e.g. vending, arcade store) can add their own purpose later."
     },
     {
       "name": "accountType",
@@ -127,7 +127,7 @@
     "allowedRoles": [
       "Admin"
     ],
-    "uiPattern": "Admin-only settings page 'Cuentas de cobro': one card per purpose (Recargas de lavandería) with its ACTIVE SPEI account (bank, holder, CLABE masked except last 4 in the list) and its Stripe account (status chips: cobros habilitados / pendiente de verificación). Buttons: 'Registrar nueva CLABE' (IonModal with live CLABE validation), 'Conectar Stripe' (opens the onboarding link), and on PENDING rows 'Confirmar' (only visible to an Admin other than the creator). Every action shows an IonSpinner in the button and disables it while in flight; first load shows a centered spinner, never an empty state before the request finishes. API in src/api/companyPaymentAccountsApi.ts.",
+    "uiPattern": "Admin-only settings page 'Cuentas de cobro': one card per purpose (Recargas de saldo) with its ACTIVE SPEI account (bank, holder, CLABE masked except last 4 in the list) and its Stripe account (status chips: cobros habilitados / pendiente de verificación). Buttons: 'Registrar nueva CLABE' (IonModal with live CLABE validation), 'Conectar Stripe' (opens the onboarding link), and on PENDING rows 'Confirmar' (only visible to an Admin other than the creator). Every action shows an IonSpinner in the button and disables it while in flight; first load shows a centered spinner, never an empty state before the request finishes. API in src/api/companyPaymentAccountsApi.ts.",
     "components": [
       {
         "step": 1,

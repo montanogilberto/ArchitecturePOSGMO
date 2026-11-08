@@ -16,6 +16,7 @@ Pipeline stages:
   6b. database_executor   — deterministic, zero-LLM: executes database_agent's SQL
   7.  fixer               — post-generation deterministic fixers (SQL, Python, TS)
   8.  frontend            — generate TSX / CSS / app patches
+  8b. feature_registry    — deterministic: registers the module in dbo.uiFeatures (sp_uiFeatures_register)
   9.  review_fix_loop     — reviewer → exit_check → review_fixer (up to 3×)
   10. pr                  — deterministic gate (agents/pr_gate.py) then push to GitHub, open PRs
 """
@@ -34,6 +35,7 @@ from agents.backend             import backend_agent
 from agents.design_consistency  import design_consistency_agent
 from agents.fixer               import fixer_agent
 from agents.frontend            import frontend_agent
+from agents.feature_registry    import feature_registry_agent
 from agents.reviewer            import reviewer_agent
 from agents.loop_exit           import loop_exit_agent
 from agents.review_fixer        import review_fixer_agent
@@ -114,6 +116,7 @@ root_agent = SequentialAgent(
         database_executor_agent, # 6b — must run after generation_stage: reads database_agent's output
         fixer_agent,             # 7
         frontend_stage,          # 8  (frontend_agent, retried -- agents/retry.py)
+        feature_registry_agent,  # 8b — deterministic: EXEC sp_uiFeatures_register into the module SQL
         review_fix_loop,         # 9  ← iterative loop
         pr_stage,                # 10 (pr_agent, hard-gated -- agents/pr_gate.py)
     ],

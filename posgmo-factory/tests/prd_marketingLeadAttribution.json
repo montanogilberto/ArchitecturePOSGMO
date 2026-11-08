@@ -1,0 +1,179 @@
+{
+  "module": "marketingLeadAttribution",
+  "description": "PHASE 1 of GMO Client Acquisition, a new ecosystem module whose goal is to acquire new customers for each company, convert conversations into first purchases, and measure what each customer costs. Acquisition belongs to the GMO ecosystem, not to the WhatsApp module: Meta is the first advertising provider, WhatsApp the first conversion channel, Google a future provider. This module records every ad click that reaches a company, as durable attribution data. A person taps a Facebook/Instagram Click-to-WhatsApp ad and the first message reaches the Cloud API webhook with a messages[].referral object (source_id, source_type, ctwa_clid, headline, body, source_url, media_type). Today modules/whatsappCloud._extract_inbound keeps only the text, so this data is lost, and it cannot be recovered: Meta sends it only on the first message after the click.\n\nTENANT VS ATTRIBUTION: the receiving WhatsApp channel establishes the tenant; the referral establishes the campaign attribution. companyId comes ONLY from the whatsappChannels row resolved from Meta's phone_number_id, never from the ad text, the referral, or the caller. UQ_whatsappChannels_phoneNumberId makes that lookup unambiguous. A message to an unregistered number is already dropped by _handle_message before this module runs, and no row is written.\n\nGRAIN: one row per ad-originated message. A customer who taps two ads has two rows, so both first-touch and last-touch attribution can be derived by ordering on referredAt; neither is stored. Rows are immutable facts: no update and no delete action exists. updated_at exists only for the factory convention and never changes.\n\nIDENTITY: dbo.clients stays the source of truth. This module NEVER creates, edits or merges a POS client, and a click never creates one. clientId is a nullable snapshot of a match at click time; it is expected to be NULL for new people. Later reporting must re-match by phone rather than trust this snapshot, because a lead often becomes a client after the click. Note for phase 4: WhatsApp creates no POS clients and dbo.reservations stores only phone and clientName, so a first purchase is attributable only when the cashier records the sale on a client with that phone.\n\nPRIVACY: an ad click is NOT marketing consent. Never write to clientContactPreferences. Never log customerPhone, ctwaClid, headline, body or rawReferral.\n\nSCOPE. IN: table, write SP, list and one SPs, webhook capture. OUT, deliberately: marketingAccounts, marketingCampaigns, marketingAdSets, marketingAds (no data source until the Meta reporting API is connected, phase 4); marketingEvents (derived from existing tables for now, needed first for the Conversions API); the agent's acquisition mode (phase 3); dashboard and any frontend (phase 4); spend, CPL, CAC, ROAS (phase 4); campaign creation (phase 5). The referral carries the ad id, not the campaign id: campaign is resolved from sourceId in phase 4.\n\nMANUAL APPLY STEPS, which the factory does not generate (confirmed by the adReferral run of 2026-11-04):\n(1) modules/whatsappCloud._extract_inbound: add \"referral\": msg.get(\"referral\") and \"timestamp\": msg.get(\"timestamp\") to each dict.\n(2) modules/whatsappCloud._handle_message: right after phone is computed, and BEFORE clientContactPreferences.handle_keyword and whatsappReservations.reply_to, so it also records when botEnabled is off or the customer sends BAJA, and so isNewLead is computed before the agent creates the whatsappConversations row: if msg.get(\"referral\"), call marketingLeadAttributions.record_referral(json_file) with ONE dict in the SP's @pjsonfile shape, inside try/except, logging failures with log_workflow_step (workflow 'marketing_attribution', status FAILED, no phone, no referral content). It must never delay or break the customer's reply.\n(3) Remove any generated public POST /marketingLeadAttributions route: rows are created in-process only, because a public route would let anyone forge attribution.\n(4) Protect both read routes with Depends(require_worker_key): they return customer phones and the backend has no user auth.\n(5) Register the router in main.py.\n\nACCEPTANCE TESTS:\nAT1 A message with a referral writes one row with the channel's companyId, and rawReferral equals the object received.\nAT2 The same externalEventId sent twice leaves one row and returns the existing id.\nAT3 A message with no referral writes no row and behaves exactly as today.\nAT4 A referral on a channel with botEnabled = 0 still writes a row; the bot stays silent.\nAT5 A referral whose text is BAJA writes a row, the opt-out still works, and consent is unchanged.\nAT6 If the SP fails, the customer still gets the agent's reply.\nAT7 The same phone on channels of two companies gives two independent rows; each company's reads return only its own.\nAT8 A phone with no client, conversation or earlier row gets isNewLead = 1; a known client, an earlier conversation, or an earlier click each gets 0; a phone matching only the 'Desconocido' placeholder counts as no client.\nAT9 A second click by the same customer adds a row; touchNumber is 1 and 2 in referredAt order.\nAT10 A referral with only the required keys (other fields missing) is still recorded; oversized text is truncated, not rejected.\nAT11 No client row is created or changed by any of the above.\nAT12 No read endpoint exposes ctwaClid, including inside rawReferral.\nAT13 POST /marketingLeadAttributions does not exist.",
+  "fields": [
+    {
+      "name": "provider",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Advertising provider. CHECK IN ('meta'); widened when Google is added."
+    },
+    {
+      "name": "conversionChannel",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Where the lead started the conversation. CHECK IN ('whatsapp'). A provider-neutral column so a future channel needs no reshaping."
+    },
+    {
+      "name": "channelId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "whatsappChannels",
+      "fk_column": "channelId",
+      "description": "Business WhatsApp number that received the lead; gives the branch by join. Required when conversionChannel = 'whatsapp' (CHECK). The SP rejects a channel outside companyId."
+    },
+    {
+      "name": "customerPhone",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "E.164 as modules/whatsappCloud.normalize_mx_number produces it ('+52' + 10 digits), same value as whatsappConversations.customerPhone. Never logged in full."
+    },
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "Snapshot of the POS client matched at click time, resolved by the SP, never sent by the caller. NULL when none matches, the normal case for a new lead."
+    },
+    {
+      "name": "isNewLead",
+      "type": "boolean",
+      "required": true,
+      "description": "Computed by the SP at insert, never sent by the caller. 1 only when the phone matches no client of this company AND has no whatsappConversations row on any channel of this company AND no earlier row in this table for this company."
+    },
+    {
+      "name": "externalEventId",
+      "type": "string",
+      "required": true,
+      "max_length": 128,
+      "description": "Provider's unique id of the event; for WhatsApp, the wamid. UNIQUE (companyId, provider, externalEventId) makes webhook retries idempotent."
+    },
+    {
+      "name": "sourceType",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "referral.source_type as received ('ad', 'post'). Not constrained: an unexpected value must not lose the row."
+    },
+    {
+      "name": "sourceId",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "referral.source_id, the Meta ad id, and the future join key to marketingAds and spend. A string, never numeric: these ids exceed INT."
+    },
+    {
+      "name": "ctwaClid",
+      "type": "string",
+      "required": false,
+      "max_length": 512,
+      "description": "referral.ctwa_clid, the click id that connects later conversions to the original click through the Conversions API. Stored, never returned by any endpoint, never logged."
+    },
+    {
+      "name": "headline",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "referral.headline. Truncate to the column size, never fail."
+    },
+    {
+      "name": "body",
+      "type": "string",
+      "required": false,
+      "max_length": 1000,
+      "description": "referral.body. Truncate to the column size, never fail."
+    },
+    {
+      "name": "sourceUrl",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "referral.source_url. Truncate to the column size, never fail."
+    },
+    {
+      "name": "mediaType",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "referral.media_type as received."
+    },
+    {
+      "name": "rawReferral",
+      "type": "text",
+      "required": false,
+      "description": "The complete referral object as JSON, for troubleshooting and for fields Meta adds later. CHECK (rawReferral IS NULL OR ISJSON(rawReferral) = 1). Never logged."
+    },
+    {
+      "name": "referredAt",
+      "type": "datetime",
+      "required": true,
+      "description": "UTC moment of the message, from Meta's messages[].timestamp (epoch seconds as a string); falls back to the current UTC time when missing or invalid."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Tenant. Taken from the resolved whatsappChannels row on write; every read SP filters by it."
+    },
+    {
+      "parentModule": "whatsappChannels",
+      "cardinality": "1:N",
+      "notes": "The number that received the lead. Establishes the tenant."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "Optional snapshot. This module never writes to dbo.clients."
+    }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/all_marketingLeadAttributions",
+        "method": "POST",
+        "description": "Read-only list of one company's rows, newest first, max 200, used to verify the pilot until the phase 4 dashboard exists. Filters: startDate/endDate (Hermosillo days, fixed UTC-7, default last 30 days), sourceId, onlyNewLeads. touchNumber is computed per phone with ROW_NUMBER ordered by referredAt across ALL the company's rows, not just the filtered period. Never returns ctwaClid or rawReferral.",
+        "requestSchema": "{ \"marketingLeadAttributions\": [{ \"companyId\": int, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\", \"sourceId\"?: string, \"onlyNewLeads\"?: bool }] }",
+        "responseSchema": "{ \"result\": [{ \"marketingLeadAttributions\": [{ \"marketingLeadAttributionId\", \"provider\", \"conversionChannel\", \"channelId\", \"customerPhone\", \"clientId\", \"isNewLead\", \"touchNumber\", \"sourceType\", \"sourceId\", \"headline\", \"sourceUrl\", \"mediaType\", \"referredAt\" }] }] }"
+      },
+      {
+        "path": "/one_marketingLeadAttributions",
+        "method": "POST",
+        "description": "One row of the company, for troubleshooting. Includes rawReferral with ctwa_clid removed by JSON_MODIFY(rawReferral, '$.ctwa_clid', NULL). Never returns ctwaClid.",
+        "requestSchema": "{ \"marketingLeadAttributions\": [{ \"companyId\": int, \"marketingLeadAttributionId\": int }] }",
+        "responseSchema": "{ \"result\": [{ \"marketingLeadAttributions\": [{ \"marketingLeadAttributionId\", \"provider\", \"conversionChannel\", \"channelId\", \"customerPhone\", \"clientId\", \"isNewLead\", \"sourceType\", \"sourceId\", \"headline\", \"body\", \"sourceUrl\", \"mediaType\", \"rawReferral\", \"referredAt\" }] }] }"
+      }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.marketingLeadAttributions"],
+    "storedProcedures": [
+      "dbo.sp_marketingLeadAttributions",
+      "dbo.sp_marketingLeadAttributions_all",
+      "dbo.sp_marketingLeadAttributions_one"
+    ],
+    "hints": [
+      "UNIQUE (companyId, provider, externalEventId). CHECK (provider IN ('meta')). CHECK (conversionChannel IN ('whatsapp')). CHECK (conversionChannel <> 'whatsapp' OR channelId IS NOT NULL). CHECK (rawReferral IS NULL OR ISJSON(rawReferral) = 1).",
+      "Use DATETIME2 for referredAt and for created_at/updated_at, defaulting to SYSUTCDATETIME(); never GETDATE(). Everything here is UTC.",
+      "sourceId is NVARCHAR(64), never numeric. isNewLead is BIT NOT NULL.",
+      "Indexes: (companyId, referredAt), (companyId, sourceId, referredAt), (companyId, customerPhone). The UNIQUE constraint already indexes externalEventId: no separate index for it.",
+      "No FK to dbo.users: the live table has no primary key and the FK fails with error 1776.",
+      "dbo.clients has first_name and last_name; there is NO clientName column. dbo.reservations has no clientId. Use only columns in structure_database.csv.",
+      "sp_marketingLeadAttributions has ONE action, 1 = idempotent insert. Any other action returns error 'unsupported_action'. No update or delete.",
+      "Action 1: truncate headline, body, sourceUrl with LEFT() to the column size. Reject a channelId outside companyId with error 'channel_not_in_company'. If (companyId, provider, externalEventId) exists, return that id and insert nothing. A UNIQUE violation from a concurrent retry (error 2627 or 2601) is the same case: return the existing id, not an error.",
+      "Every exit path must leave @@TRANCOUNT balanced: commit or roll back before any GOTO or RETURN.",
+      "The SP resolves clientId and isNewLead itself and ignores any value sent for them. Client match, same as sp_whatsappCustomerRewards: RIGHT(REPLACE(REPLACE(REPLACE(c.cellphone,'+',''),' ',''),'-',''),10) equals the last 10 digits of customerPhone, within companyId, AND c.first_name <> N'Desconocido'.",
+      "isNewLead also requires no dbo.whatsappConversations row for this phone on any channel of this company (join whatsappChannels by companyId), and no earlier dbo.marketingLeadAttributions row for this company and phone.",
+      "This SP never inserts or updates dbo.clients, dbo.clientContactPreferences or any other table.",
+      "Hermosillo is a fixed UTC-7 with no DST: compute period bounds with DATEADD(HOUR, 7, ...). Never use AT TIME ZONE 'Central Standard Time'.",
+      "All SPs use the @pjsonfile pattern and TRY/CATCH. _all and _one must never select ctwaClid; _all must not select rawReferral."
+    ]
+  }
+}

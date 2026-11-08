@@ -2404,6 +2404,84 @@
         "@pjsonfile"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_marketingLeadAttributions",
+      "module_binding": "modules/marketingLeadAttributions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_marketingLeadAttributions_all",
+      "module_binding": "modules/marketingLeadAttributions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_marketingLeadAttributions_one",
+      "module_binding": "modules/marketingLeadAttributions.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyPaymentAccounts",
+      "module_binding": "modules/companyPaymentAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyPaymentAccounts_active",
+      "module_binding": "modules/companyPaymentAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyPaymentAccounts_all",
+      "module_binding": "modules/companyPaymentAccounts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyPaymentAccounts_one",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_roleUiFeatures_update",
+      "module_binding": "modules/roles.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_uiFeatures_all",
+      "module_binding": "modules/roles.py",
+      "parameters": [],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_uiFeatures_register",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

@@ -61,6 +61,12 @@
   },
   {
     "parent_table": "clients",
+    "child_table": "marketingLeadAttributions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_marketingLeadAttributions_clients"
+  },
+  {
+    "parent_table": "clients",
     "child_table": "paymentIntents",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_paymentIntents_payeeClients"
@@ -84,6 +90,12 @@
     "fk_constraint_name": "fk_FK_transferEvidence_UploadedBy"
   },
   {
+    "parent_table": "commissionTerminals",
+    "child_table": "companyPaymentAccounts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_companyPaymentAccounts_terminal"
+  },
+  {
     "parent_table": "companies",
     "child_table": "aiMessages",
     "type": "||--o{",
@@ -103,6 +115,12 @@
   },
   {
     "parent_table": "companies",
+    "child_table": "companyPaymentAccounts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_companyPaymentAccounts_companies"
+  },
+  {
+    "parent_table": "companies",
     "child_table": "companyTokenLedger",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_companyTokenLedger_company"
@@ -112,6 +130,12 @@
     "child_table": "employees",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_employees_companyId"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "marketingLeadAttributions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_marketingLeadAttributions_companies"
   },
   {
     "parent_table": "companies",
@@ -496,6 +520,12 @@
     "child_table": "walletTransactions",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_walletTransactions_entryType"
+  },
+  {
+    "parent_table": "whatsappChannels",
+    "child_table": "marketingLeadAttributions",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_marketingLeadAttributions_whatsappChannels"
   },
   {
     "parent_table": "whatsappChannels",

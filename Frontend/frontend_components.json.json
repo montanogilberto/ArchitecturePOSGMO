@@ -1817,5 +1817,23 @@
     "type": "payments",
     "reusable": false,
     "source": "knowledge_sync"
+  },
+  {
+    "componentName": "UpdateRequiredGate",
+    "filePath": "src/components/ui/UpdateRequiredGate.tsx",
+    "folder": "ui",
+    "props": [],
+    "type": "ui",
+    "reusable": true,
+    "source": "knowledge_sync"
+  },
+  {
+    "componentName": "TransferAccountCard",
+    "filePath": "src/components/payments/TransferAccountCard.tsx",
+    "folder": "payments",
+    "props": [],
+    "type": "payments",
+    "reusable": false,
+    "source": "knowledge_sync"
   }
 ]

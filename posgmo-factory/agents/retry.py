@@ -47,6 +47,31 @@ def parse_json_object(raw) -> dict:
     return loaded if isinstance(loaded, dict) else {}
 
 
+def normalize_json_text(raw):
+    """Strict JSON text for output that is only invalid because of raw control
+    characters (line breaks, tabs) inside its strings, else None (already
+    strict, or not JSON at all). Found 2026-11-07 (prd_voiceCall): backend_agent
+    wrote a 47 KB module as a JSON string with literal newlines, 3/3 attempts --
+    "Invalid control character" -- so the run produced no backend and no PR.
+    The content is exactly what was meant; only its encoding was off. Every
+    downstream stage parses strictly, so the fix is to re-encode here, once."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    body = raw.strip()
+    if body.startswith("```"):
+        body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("```")).strip()
+    try:
+        json.loads(body)
+        return None
+    except json.JSONDecodeError:
+        pass
+    try:
+        loaded = json.loads(body, strict=False)
+    except json.JSONDecodeError:
+        return None
+    return json.dumps(loaded, ensure_ascii=False) if isinstance(loaded, dict) else None
+
+
 def describe_unusable(raw) -> str:
     """Why an attempt's output was rejected -- a bare "unusable output" left
     the cause of a costly retry undiagnosable (2026-09-24: 2/8 frontend
@@ -104,6 +129,11 @@ async def run_with_retries(
             if getattr(event, "error_code", None):
                 failures.append(f"attempt {attempt}: {event.error_code}")
             yield event
+        normalized = normalize_json_text(output)
+        if normalized is not None:
+            print(f"[retry] {agent.name} attempt {attempt}: re-encoded control characters in its JSON", flush=True)
+            output = normalized
+            yield Event(author=agent.name, actions=EventActions(state_delta={output_key: normalized}))
         if is_usable(output):
             break
         failures.append(f"attempt {attempt}: unusable output ({describe_unusable(output)})")

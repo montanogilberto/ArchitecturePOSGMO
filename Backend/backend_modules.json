@@ -285,7 +285,7 @@
       "sp_users"
     ],
     "observable": true,
-    "lines": 312
+    "lines": 333
   },
   {
     "module": "clients",
@@ -340,7 +340,7 @@
       "sp_companies_one"
     ],
     "observable": false,
-    "lines": 73
+    "lines": 93
   },
   {
     "module": "companiesBranches",
@@ -356,6 +356,20 @@
     ],
     "observable": false,
     "lines": 92
+  },
+  {
+    "module": "companyPaymentAccounts",
+    "file": "modules/companyPaymentAccounts.py",
+    "routeFiles": [
+      "routes_/companyPaymentAccounts.py"
+    ],
+    "storedProcedures": [
+      "sp_companyPaymentAccounts",
+      "sp_companyPaymentAccounts_active",
+      "sp_companyPaymentAccounts_all"
+    ],
+    "observable": true,
+    "lines": 190
   },
   {
     "module": "companyTokens",
@@ -672,7 +686,7 @@
       "sp_journalEntries_trialBalance"
     ],
     "observable": false,
-    "lines": 390
+    "lines": 402
   },
   {
     "module": "laundry",
@@ -794,7 +808,7 @@
       "sp_login"
     ],
     "observable": false,
-    "lines": 65
+    "lines": 78
   },
   {
     "module": "maintenancePredictor",
@@ -808,6 +822,20 @@
     ],
     "observable": false,
     "lines": 140
+  },
+  {
+    "module": "marketingLeadAttributions",
+    "file": "modules/marketingLeadAttributions.py",
+    "routeFiles": [
+      "routes_/marketingLeadAttribution.py"
+    ],
+    "storedProcedures": [
+      "sp_marketingLeadAttributions",
+      "sp_marketingLeadAttributions_all",
+      "sp_marketingLeadAttributions_one"
+    ],
+    "observable": true,
+    "lines": 56
   },
   {
     "module": "marketplaceOrders",
@@ -889,7 +917,7 @@
       "sp_pushNotifications_resolveUsers"
     ],
     "observable": true,
-    "lines": 701
+    "lines": 708
   },
   {
     "module": "notificationPush",
@@ -907,7 +935,7 @@
     ],
     "storedProcedures": [],
     "observable": false,
-    "lines": 109
+    "lines": 110
   },
   {
     "module": "offerReminders",
@@ -1138,7 +1166,7 @@
       "sp_pushNotifications_resolveUsers"
     ],
     "observable": false,
-    "lines": 335
+    "lines": 328
   },
   {
     "module": "receiptLinks",
@@ -1174,7 +1202,7 @@
       "sp_reservations"
     ],
     "observable": false,
-    "lines": 267
+    "lines": 269
   },
   {
     "module": "rewardBenefits",
@@ -1215,10 +1243,13 @@
     ],
     "storedProcedures": [
       "sp_login",
-      "sp_roles"
+      "sp_roleUiFeatures_update",
+      "sp_roles",
+      "sp_uiFeatures",
+      "sp_uiFeatures_all"
     ],
-    "observable": false,
-    "lines": 42
+    "observable": true,
+    "lines": 126
   },
   {
     "module": "scannertext",
@@ -1257,6 +1288,18 @@
     ],
     "observable": false,
     "lines": 60
+  },
+  {
+    "module": "sessions",
+    "file": "modules/sessions.py",
+    "routeFiles": [
+      "routes_/sessionAuth.py"
+    ],
+    "storedProcedures": [
+      "sp_users_one"
+    ],
+    "observable": false,
+    "lines": 65
   },
   {
     "module": "shipments",
@@ -1304,6 +1347,7 @@
     "module": "stripe_payments",
     "file": "modules/stripe_payments.py",
     "routeFiles": [
+      "routes_/companyPaymentAccounts.py",
       "routes_/stripe_payments.py"
     ],
     "storedProcedures": [
@@ -1315,7 +1359,7 @@
       "sp_transactions_list"
     ],
     "observable": true,
-    "lines": 1344
+    "lines": 1585
   },
   {
     "module": "suppliers",
@@ -1422,22 +1466,7 @@
       "sp_users_one_email"
     ],
     "observable": true,
-    "lines": 642
-  },
-  {
-    "module": "utils",
-    "file": "modules/utils.py",
-    "routeFiles": [
-      "routes_/utils.py"
-    ],
-    "storedProcedures": [
-      "sp_database_info_tables",
-      "sp_select_all_tables",
-      "sp_select_one_row",
-      "sp_select_with_one_field_filter"
-    ],
-    "observable": false,
-    "lines": 93
+    "lines": 649
   },
   {
     "module": "vending",
@@ -1463,6 +1492,16 @@
     ],
     "observable": true,
     "lines": 208
+  },
+  {
+    "module": "walletTopUps",
+    "file": "modules/walletTopUps.py",
+    "routeFiles": [
+      "routes_/walletTopUps.py"
+    ],
+    "storedProcedures": [],
+    "observable": true,
+    "lines": 209
   },
   {
     "module": "walletTransactions",
@@ -1532,7 +1571,17 @@
       "sp_whatsapp_messages"
     ],
     "observable": true,
-    "lines": 458
+    "lines": 534
+  },
+  {
+    "module": "whatsappEvidence",
+    "file": "modules/whatsappEvidence.py",
+    "routeFiles": [],
+    "storedProcedures": [
+      "sp_whatsappCustomerRewards"
+    ],
+    "observable": true,
+    "lines": 119
   },
   {
     "module": "whatsappReservations",

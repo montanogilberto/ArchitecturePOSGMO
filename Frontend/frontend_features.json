@@ -1,6 +1,14 @@
 [
   {
     "area": "admin",
+    "feature": "CompanyPaymentAccounts",
+    "folder": "src/pages/admin/CompanyPaymentAccounts",
+    "pageShell": "src/pages/admin/CompanyPaymentAccountsPage.tsx",
+    "mvvm": true,
+    "fileCount": 2
+  },
+  {
+    "area": "admin",
     "feature": "Employees",
     "folder": "src/pages/admin/Employees",
     "pageShell": "src/pages/admin/EmployeesPage.tsx",
@@ -13,7 +21,7 @@
     "folder": "src/pages/clients/ClientDashboardPOS",
     "pageShell": "src/pages/clients/ClientDashboardPOSPage.tsx",
     "mvvm": true,
-    "fileCount": 14
+    "fileCount": 22
   },
   {
     "area": "clients",
@@ -237,7 +245,7 @@
     "folder": "src/pages/messaging/NotificationDispatchLog",
     "pageShell": "src/pages/messaging/NotificationDispatchLogPage.tsx",
     "mvvm": true,
-    "fileCount": 23
+    "fileCount": 24
   },
   {
     "area": "messaging",

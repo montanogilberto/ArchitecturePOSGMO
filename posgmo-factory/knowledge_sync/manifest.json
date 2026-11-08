@@ -1,39 +1,28 @@
 {
   "scanner": "knowledge_sync/1.1.0",
-  "ranAt": "2026-11-04T19:02:45+00:00",
+  "ranAt": "2026-11-08T06:45:20+00:00",
   "repos": {
     "frontend": {
       "path": "/Users/apple12/PycharmProjects/POSVendingV2/POSVending",
-      "commit": "2433b5e5",
+      "commit": "c6ea4f54",
       "branch": "development",
-      "commitDate": "2026-11-02T00:46:06-07:00"
+      "commitDate": "2026-11-06T13:53:09-07:00"
     },
     "backend": {
       "path": "/Users/apple12/PycharmProjects/pythonProject/smartloans_backend",
-      "commit": "869a2d5",
+      "commit": "65946cf",
       "branch": "development",
-      "commitDate": "2026-11-04T11:54:35-07:00"
+      "commitDate": "2026-11-07T23:34:48-07:00"
     },
     "agents": {
       "path": "/Users/apple12/LoanAgents_SmartLoans",
-      "commit": "9cb57f5",
+      "commit": "0e902af",
       "branch": "development",
-      "commitDate": "2026-11-04T11:53:25-07:00"
+      "commitDate": "2026-11-07T23:22:08-07:00"
     }
   },
   "written": [
     "Backend/backend_routes.json.json",
-    "Backend/backend_modules.json",
-    "Backend/backend_firmware.json",
-    "Backend/backend_stored_procedures.json.json",
-    "Database/structure_database.csv",
-    "Database/sql_relationships.json",
-    "Database/db_programmability.json",
-    "Frontend/frontend_routes.json.json",
-    "Frontend/frontend_components.json.json",
-    "Frontend/frontend_api_clients.json",
-    "Frontend/frontend_features.json",
-    "Agents/agents_catalog.json",
-    "Conventions/repo_conventions.json"
+    "Backend/backend_modules.json"
   ]
 }

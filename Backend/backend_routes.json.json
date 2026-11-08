@@ -522,7 +522,8 @@
       "file": "routes_/utils.py",
       "tags": [
         "System Inspection Helpers"
-      ]
+      ],
+      "stale": true
     },
     {
       "path": "/vending_v2",
@@ -4092,7 +4093,8 @@
       "handlers": [
         "select_all_tables_"
       ],
-      "source": "knowledge_sync"
+      "source": "knowledge_sync",
+      "stale": true
     },
     {
       "path": "/select_elements_with_filter",
@@ -4106,7 +4108,8 @@
       "handlers": [
         "select_elements_with_filter"
       ],
-      "source": "knowledge_sync"
+      "source": "knowledge_sync",
+      "stale": true
     },
     {
       "path": "/select_info_tables",
@@ -4120,7 +4123,8 @@
       "handlers": [
         "select_info_tables_"
       ],
-      "source": "knowledge_sync"
+      "source": "knowledge_sync",
+      "stale": true
     },
     {
       "path": "/select_one_row",
@@ -4134,7 +4138,8 @@
       "handlers": [
         "select_one_row_"
       ],
-      "source": "knowledge_sync"
+      "source": "knowledge_sync",
+      "stale": true
     },
     {
       "path": "/send_account_created",
@@ -4849,6 +4854,244 @@
       ],
       "handlers": [
         "whatsapp_staff_reply_route"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_marketingLeadAttributions",
+      "file": "routes_/marketingLeadAttribution.py",
+      "tags": [
+        "marketingLeadAttribution"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_marketingLeadAttributions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/app/minVersion",
+      "file": "routes_/sessionAuth.py",
+      "tags": [
+        "sessionAuth"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "app_min_version"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/auth/refresh",
+      "file": "routes_/sessionAuth.py",
+      "tags": [
+        "sessionAuth"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "auth_refresh"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_marketingLeadAttributions",
+      "file": "routes_/marketingLeadAttribution.py",
+      "tags": [
+        "marketingLeadAttribution"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_marketingLeadAttributions"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companyPaymentAccounts/active",
+      "file": "routes_/companyPaymentAccounts.py",
+      "tags": [
+        "Company payment accounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "active"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companyPaymentAccounts/confirm",
+      "file": "routes_/companyPaymentAccounts.py",
+      "tags": [
+        "Company payment accounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "confirm"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companyPaymentAccounts/list",
+      "file": "routes_/companyPaymentAccounts.py",
+      "tags": [
+        "Company payment accounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "list_all"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companyPaymentAccounts/stripe/onboarding-link",
+      "file": "routes_/companyPaymentAccounts.py",
+      "tags": [
+        "Company payment accounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "onboarding_link"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companyPaymentAccounts/stripe/platform",
+      "file": "routes_/companyPaymentAccounts.py",
+      "tags": [
+        "Company payment accounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "platform_account"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/companyPaymentAccounts/transfer-account",
+      "file": "routes_/companyPaymentAccounts.py",
+      "tags": [
+        "Company payment accounts"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "transfer_account"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/roles/ui_features",
+      "file": "routes_/roles.py",
+      "tags": [
+        "roles"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "update_role_ui_features"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/stripe/top-up/save-card",
+      "file": "routes_/stripe_payments.py",
+      "tags": [
+        "Stripe Connect"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "top_up_save_card"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/ui_features",
+      "file": "routes_/roles.py",
+      "tags": [
+        "roles"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "handlers": [
+        "ui_features"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/walletTopUps/transfer/confirm",
+      "file": "routes_/walletTopUps.py",
+      "tags": [
+        "Wallet top-ups"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "confirm"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/walletTopUps/transfer/reject",
+      "file": "routes_/walletTopUps.py",
+      "tags": [
+        "Wallet top-ups"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reject"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/walletTopUps/cash",
+      "file": "routes_/walletTopUps.py",
+      "tags": [
+        "Wallet top-ups"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "cash"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/walletTopUps/terminal",
+      "file": "routes_/walletTopUps.py",
+      "tags": [
+        "Wallet top-ups"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "terminal"
       ],
       "source": "knowledge_sync"
     }

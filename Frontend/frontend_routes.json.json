@@ -702,5 +702,12 @@
     "authenticated": true,
     "feature": "notificationDispatchLog",
     "source": "knowledge_sync"
+  },
+  {
+    "path": "/company-payment-accounts",
+    "component": "src/pages/admin/CompanyPaymentAccountsPage.tsx",
+    "authenticated": true,
+    "feature": "companyPaymentAccounts",
+    "source": "knowledge_sync"
   }
 ]

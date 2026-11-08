@@ -1,0 +1,7 @@
+Returns all marketingLeadAttributions records for the given company, filtered and ordered newest first (max 200), via sp_marketingLeadAttributions_all.
+This endpoint supports verifying pilot data until the phase 4 dashboard.
+Filters: startDate/endDate (Hermosillo days, fixed UTC-7, default last 30 days), sourceId, onlyNewLeads.
+Stored procedure: EXEC [dbo].[sp_marketingLeadAttributions_all] @pjsonfile = '<json>'
+
+Example:
+curl -X POST "https://smartloansbackend.azurewebsites.net/all_marketingLeadAttributions"   -H "Content-Type: application/json"   -d '{"marketingLeadAttributions":[{"companyId":1, "startDate":"2023-10-01", "endDate":"2023-10-31", "onlyNewLeads":true}]}'

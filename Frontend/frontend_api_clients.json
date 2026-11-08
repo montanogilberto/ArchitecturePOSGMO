@@ -1,5 +1,15 @@
 [
   {
+    "file": "src/api/appVersionApi.ts",
+    "functions": [
+      {
+        "name": "fetchMinNativeVersion",
+        "method": "GET",
+        "path": "/app/minVersion"
+      }
+    ]
+  },
+  {
     "file": "src/api/arcadeApi.ts",
     "functions": []
   },
@@ -205,6 +215,10 @@
     ]
   },
   {
+    "file": "src/api/companyPaymentAccountsApi.ts",
+    "functions": []
+  },
+  {
     "file": "src/api/companyTokensApi.ts",
     "functions": [
       {
@@ -348,8 +362,17 @@
     ]
   },
   {
+    "file": "src/api/laundryWalletApi.test.ts",
+    "functions": []
+  },
+  {
     "file": "src/api/laundryWalletApi.ts",
     "functions": [
+      {
+        "name": "getTopUpOptions",
+        "method": "POST",
+        "path": "/companyPaymentAccounts/active"
+      },
       {
         "name": "createLaundryTopUpIntent",
         "method": "POST",
@@ -359,6 +382,11 @@
         "name": "confirmLaundryTopUp",
         "method": "POST",
         "path": "/stripe/payment-intents/confirm"
+      },
+      {
+        "name": "answerSaveCard",
+        "method": "POST",
+        "path": "/stripe/top-up/save-card"
       }
     ]
   },
@@ -602,6 +630,16 @@
         "name": "fetchRoleCatalog",
         "method": "GET",
         "path": "/roles"
+      },
+      {
+        "name": "updateRoleUiFeatures",
+        "method": "POST",
+        "path": "/roles/ui_features"
+      },
+      {
+        "name": "fetchUiFeatures",
+        "method": "GET",
+        "path": "/ui_features"
       }
     ]
   },
@@ -629,6 +667,10 @@
         "path": "/services"
       }
     ]
+  },
+  {
+    "file": "src/api/sessionApi.ts",
+    "functions": []
   },
   {
     "file": "src/api/stripeApi.ts",
@@ -666,6 +708,16 @@
         "name": "validateTransferEvidence",
         "method": "POST",
         "path": "/validate-transfer-evidence"
+      }
+    ]
+  },
+  {
+    "file": "src/api/transferReadingApi.ts",
+    "functions": [
+      {
+        "name": "readTransferEvidence",
+        "method": "POST",
+        "path": "/transfers/extract-evidence"
       }
     ]
   },

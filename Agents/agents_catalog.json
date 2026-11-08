@@ -286,6 +286,29 @@
     "proposes_writes": false
   },
   {
+    "folder": "agents/transfer_extraction",
+    "name": "transfer_extraction_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Reads total, clave de rastreo, date and sending bank from a SPEI receipt photo.",
+    "tools": [],
+    "proposes_writes": false
+  },
+  {
+    "folder": "agents/voice_secretary",
+    "name": "voice_secretary_agent",
+    "kind": "Agent",
+    "model": null,
+    "description": "Live phone assistant: calls a customer whose order is ready, agrees how and when they'll get it (pickup or delivery, day/time, address, payment) and PROPOSES a PICKUP_AGREEMENT — the backend confirms it with the customer by WhatsApp. Answers business facts only from tools.",
+    "tools": [
+      "FunctionTool",
+      "propose_action",
+      "confirm_customer_identity",
+      "end_call"
+    ],
+    "proposes_writes": true
+  },
+  {
     "folder": "agents/whatsapp_insights",
     "name": "whatsapp_insights_agent",
     "kind": "Agent",

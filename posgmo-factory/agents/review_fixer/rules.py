@@ -11,6 +11,37 @@ from google.adk.tools.tool_context import ToolContext
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _shell_module(page_path: str) -> tuple[str, str] | None:
+    """('Expenses', 'finance') from src/pages/finance/ExpensesPage.tsx."""
+    m = re.match(r"src/pages/([^/]+)/(\w+)Page\.tsx$", page_path or "")
+    return (m.group(2), m.group(1)) if m else None
+
+
+def _shell_from_layout(page_path: str) -> str:
+    """The router shell exactly as POSVending writes it (pages/finance/ExpensesPage.tsx),
+    with the import lines from frontend_layout -- the one source for them."""
+    from frontend_layout import layout
+    parsed = _shell_module(page_path)
+    if not parsed:
+        return ""
+    M, area = parsed
+    lines = layout(M[0].lower() + M[1:], area)
+    return (f"import React from 'react';\n{lines['shell_css_import']}\n{lines['shell_view_import']}\n\n"
+            f"const {M}Page: React.FC = () => {{\n  return <{M}View />;\n}};\n\nexport default {M}Page;\n")
+
+
+def _ensure_default_view_export(view_content: str, page_path: str) -> str:
+    """The shell default-imports the View; add `export default` when the View
+    only has a named export."""
+    parsed = _shell_module(page_path)
+    if not parsed or re.search(r"^export\s+default\b", view_content, re.M):
+        return view_content
+    M = parsed[0]
+    if re.search(rf"\b(const|function)\s+{M}View\b", view_content):
+        return view_content.rstrip() + f"\n\nexport default {M}View;\n"
+    return view_content
+
+
 def _load(key: str, tool_context: ToolContext) -> dict:
     raw = tool_context.state.get(key, "{}")
     if not isinstance(raw, str):
@@ -195,6 +226,18 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
                 continue
 
             original = content
+
+            if key == "page_file" and msg_lo.startswith("router shell must import"):
+                # The shell is fully determined by the layout: rebuild it from
+                # frontend_layout's import lines (2026-11-07, prd_voiceCall: a
+                # named `{ VoiceCallView }` import blocked the PR 3/3 iterations).
+                content = _shell_from_layout(page.get("path", ""))
+                view = frontend.get("view_file") or {}
+                if view.get("content"):
+                    view_fixed = _ensure_default_view_export(view["content"], page.get("path", ""))
+                    if view_fixed != view["content"]:
+                        frontend["view_file"]["content"] = view_fixed
+                        fe_dirty = True
 
             if "authcontext" in msg_lo or "usecontext(authcontext)" in msg_lo or "user?.companyid" in msg_lo:
                 content = _fix_auth_context(content)

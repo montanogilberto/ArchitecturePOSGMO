@@ -1,0 +1,60 @@
+{
+  "module": "companyFeature",
+  "description": "Per-company switch for optional business features, so a capability built for one kind of business (a laundry telling the customer their service is ready) is only offered to the companies that turned it on, and never to a company where it makes no sense (a grocery store, where a sale is not a service). One row per (companyId, featureKey) in dbo.companyFeatures: whether the feature is enabled, plus a small JSON config for that feature (channels, WhatsApp template, message text). A missing row means DISABLED: every feature is off by default and must be enabled explicitly per company. The backend reads this table to decide which actions it offers the dashboard (availableActions) and refuses the action itself when the feature is off; the frontend never decides eligibility from a companyId. First feature: SERVICE_COMPLETION_NOTICE (staff tell the customer of a POS sale that the service they paid for is finished and ready for pickup, by push then WhatsApp then SMS through the existing notificationDispatch cascade, with eventName service_completed -- a business event distinct from income_created). It replaces nothing: dbo.companyModules (legacy, no identity key or audit columns, every company has every module) stays as is.",
+  "fields": [
+    {
+      "name": "featureKey",
+      "type": "string",
+      "required": true,
+      "max_length": 50,
+      "description": "Stable upper-snake-case key of the feature, e.g. SERVICE_COMPLETION_NOTICE. UNIQUE (companyId, featureKey). Free text checked by the backend against its own list of known features (not a lookup table): a new feature needs code anyway."
+    },
+    {
+      "name": "enabled",
+      "type": "boolean",
+      "required": true,
+      "description": "1 = the company uses this feature; 0 = switched off (kept for history instead of deleting the row)."
+    },
+    {
+      "name": "configJson",
+      "type": "text",
+      "required": false,
+      "description": "Feature settings as a JSON object, validated by the backend for that featureKey; NULL = the feature's defaults. For SERVICE_COMPLETION_NOTICE: {\"waTemplate\": \"servicio_listo\", \"pushTitle\": \"Tu servicio está listo\", \"pushMessage\": \"...\"}. Never holds secrets, phone numbers or customer data."
+    },
+    {
+      "name": "updatedByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Staff user who last changed the row (audit). NULL for rows created by a migration seed."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId, injected by the stored procedures from the authenticated session. One row per feature per company."
+    }
+  ],
+  "roles_allowed": [
+    "Admin"
+  ],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "database": {
+    "tables": [
+      "dbo.companyFeatures"
+    ],
+    "storedProcedures": [
+      "dbo.sp_companyFeatures",
+      "dbo.sp_companyFeatures_all",
+      "dbo.sp_companyFeatures_one"
+    ],
+    "hints": [
+      "UNIQUE constraint on (companyId, featureKey); the upsert SP matches an existing row by (companyId, featureKey) when companyFeatureId is not given, so re-running a seed never duplicates a row.",
+      "featureKey stored upper-case, nvarchar(50) NOT NULL; enabled bit NOT NULL DEFAULT 0; configJson nvarchar(max) NULL with CHECK (configJson IS NULL OR ISJSON(configJson) = 1).",
+      "sp_companyFeatures_all with companyId returns that company's rows (enabled and disabled); optional filter enabledOnly bit.",
+      "sp_companyFeatures_one accepts either companyFeatureId or (companyId, featureKey) and returns [] when there is no row -- the caller treats no row as disabled.",
+      "No DELETE action: disabling is enabled = 0."
+    ]
+  }
+}

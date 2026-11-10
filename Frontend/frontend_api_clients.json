@@ -777,6 +777,16 @@
     ]
   },
   {
+    "file": "src/api/voiceCallsApi.ts",
+    "functions": [
+      {
+        "name": "placeSecretaryCall",
+        "method": "POST",
+        "path": "/voiceCalls/place"
+      }
+    ]
+  },
+  {
     "file": "src/api/waterTanksApi.ts",
     "functions": [
       {

@@ -21,7 +21,7 @@
     "folder": "src/pages/clients/ClientDashboardPOS",
     "pageShell": "src/pages/clients/ClientDashboardPOSPage.tsx",
     "mvvm": true,
-    "fileCount": 22
+    "fileCount": 25
   },
   {
     "area": "clients",

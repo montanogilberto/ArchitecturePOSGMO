@@ -5094,6 +5094,48 @@
         "terminal"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "path": "/reservationHolidays",
+      "file": "routes_/reservations.py",
+      "tags": [
+        "reservations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reservation_holidays"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/reservationSchedule",
+      "file": "routes_/reservations.py",
+      "tags": [
+        "reservations"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "reservation_schedule"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/voiceCalls/place",
+      "file": "routes_/voiceCalls.py",
+      "tags": [
+        "voiceCalls"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "voice_call_place"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

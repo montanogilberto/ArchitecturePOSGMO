@@ -1129,7 +1129,8 @@
     ],
     "type": "pos",
     "reusable": false,
-    "source": "knowledge_sync"
+    "source": "knowledge_sync",
+    "stale": true
   },
   {
     "componentName": "ProductForm",

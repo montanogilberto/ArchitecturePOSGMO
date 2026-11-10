@@ -1,0 +1,160 @@
+{
+  "module": "prepaidWallet",
+  "description": "Prepaid saldo ledger of a COMPANY with its own customers (RFC-009 P1 and RFC-011 P2 in POSVending docs/rfcs; rollout step 3 of RFC-011). One INSERT-only row per saldo event in dbo.prepaidWalletEntries: a top-up a staff member or the company's payment provider confirmed, a charge at a laundry machine, a POS sale paid with saldo, a refund, a reversal, a manual adjustment, or the opening balance migrated from walletTransactions. The saldo is a closed-loop liability of that company (accounting: Anticipos de clientes): it is owned per (companyId, clientId), spent only at that company and any of its branches, and never moved between companies. SmartLoans never receives or holds this money -- the company collects it at its counter or in its own provider account, and this ledger is only the record (architecture D1/D2). It replaces the use of dbo.walletTransactions for saldo, which goes back to being the SmartLoans-only reconciliation ledger. The balance is a projection: the balanceAfter of the client's newest entry. Corrections are new REVERSAL entries, never UPDATE or DELETE. This PRD covers the ledger only. NOT in this PRD (separate work, later rollout steps): the single-use PIN spend authorization of RFC-011 P3, the per-company activation and limits, moving top-ups and machines to this ledger, the balance migration, and the charge inside income_sp.",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "Owner of the saldo. Never NULL: there is no platform or company-level row in this ledger. clientId 1 is the POS walk-in placeholder (Mostrador) and cannot hold saldo -- the SP rejects it with client_not_allowed."
+    },
+    {
+      "name": "entryType",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Saldo event. Allowed values and their direction: TOPUP (C), USAGE (D, laundry machine), POS_SALE (D, sale at the register), REFUND (C, money back for a use or sale), REVERSAL (C or D, undoes a previous entry), ADJUSTMENT (C or D, manual, note required), OPENING_BALANCE (C, one per client, migration from walletTransactions). Enforced by a CHECK constraint (see database hints); not a foreign key and not a separate lookup table."
+    },
+    {
+      "name": "direction",
+      "type": "string",
+      "required": true,
+      "max_length": 1,
+      "description": "D = debit (saldo down), C = credit (saldo up), from the client's point of view."
+    },
+    {
+      "name": "amountMXN",
+      "type": "decimal",
+      "required": true,
+      "description": "Always positive; direction carries the sign. Stored as decimal(12,2). Computed or confirmed server-side by the caller -- never an amount typed in the client app."
+    },
+    {
+      "name": "balanceAfter",
+      "type": "decimal",
+      "required": true,
+      "description": "Client's saldo right after this entry, set by the SP (never sent by the caller). Stored as decimal(12,2), never negative. The newest entry's balanceAfter IS the client's saldo."
+    },
+    {
+      "name": "idempotencyKey",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "UNIQUE per company. A retry with the same key returns the original entry and posts nothing. Key formats used by callers: pos:<companyId>:<clientRequestId> (POS sale), pos-reversal:<companyId>:<incomeId> (deleted sale), laundry:<deviceId>:<requestId> (machine), transfer:<companyId>:<claveRastreo>, cash:<companyId>:<requestId>, payment:<provider>:<paymentId>, opening:<companyId>:<clientId> (migration)."
+    },
+    {
+      "name": "source",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Where the event came from. Allowed values: CASH, TERMINAL, CARD, SPEI (top-ups, RFC-010/RFC-012), MACHINE (laundry device), POS (sale at the register), MIGRATION, MANUAL."
+    },
+    {
+      "name": "referenceType",
+      "type": "string",
+      "required": false,
+      "max_length": 30,
+      "description": "What produced this entry. Allowed values: income (POS sale or machine ticket), laundry_device_use, transfer_evidence, provider_payment, prepaid_wallet_entry (the entry a REVERSAL or REFUND undoes), wallet_transaction (migration), manual."
+    },
+    {
+      "name": "referenceId",
+      "type": "integer",
+      "required": false,
+      "description": "Id in the referenced table (income.incomeId, laundryDeviceUses.useId, transferEvidence.transferEvidenceId, ...). With referenceType it forms the audit link. No FK: it points at different tables."
+    },
+    {
+      "name": "createdByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Staff user who recorded the event. NULL for machine charges and provider webhooks. Plain INT, no FK: dbo.users has no primary key in the live DB (FK fails with error 1776)."
+    },
+    {
+      "name": "note",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Short memo shown in the movement history. Required for ADJUSTMENT. Never a PIN, token or personal data."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId, injected by the stored procedures. Every read and write is scoped by companyId; a client's saldo at one company is invisible to and unusable by any other company."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "1:N",
+      "notes": "clientId owns the entries. One running balance per (companyId, clientId)."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": true,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/prepaid-wallet-movements",
+    "allowedRoles": [
+      "Admin",
+      "Manager"
+    ],
+    "uiPattern": "READ-ONLY list 'Movimientos de saldo'. No create, edit or delete controls anywhere: entries are posted only by top-up, machine and sale flows, never from this page. UI copy in Spanish (es-MX). Money with fmtMXN from src/utils/format.ts, dates with mxDate. First load shows a centered IonSpinner with text, never zeros or an empty state before the request finishes. Reloads on useIonViewWillEnter and on onDataChanged from src/utils/refreshBus.ts. API in src/api/prepaidWalletApi.ts.",
+    "components": [
+      {
+        "step": 1,
+        "name": "PrepaidWalletMovementListStep",
+        "description": "IonList of ledger entries newest-first for the session's company, with an optional client filter (IonSearchbar by name or phone) and an entryType filter (IonSelect). Each row: entryType as a StatusBadge (map added to statusMaps.ts: Abono, Uso en máquina, Compra, Devolución, Reverso, Ajuste, Saldo inicial), signed amount (D red / C green), note, date, and balanceAfter. EmptyState from components/ui when the finished request returns no rows."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/prepaidWallets/balance",
+        "method": "POST",
+        "description": "Read-only: { prepaidWallets: [{ companyId, clientId }] } -> { availableBalance } from sp_prepaidWallets_balance. Allowed for staff of that company (Bearer session), for the client reading their own saldo, and with the worker key. The company comes from the session, not from the body, when the caller is not the worker."
+      },
+      {
+        "path": "/prepaidWallets",
+        "method": "POST",
+        "description": "Posts one ledger entry (action 1 only) through sp_prepaidWallets. NOT callable from the client app: Depends on a company staff session with role Admin or Manager, or the worker key -- same guard style as require_wallet_ledger_access(write=True) in security/session_tokens.py, with the company taken from the session. Top-ups, machine charges and POS sales do not use this route: they call the module function in-process from their own orchestration (walletTopUps, laundryDevices, income). Module function takes ONE json_file dict with the SP's @pjsonfile shape. Instrumented with log_workflow_step(workflow_name='money_trail') and log_audit on every posted entry; never logs PINs, tokens or personal data. EVERY route of this router carries a Depends guard, the generated /all_prepaidWallets and /one_prepaidWallets included (staff session of that company or worker key; same style as require_wallet_ledger_access(write=False)); no route of this module is anonymous. The module sends the integer action (1) the SP expects."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.prepaidWalletEntries"
+    ],
+    "storedProcedures": [
+      "dbo.sp_prepaidWallets",
+      "dbo.sp_prepaidWallets_all",
+      "dbo.sp_prepaidWallets_one",
+      "dbo.sp_prepaidWallets_balance"
+    ],
+    "hints": [
+      "Table name is dbo.prepaidWalletEntries (NOT dbo.prepaidWallets). Primary key: prepaidWalletEntryId INT IDENTITY(1,1). JSON root for every SP is 'prepaidWallets' ($.prepaidWallets[0]...).",
+      "Artifact shape: emit the standard CRUD keys create_table, sp_upsert, sp_all, sp_one -- NOT sp_action_router, and NOT one procedure with string actions. sp_upsert is dbo.sp_prepaidWallets with the integer action parsed with TRY_CONVERT(INT, ...); sp_all is dbo.sp_prepaidWallets_all; sp_one holds BOTH dbo.sp_prepaidWallets_one and dbo.sp_prepaidWallets_balance, separated by GO. Four separate procedures, because the backend module calls each one by name.",
+      "Model it on the existing sql/sp_walletTransactions.sql in smartloans_backend (same invariants, same response shapes), minus the CAPITAL_* special cases and minus the NULL-clientId platform ledger.",
+      "Column types: amountMXN DECIMAL(12,2) NOT NULL, balanceAfter DECIMAL(12,2) NOT NULL (the same precision in every SP variable -- not DECIMAL(10,2)), direction CHAR(1) NOT NULL, created_At DATETIME NOT NULL DEFAULT GETUTCDATE() (UTC). updated_at stays NULL forever.",
+      "CHECK direction IN ('D','C'). CHECK amountMXN > 0. CHECK balanceAfter >= 0.",
+      "entryType is a plain NVARCHAR(20) NOT NULL column with CHECK entryType IN ('TOPUP','USAGE','POS_SALE','REFUND','REVERSAL','ADJUSTMENT','OPENING_BALANCE'). No lookup table and NO foreign key on entryType: the only foreign keys of this table are companyId -> companies and clientId -> clients.",
+      "UNIQUE index on (companyId, idempotencyKey). Index (companyId, clientId, prepaidWalletEntryId DESC) for the balance and statements. Index (companyId, referenceType, referenceId) for reconciliation.",
+      "INSERT-only ledger: sp_prepaidWallets implements action 1 only. Action 2 (update) and action 3 (delete) return {\"error\":\"...\"} and change nothing. No isActive / soft-delete column.",
+      "Idempotent replay in action 1, checked FIRST, before any validation: if (companyId, idempotencyKey) already exists, return that entry with replayed = true and insert nothing (so a retried OPENING_BALANCE replays instead of failing its own 'already has entries' rule). If it exists with a different clientId, entryType, direction or amountMXN, return {\"error\":\"idempotency_conflict\"} instead.",
+      "Serialize per (companyId, clientId): read the client's newest balanceAfter WITH (UPDLOCK, HOLDLOCK) inside the transaction (0 when the client has no entries), then newBalance = prev + amountMXN for C or prev - amountMXN for D.",
+      "No overdraft: if newBalance < 0, roll back and return {\"error\":\"saldo_insuficiente\",\"available\":<prev>}. This applies to every entryType, REVERSAL and ADJUSTMENT included.",
+      "Validate in the SP before inserting (after the replay check): companyId, entryType, direction, amountMXN and idempotencyKey are not NULL (error missing_fields); clientId is not NULL and is not 1 (error client_not_allowed); the client exists in dbo.clients by clientId alone -- do NOT require clients.companyId = @companyId, that column is nullable and legacy rows carry another company; direction matches entryType (TOPUP, REFUND, OPENING_BALANCE must be C; USAGE and POS_SALE must be D; REVERSAL and ADJUSTMENT may be either); ADJUSTMENT has a non-empty note; OPENING_BALANCE is rejected when the client already has any entry in that company.",
+      "balanceAfter is always computed by the SP; a balanceAfter sent in the JSON is ignored.",
+      "The SP must be callable both on its own and from inside another procedure's transaction (sp_income_reverseOnDelete will post a REVERSAL in its own transaction, RFC-011 P5): open and commit a transaction only when @@TRANCOUNT = 0, and in CATCH roll back only a transaction this SP opened; when nested, re-raise with THROW so the caller rolls back.",
+      "sp_prepaidWallets_all: filter by companyId (required), optional clientId, optional entryType; newest first; TOP 200; each row also returns the client's first_name and last_name (LEFT JOIN dbo.clients). Result uses FOR JSON PATH, ROOT('prepaidWallets') and returns {\"prepaidWallets\":[]} when empty.",
+      "sp_prepaidWallets_one: one entry by prepaidWalletEntryId AND companyId (never by id alone).",
+      "sp_prepaidWallets_balance: {\"availableBalance\": <newest balanceAfter for (companyId, clientId), 0 when none>}. Read-only, no locks beyond the default.",
+      "Response shape: one jsonResult column; action 1 returns the entry FOR JSON PATH, WITHOUT_ARRAY_WRAPPER; errors as {\"error\":\"...\"} from the CATCH block.",
+      "No triggers on this table and no writes to any other table from these SPs: tickets, accounting (Anticipos de clientes) and notifications are orchestrated by the calling module.",
+      "Script must be safe to re-run (IF NOT EXISTS for tables, indexes and FKs; DROP + CREATE for procedures) and must not touch dbo.walletTransactions."
+    ]
+  }
+}

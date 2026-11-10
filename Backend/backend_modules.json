@@ -1197,12 +1197,14 @@
       "routes_/reservations.py"
     ],
     "storedProcedures": [
+      "sp_reservationHolidays",
       "sp_reservationHours",
+      "sp_reservationSchedule",
       "sp_reservationServices",
       "sp_reservations"
     ],
     "observable": false,
-    "lines": 269
+    "lines": 270
   },
   {
     "module": "rewardBenefits",
@@ -1482,6 +1484,16 @@
     "lines": 60
   },
   {
+    "module": "voiceCalls",
+    "file": "modules/voiceCalls.py",
+    "routeFiles": [
+      "routes_/voiceCalls.py"
+    ],
+    "storedProcedures": [],
+    "observable": true,
+    "lines": 170
+  },
+  {
     "module": "walletBalance",
     "file": "modules/walletBalance.py",
     "routeFiles": [
@@ -1557,7 +1569,7 @@
       "sp_whatsappConversations"
     ],
     "observable": false,
-    "lines": 156
+    "lines": 175
   },
   {
     "module": "whatsappCloud",
@@ -1571,7 +1583,7 @@
       "sp_whatsapp_messages"
     ],
     "observable": true,
-    "lines": 534
+    "lines": 634
   },
   {
     "module": "whatsappEvidence",

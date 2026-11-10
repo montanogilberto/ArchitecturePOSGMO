@@ -2482,6 +2482,22 @@
         "@pjsonfile"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_reservationHolidays",
+      "module_binding": "modules/reservations.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_reservationSchedule",
+      "module_binding": "modules/reservations.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

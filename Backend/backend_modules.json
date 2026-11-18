@@ -452,6 +452,21 @@
     "lines": 485
   },
   {
+    "module": "demandSignals",
+    "file": "modules/demandSignals.py",
+    "routeFiles": [
+      "routes_/demandSignal.py"
+    ],
+    "storedProcedures": [
+      "sp_demandSignals",
+      "sp_demandSignals_all",
+      "sp_demandSignals_one",
+      "sp_demandSignals_zoneSummary"
+    ],
+    "observable": true,
+    "lines": 71
+  },
+  {
     "module": "departaments",
     "file": "modules/departaments.py",
     "routeFiles": [
@@ -797,6 +812,20 @@
     ],
     "observable": false,
     "lines": 113
+  },
+  {
+    "module": "locationHosts",
+    "file": "modules/locationHosts.py",
+    "routeFiles": [
+      "routes_/locationHost.py"
+    ],
+    "storedProcedures": [
+      "sp_locationHosts",
+      "sp_locationHosts_all",
+      "sp_locationHosts_status"
+    ],
+    "observable": true,
+    "lines": 65
   },
   {
     "module": "login",
@@ -1278,6 +1307,19 @@
     "lines": 73
   },
   {
+    "module": "serviceCompletionNotices",
+    "file": "modules/serviceCompletionNotices.py",
+    "routeFiles": [
+      "routes_/serviceCompletionNotices.py"
+    ],
+    "storedProcedures": [
+      "sp_companyFeatures_one",
+      "sp_income_one"
+    ],
+    "observable": true,
+    "lines": 271
+  },
+  {
     "module": "services",
     "file": "modules/services.py",
     "routeFiles": [
@@ -1583,7 +1625,7 @@
       "sp_whatsapp_messages"
     ],
     "observable": true,
-    "lines": 634
+    "lines": 643
   },
   {
     "module": "whatsappEvidence",
@@ -1600,11 +1642,14 @@
     "file": "modules/whatsappReservations.py",
     "routeFiles": [],
     "storedProcedures": [
+      "sp_clients",
+      "sp_demandSignals",
+      "sp_locationHosts",
       "sp_reservationServices",
       "sp_whatsappCustomerRewards"
     ],
     "observable": true,
-    "lines": 338
+    "lines": 573
   },
   {
     "module": "workflowOrchestrator",

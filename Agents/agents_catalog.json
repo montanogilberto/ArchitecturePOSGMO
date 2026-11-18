@@ -309,6 +309,22 @@
     "proposes_writes": true
   },
   {
+    "folder": "agents/whatsapp_campaign",
+    "name": "whatsapp_campaign_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "WhatsApp campaign for people who are not clients yet: the new laundry options being validated (autoservicio 24 h, lockers), the zone where they'd use them, their name and notice opt-in (RECORD_DEMAND_SIGNAL), and businesses offering space (RECORD_LOCATION_HOST).",
+    "tools": [
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "FunctionTool",
+      "propose_action"
+    ],
+    "proposes_writes": true
+  },
+  {
     "folder": "agents/whatsapp_insights",
     "name": "whatsapp_insights_agent",
     "kind": "Agent",
@@ -316,6 +332,18 @@
     "description": "Reads a period of WhatsApp customer messages for one business and summarizes what customers want, their most common doubts and what they ask for that the business doesn't offer. Advisory, read-only, no tools.",
     "tools": [],
     "proposes_writes": false
+  },
+  {
+    "folder": "agents/whatsapp_registration",
+    "name": "whatsapp_registration_agent",
+    "kind": "Agent",
+    "model": "gemini-2.5-flash",
+    "description": "Registers the WhatsApp customer as a new client of this business: asks only their full name (the phone is the number they write from) and PROPOSES REGISTER_CLIENT; the backend creates it after their \"sí\". Use when the customer wants to register / darse de alta / crear su cuenta.",
+    "tools": [
+      "FunctionTool",
+      "propose_action"
+    ],
+    "proposes_writes": true
   },
   {
     "folder": "agents/whatsapp_reservations",

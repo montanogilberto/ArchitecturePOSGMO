@@ -49,6 +49,12 @@
   },
   {
     "parent_table": "clients",
+    "child_table": "demandSignals",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_demandSignals_clients"
+  },
+  {
+    "parent_table": "clients",
     "child_table": "fundingTransactions",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_fundingTransactions_BorrowerClients"
@@ -109,6 +115,12 @@
   },
   {
     "parent_table": "companies",
+    "child_table": "companyFeatures",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_companyFeatures_companies"
+  },
+  {
+    "parent_table": "companies",
     "child_table": "companyModules",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK__company_m__compa__1A54DAB7"
@@ -127,9 +139,21 @@
   },
   {
     "parent_table": "companies",
+    "child_table": "demandSignals",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_demandSignals_companies"
+  },
+  {
+    "parent_table": "companies",
     "child_table": "employees",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_employees_companyId"
+  },
+  {
+    "parent_table": "companies",
+    "child_table": "locationHosts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_locationHosts_companies"
   },
   {
     "parent_table": "companies",
@@ -250,6 +274,18 @@
     "child_table": "paymentIntents",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_paymentIntents_loans"
+  },
+  {
+    "parent_table": "marketingLeadAttributions",
+    "child_table": "demandSignals",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_demandSignals_marketingLeadAttributions"
+  },
+  {
+    "parent_table": "marketingLeadAttributions",
+    "child_table": "locationHosts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_locationHosts_marketingLeadAttributions"
   },
   {
     "parent_table": "marketplaceOrders",
@@ -520,6 +556,18 @@
     "child_table": "walletTransactions",
     "type": "||--o{",
     "fk_constraint_name": "fk_FK_walletTransactions_entryType"
+  },
+  {
+    "parent_table": "whatsappChannels",
+    "child_table": "demandSignals",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_demandSignals_whatsappChannels"
+  },
+  {
+    "parent_table": "whatsappChannels",
+    "child_table": "locationHosts",
+    "type": "||--o{",
+    "fk_constraint_name": "fk_FK_locationHosts_whatsappChannels"
   },
   {
     "parent_table": "whatsappChannels",

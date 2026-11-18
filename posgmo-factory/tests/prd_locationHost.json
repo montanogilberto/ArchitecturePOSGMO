@@ -1,0 +1,57 @@
+{
+  "module": "locationHost",
+  "description": "GMO Client Acquisition, Red GMO partner side: businesses (tiendas, gimnasios, farmacias, oficinas, escuelas) that offer space for a GMO laundry locker. GMO installs and operates the locker, charges and washes; the host business ('socio') would earn a share of completed and paid services (the commission and its weekly payout are NOT part of this module; they need a payments RFC). A business owner or manager writes to the company's WhatsApp number (Meta ad 'Gana 10% con tu espacio' or organic), the agent asks a few questions and proposes RECORD_LOCATION_HOST; smartloans_backend modules/whatsappReservations sets companyId, channelId and contactPhone from the WhatsApp channel and sender (never from the agent), links the latest marketingLeadAttributions row for that phone and channel, and calls sp_locationHosts. One row per (companyId, contactPhone, businessName), upserted as the conversation progresses: a later call only overwrites the fields it sends. Staff then move each candidate through a pipeline (status) from the POS; that status update is the only staff write. These rows are overlaid on the demand map (demandSignals) to choose where to install lockers. There is no public create route. Design doc: POSVending docs/sistema-adquisicion-validacion-ubicaciones.md.",
+  "fields": [
+    {"name": "channelId", "type": "integer", "required": true, "fk_table": "whatsappChannels", "fk_column": "channelId", "description": "Business WhatsApp number that received the conversation; establishes the tenant. The SP rejects a channel outside companyId."},
+    {"name": "contactPhone", "type": "string", "required": true, "max_length": 20, "description": "WhatsApp sender in E.164: the person who offered the space. Reads return it only to admin/manager sessions of the company."},
+    {"name": "marketingLeadAttributionId", "type": "integer", "required": false, "fk_table": "marketingLeadAttributions", "fk_column": "marketingLeadAttributionId", "description": "Latest ad attribution for this phone and channel, looked up by the SP when not sent."},
+    {"name": "origin", "type": "string", "required": true, "max_length": 20, "description": "CHECK IN ('anuncio','organico','personal'). 'anuncio' when marketingLeadAttributionId is set."},
+    {"name": "businessName", "type": "string", "required": true, "max_length": 120, "description": "Business name as the person wrote it."},
+    {"name": "businessType", "type": "string", "required": false, "max_length": 20, "description": "CHECK IN ('tienda','gimnasio','farmacia','oficina','escuela','gasolinera','restaurante','otro')."},
+    {"name": "contactName", "type": "string", "required": false, "max_length": 120, "description": "Name of the person, only if they gave it."},
+    {"name": "contactRole", "type": "string", "required": false, "max_length": 20, "description": "CHECK IN ('dueno','encargado','otro')."},
+    {"name": "zoneText", "type": "string", "required": true, "max_length": 120, "description": "Colonia or area of the business as they wrote it."},
+    {"name": "addressText", "type": "string", "required": false, "max_length": 200, "description": "Street address of the business (a business location, not a home), only if they gave it."},
+    {"name": "zoneName", "type": "string", "required": false, "max_length": 120, "description": "Normalized colonia name (Hermosillo catalog). NULL = not located yet."},
+    {"name": "zoneLat", "type": "decimal", "required": false, "description": "Colonia centroid latitude, DECIMAL(9,6)."},
+    {"name": "zoneLng", "type": "decimal", "required": false, "description": "Colonia centroid longitude, DECIMAL(9,6)."},
+    {"name": "openingHours", "type": "string", "required": false, "max_length": 120, "description": "Opening hours as they described them."},
+    {"name": "opensWeekends", "type": "boolean", "required": false, "description": "Open on Saturday and/or Sunday."},
+    {"name": "spaceType", "type": "string", "required": false, "max_length": 20, "description": "CHECK IN ('interior','exterior','estacionamiento','no_seguro')."},
+    {"name": "dailyVisitors", "type": "string", "required": false, "max_length": 20, "description": "Approximate customers per day. CHECK IN ('menos_50','50_200','mas_200','no_seguro')."},
+    {"name": "hasParking", "type": "boolean", "required": false, "description": "Customers can park nearby."},
+    {"name": "contactOptIn", "type": "boolean", "required": true, "description": "Explicit yes to being contacted by the GMO team. Default 0. An ad click is not consent."},
+    {"name": "optInAt", "type": "datetime", "required": false, "description": "UTC moment of the explicit yes; set by the SP the first time contactOptIn becomes 1."},
+    {"name": "status", "type": "string", "required": true, "max_length": 20, "description": "Pipeline. CHECK IN ('nuevo','contactado','visitado','aprobado','instalado','descartado'). New rows start 'nuevo'; only the staff status endpoint changes it."},
+    {"name": "staffNotes", "type": "string", "required": false, "max_length": 500, "description": "Notes from the team (visit, conditions). Written only by the staff status endpoint."}
+  ],
+  "relationships": [
+    {"parentModule": "companies", "cardinality": "1:N", "notes": "Tenant, from the resolved whatsappChannels row. Every SP filters by it."},
+    {"parentModule": "whatsappChannels", "cardinality": "1:N", "notes": "Number that received the conversation."},
+    {"parentModule": "marketingLeadAttributions", "cardinality": "1:N", "notes": "Optional link to the ad that started the chat."}
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "backend": {
+    "endpoints": [
+      {"path": "/all_locationHosts", "method": "POST", "description": "Read-only list of one company's host candidates, newest first, max 500. Filters: status, zoneName, startDate/endDate (Hermosillo days, fixed UTC-7, default last 90 days). Admin/manager session of the company or worker key.", "requestSchema": "{ \"locationHosts\": [{ \"companyId\": int, \"userId\": int, \"status\"?: string, \"zoneName\"?: string, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\" }] }", "responseSchema": "{ \"result\": [ { \"locationHosts\": [ { locationHostId, origin, businessName, businessType, contactName, contactRole, contactPhone, zoneText, addressText, zoneName, zoneLat, zoneLng, openingHours, opensWeekends, spaceType, dailyVisitors, hasParking, contactOptIn, status, staffNotes, sourceId, headline, created_at, updated_at } ] } ] }"},
+      {"path": "/locationHosts/status", "method": "POST", "description": "Staff moves one candidate through the pipeline and may add notes. Only status and staffNotes change. Admin/manager session of the company or worker key.", "requestSchema": "{ \"locationHosts\": [{ \"companyId\": int, \"userId\": int, \"locationHostId\": int, \"status\": string, \"staffNotes\"?: string }] }", "responseSchema": "{ \"result\": [ { \"locationHostId\": int, \"status\": string } ] }"}
+    ]
+  },
+  "database": {
+    "tables": ["dbo.locationHosts"],
+    "storedProcedures": ["dbo.sp_locationHosts", "dbo.sp_locationHosts_all", "dbo.sp_locationHosts_status"],
+    "hints": [
+      "UNIQUE (companyId, contactPhone, businessName). sp_locationHosts upserts on it: a later call only overwrites the fields it sends (NULL = keep). It never changes status or staffNotes; new rows start with status 'nuevo'.",
+      "CHECK constraints for origin, businessType, contactRole, spaceType, dailyVisitors and status with the exact value lists in the field descriptions.",
+      "sp_locationHosts validates that channelId belongs to companyId; when marketingLeadAttributionId is not sent it links the latest marketingLeadAttributions row for (companyId, channelId, contactPhone) and sets origin 'anuncio'.",
+      "sp_locationHosts_status updates only status and staffNotes of a row of that companyId; an id of another company changes nothing and returns an error.",
+      "Use DATETIME2 for created_at/updated_at and optInAt, default SYSUTCDATETIME(); never GETDATE(). Hermosillo is fixed UTC-7 with no DST: compute period bounds with DATEADD(HOUR, 7, ...).",
+      "zoneLat/zoneLng DECIMAL(9,6) NULL. Indexes: (companyId, created_at), (companyId, status), (companyId, zoneName).",
+      "No public create endpoint: rows are written only by smartloans_backend modules/whatsappReservations on RECORD_LOCATION_HOST (manual step, the factory does not generate the webhook hook). No delete.",
+      "This module never inserts or updates dbo.clients, dbo.demandSignals or dbo.marketingLeadAttributions.",
+      "All SPs use the @pjsonfile pattern and TRY/CATCH, and return a single NVARCHAR jsonResult row ({\"result\": [...]} or {\"error\": \"...\"}). Run the factory with FACTORY_SQL_MODE=validate."
+    ]
+  }
+}

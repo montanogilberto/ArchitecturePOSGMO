@@ -709,5 +709,19 @@
     "authenticated": true,
     "feature": "companyPaymentAccounts",
     "source": "knowledge_sync"
+  },
+  {
+    "path": "/voice-calls",
+    "component": "src/pages/messaging/VoiceCallPage.tsx",
+    "authenticated": true,
+    "feature": null,
+    "source": "knowledge_sync"
+  },
+  {
+    "path": "/demand-map",
+    "component": "src/pages/marketing/DemandMapPage.tsx",
+    "authenticated": true,
+    "feature": "demandMap",
+    "source": "knowledge_sync"
   }
 ]

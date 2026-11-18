@@ -1,0 +1,156 @@
+{
+  "module": "whatsappMessageDelivery",
+  "description": "Delivery receipt of every OUTBOUND WhatsApp message the business sends through the Meta Cloud API (POS staff replies, staff template messages, and agent replies), so the POS chat can show WhatsApp-style ticks on each bubble: reloj = accepted by Meta, ✓ = sent, ✓✓ gris = delivered to the phone, ✓✓ azul = read, ⚠️ = failed with Meta's reason. WHY: today a bubble in the POS inbox only means Meta answered 200 (accepted). Delivery is reported later by Meta's status webhook (value.statuses on POST /whatsapp/cloud/webhook) and modules/whatsappCloud._log_statuses only writes it to the App Service log — confirming a single message on 2026-11-12 meant downloading the production logs and matching phone digits by hand. Real failures seen that day that the POS never showed: 131042 'Business eligibility payment issue' (unsettled WhatsApp Business account payments) and 131026 'Message undeliverable'. ONE ROW PER Meta message id (wamid) — current state, not a history log. UNIQUE (providerMessageId). Linked to the legacy log row dbo.whatsappMessages.messageId (the table the POS thread reads); that legacy table is NOT altered. ORDERING (verified in prod logs 2026-11-12): Meta delivers statuses out of order and duplicated — 'read' can arrive before 'delivered', and 'sent' after 'delivered' — and the status webhook can arrive BEFORE the backend has inserted the row for its own send (sent arrives ~1 s after the send). Therefore every write is an UPSERT keyed on providerMessageId with a MONOTONIC status: rank accepted=0 < sent=1 < delivered=2 < read=3; a lower-ranked status never overwrites a higher one; 'failed' replaces only accepted/sent (never delivered/read). Each timestamp (sentAt, deliveredAt, readAt, failedAt) is stamped once (first value wins) from Meta's own statuses[].timestamp (unix seconds, UTC), not from arrival time; 'read' also stamps deliveredAt if it is still NULL. The send-side upsert fills whatsappMessageId/senderKind on a row the webhook may have created first, and never lowers its status. Status is a plain string with a CHECK constraint (accepted, sent, delivered, read, failed) — NO lookup table and NO FK for it: the decision gate requires FK targets to already exist in the live DB, and this feature must not need DDL on production before generation. The rank used for the monotonic rule lives in the SP as a CASE (accepted 0, sent 1, delivered 2, read 3). The es-MX labels live in the frontend statusMaps entry. Multi-tenant: there is NO user session on any write (webhook and in-process send hooks): companyId comes from the resolved dbo.whatsappChannels row (send side: the channel that sent; webhook side: entry.changes[].value.metadata.phone_number_id -> whatsappChannels.get_channel). Reads are per company. PII: never log the full recipient phone or the message text; logs keep the last 4 digits only. Observability: workflow_step/log_workflow_step with workflow_name='whatsapp_chat', step 'delivery_status' on failed rows (code + title, no phone); no log_audit needed (system-written receipts, not user mutations).",
+  "fields": [
+    {
+      "name": "providerMessageId",
+      "type": "string",
+      "required": true,
+      "max_length": 100,
+      "description": "Meta wamid returned by the send call (messages[0].id) and echoed in statuses[].id. UNIQUE. The upsert key for every write."
+    },
+    {
+      "name": "whatsappMessageId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "whatsappMessages",
+      "fk_column": "messageId",
+      "description": "The dbo.whatsappMessages log row of this outbound message (the row the POS thread renders as a bubble). NULL while only the webhook has reported the wamid (it can arrive before the send-side insert) and for sends that never got a log row. Indexed: the thread SP joins on it."
+    },
+    {
+      "name": "channelId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "whatsappChannels",
+      "fk_column": "channelId",
+      "description": "Business number that sent the message; gives companyId. Webhook side resolved from value.metadata.phone_number_id."
+    },
+    {
+      "name": "senderKind",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Who sent it: staff_pos (POST /whatsapp/staffReply plain text), staff_template (staffReply asTemplate, mensaje_negocio template), agent (the WhatsApp agent's reply in _handle_message). NULL when the row was created by the webhook before the send side filled it."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "accepted | sent | delivered | read | failed — CHECK constraint, no FK/lookup table. Monotonic by rank (accepted 0 < sent 1 < delivered 2 < read 3, computed with CASE in the SP); 'failed' only replaces accepted/sent."
+    },
+    {
+      "name": "sentAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC from Meta's 'sent' status timestamp. First value wins."
+    },
+    {
+      "name": "deliveredAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC from Meta's 'delivered' status timestamp (or the 'read' timestamp if delivered never arrived). First value wins."
+    },
+    {
+      "name": "readAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC from Meta's 'read' status timestamp. Only reported when the customer has read receipts on. First value wins."
+    },
+    {
+      "name": "failedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC from Meta's 'failed' status timestamp. First value wins."
+    },
+    {
+      "name": "errorCode",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Meta error code on failed (statuses[].errors[0].code), e.g. 131047 outside 24h window, 131042 account payment issue, 131026 undeliverable, 131049 marketing limit. The frontend maps known codes to es-MX text."
+    },
+    {
+      "name": "errorTitle",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Meta's errors[0].title (fallback errors[0].message), English, shown as-is only when the code is not in the frontend map. Never contains the phone."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId, always passed from the resolved whatsappChannels row (no user session on any write)."
+    },
+    {
+      "parentModule": "whatsappChannels",
+      "cardinality": "N:1",
+      "notes": "Every outbound message is sent from one business number."
+    },
+    {
+      "parentModule": "whatsappMessages",
+      "cardinality": "1:1",
+      "notes": "Optional link to the legacy log row the POS thread renders. Legacy table is not altered."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager",
+    "Cashier"
+  ],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/whatsapp-agent/conversations",
+    "allowedRoles": [
+      "Admin",
+      "Manager",
+      "Cashier"
+    ],
+    "uiPattern": "NO NEW PAGE and NO new API client call: delivery state arrives inside the existing thread response (sp_whatsappAgentConversations action 'thread'), so the floating dock (src/components/messaging/WhatsAppDock*) and the inbox (src/pages/messaging/WhatsAppConversations/) both get it through the shared bubble component src/components/messaging/WhatsAppTimeline.tsx. WhatsAppThreadItem (src/api/whatsappAgentApi.ts) already has status and error: for kind 'bot' | 'staff' | 'staff_app' they now carry the delivery status (accepted|sent|delivered|read|failed|null) and the error code. (1) In the Entry for bot/staff bubbles, after the '<who> · <time>' line add an IonIcon: accepted = timeOutline, sent = checkmarkOutline, delivered = checkmarkDoneOutline (muted), read = checkmarkDoneOutline with class wac-tick--read (WhatsApp blue via a CSS custom property in WhatsAppChat.css), failed = alertCircleOutline danger; aria-label/title from a new statusMaps entry WHATSAPP_DELIVERY_STATUS (es-MX labels: Aceptado por Meta / Enviado / Entregado / Leído / No entregado) — one map, no page-local map. null status (messages from before this feature, staff_app echoes) shows no icon — never a fake tick. (2) failed: the bubble gets class wac-bubble--undelivered and a line below the text 'No entregado: <motivo>' where motivo comes from a WHATSAPP_ERROR_REASON map in src/utils/whatsappChat.ts: 131047 'pasaron más de 24 h desde el último mensaje del cliente', 131042 'la cuenta de WhatsApp Business tiene pagos pendientes', 131026 'el número no tiene WhatsApp o bloqueó al negocio', 131049 'Meta limitó los mensajes de marketing a este cliente'; unknown codes show 'Meta no lo entregó (código <code>)'. (3) Freshness: the dock already polls (LIST_POLL_MS) and listens to onDataChanged; the open thread must refetch on the same tick so a ✓✓ turns blue without reopening the chat — no extra endpoint. No inline styles, Ionic components only, es-MX copy.",
+    "components": [
+      {
+        "step": 1,
+        "name": "DeliveryTick",
+        "description": "Small presentational component in src/components/messaging/ (used only by WhatsAppTimeline) rendering the IonIcon + label for a delivery status."
+      },
+      {
+        "step": 2,
+        "name": "UndeliveredReason",
+        "description": "Line under a failed bubble with the es-MX reason from WHATSAPP_ERROR_REASON."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/whatsappMessageDeliveries",
+        "method": "POST",
+        "description": "Generated CRUD route for parity with other modules (read by companyId + whatsappMessageIds for debugging). The POS does not call it: writes happen in-process from modules/whatsappCloud.py and reads come joined in the thread SP."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "whatsappMessageDeliveries"
+    ],
+    "storedProcedures": [
+      "sp_whatsappMessageDeliveries"
+    ],
+    "hints": [
+      "status: NVARCHAR(20) NOT NULL with CONSTRAINT CK_whatsappMessageDeliveries_status CHECK (status IN ('accepted','sent','delivered','read','failed')). No lookup table.",
+      "BACKEND: Module function upsert_delivery(json_file: dict) in modules/whatsappMessageDelivery.py calling sp_whatsappMessageDeliveries action 'upsert' — ONE json_file dict, never positional params. Must never raise into callers: try/except + logger.exception, returns None on error.",
+      "BACKEND: PREREQUISITE (hand-edit of a legacy SP, not generated): dbo.sp_whatsapp_messages action 1 must return the inserted id: SET @Outputmessage = JSON_MODIFY(@Outputmessage, '$.result[0].value', CONVERT(NVARCHAR(20), SCOPE_IDENTITY())). The SP lives only in the live DB today — script it into smartloans_backend/sql/sp_whatsapp_messages.sql. Add modules/whatsapp.log_outbound_message(json_file) -> int | None that returns that id; log_message_to_database keeps its current TwiML return for the legacy Twilio callers.",
+      "BACKEND: Send-side hooks in modules/whatsappCloud.py (after Meta returns the wamid and after the whatsappMessages row is logged): staff_reply (senderKind staff_pos), _staff_template (staff_template), _handle_message agent reply around line 458 (agent; send_text's return value is currently discarded — keep it). Upsert { providerMessageId: wamid, whatsappMessageId, channelId, companyId: channel.companyId, senderKind, status: 'accepted' }.",
+      "BACKEND: Webhook hook: in _log_statuses, for each statuses[] entry upsert { providerMessageId: id, channelId/companyId from value.metadata.phone_number_id, status, statusTimestamp: timestamp, errorCode, errorTitle }. Keep the existing _update_dispatch call (notificationDispatches) unchanged. Change both log lines to mask recipient_id to its last 4 digits (they print the full phone today).",
+      "BACKEND: sp_whatsappAgentConversations action 'thread' (hand-maintained SP in smartloans_backend/sql/): in the @useMessages=1 branch LEFT JOIN dbo.whatsappMessageDeliveries d ON d.whatsappMessageId = m.messageId for outbound rows and put d.status into @items.status and d.errorCode into @items.error. The 'kind' CASE keeps reading m.status ('staff_sent'/'staff_app') — do not change it. Inbound rows keep status NULL.",
+      "UNIQUE (providerMessageId). Nonclustered index on (whatsappMessageId) INCLUDE (status, errorCode).",
+      "Action 'upsert' implements the monotonic rule inside one MERGE/UPDATE-then-INSERT under SERIALIZABLE/UPDLOCK on providerMessageId (two webhook deliveries for the same wamid can race): status changes only when the incoming statusRank is higher, or incoming is 'failed' and current is accepted/sent; *_At columns use COALESCE(existing, incoming); whatsappMessageId/senderKind use COALESCE(existing, incoming).",
+      "statusTimestamp input is unix seconds: DATEADD(SECOND, @ts, '1970-01-01') (UTC). When absent (send-side 'accepted'), no *_At column is stamped; created_At records the send.",
+      "FK to whatsappMessages.messageId: verify dbo.whatsappMessages.messageId is its primary key in the live DB before generating (structure_database.csv marks it PK); if not, declare it plain INT without FK, like the users.userId exception.",
+      "Run with FACTORY_SQL_MODE=validate — the factory's database executor otherwise applies DDL to the live production DB."
+    ]
+  }
+}

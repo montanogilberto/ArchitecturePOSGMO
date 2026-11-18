@@ -567,3 +567,16 @@ genuinely passed review, and the answer was to treat it as the real
    (Milestone 6) after appearing twice.
 3. Carried-forward open questions, unchanged: commercial-platform role model
    vs. `AllowedRole`; slug/uniqueness policies on organization/project.
+
+## Exception to the roadmap freeze — customer-app module catalog (2026-11-17)
+
+**Owner decision, not a run finding.** Added `Frontend/customer_app_modules.json`
+(curated) and the MCP tool `get_customer_app_modules`, and the PRD builder now
+calls it for new-company / customer-page requests. Reason: onboarding a new
+company onto the customer app (reference: menuLaundy) needs one place that
+lists every module, its endpoints/tables, dependencies, the per-company data to
+collect, and what is still hardcoded for the laundry — otherwise each new
+company is researched from scratch. Scope kept to a read-only getter over one
+file; no pipeline stage changed. Guarded by `tests/test_customer_app_modules.py`
+(every endpoint must exist in the synced backend routes unless `pending`).
+Inventory remains the next slice.

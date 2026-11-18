@@ -5136,6 +5136,104 @@
         "voice_call_place"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "path": "/serviceCompletionNotices/send",
+      "file": "routes_/serviceCompletionNotices.py",
+      "tags": [
+        "serviceCompletionNotices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "service_completion_send"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/serviceCompletionNotices/status",
+      "file": "routes_/serviceCompletionNotices.py",
+      "tags": [
+        "serviceCompletionNotices"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "service_completion_status"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_demandSignals",
+      "file": "routes_/demandSignal.py",
+      "tags": [
+        "demandSignal"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_demandSignals"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/demandSignals/zoneSummary",
+      "file": "routes_/demandSignal.py",
+      "tags": [
+        "demandSignal"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "zone_summary_demandSignals"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/one_demandSignals",
+      "file": "routes_/demandSignal.py",
+      "tags": [
+        "demandSignal"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "one_demandSignals"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/all_locationHosts",
+      "file": "routes_/locationHost.py",
+      "tags": [
+        "locationHost"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "all_locationHosts"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "path": "/locationHosts/status",
+      "file": "routes_/locationHost.py",
+      "tags": [
+        "locationHost"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "handlers": [
+        "status_locationHosts"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

@@ -232,6 +232,14 @@
     "fileCount": 5
   },
   {
+    "area": "marketing",
+    "feature": "DemandMap",
+    "folder": "src/pages/marketing/DemandMap",
+    "pageShell": "src/pages/marketing/DemandMapPage.tsx",
+    "mvvm": true,
+    "fileCount": 4
+  },
+  {
     "area": "messaging",
     "feature": "NotificationDetail",
     "folder": "src/pages/messaging/NotificationDetail",
@@ -254,6 +262,14 @@
     "pageShell": null,
     "mvvm": true,
     "fileCount": 15
+  },
+  {
+    "area": "messaging",
+    "feature": "VoiceCall",
+    "folder": "src/pages/messaging/VoiceCall",
+    "pageShell": "src/pages/messaging/VoiceCallPage.tsx",
+    "mvvm": true,
+    "fileCount": 3
   },
   {
     "area": "messaging",

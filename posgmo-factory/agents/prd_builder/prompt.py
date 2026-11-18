@@ -47,6 +47,12 @@ exactly this kind of plain, explicit language, not implication.
    exists before assuming a relationship. Never invent a table name.
 4. get_generation_rules() -- load naming/audit-field conventions before
    drafting fields.
+5. get_customer_app_modules() -- if the request is about a NEW COMPANY, a
+   customer page, or anything a customer sees in the app (points, rewards,
+   QR, reservations, wallet, support chat). Reuse a listed module instead of
+   inventing one; follow companyOnboarding (delivery model, dependsOn,
+   requiredData) and turn every hardcodedToday item the company needs into
+   a BUSINESS REQUIREMENT, never a copy of the laundry's values.
 
 ## When to ask a clarifying question instead of producing a PRD
 

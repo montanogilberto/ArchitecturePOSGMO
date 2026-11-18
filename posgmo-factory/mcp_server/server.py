@@ -287,6 +287,37 @@ def get_agents_catalog() -> list:
     return _json("Agents/agents_catalog.json")
 
 
+@mcp.tool()
+def get_customer_app_modules(module_key: str = "") -> dict:
+    """
+    Returns the breakdown of the customer-facing app modules (reference app:
+    menuLaundy) and the rules for giving a NEW COMPANY a customer page:
+    deliveryModels (new page vs add a module to an existing page),
+    featureFlags (dbo.companyFeatures), modules (route, frontend files,
+    endpoints, tables, dependsOn, perCompanyData, hardcodedToday, rules) and
+    companyOnboarding (steps + the data to collect up front).
+
+    Call this BEFORE writing a PRD or spec for a new company, a customer page,
+    or anything a customer sees in the app — reuse a listed module instead of
+    generating a new one. Curated, not synced: if it conflicts with the real
+    menuLaundy repo, the repo wins.
+
+    Args:
+        module_key: one module's key (e.g. "reservations", "wallet");
+            empty returns the whole file.
+    """
+    data = _json("Frontend/customer_app_modules.json")
+    if not module_key or not isinstance(data, dict) or "error" in data:
+        return data
+    key = module_key.lower().strip()
+    found = [m for m in data.get("modules", []) if m.get("key") == key]
+    if not found:
+        return {"error": f"Unknown module key: {module_key}",
+                "known": [m.get("key") for m in data.get("modules", [])]}
+    return {"module": found[0], "deliveryModels": data.get("deliveryModels"),
+            "featureFlags": data.get("featureFlags")}
+
+
 # ---------------------------------------------------------------------------
 # Database tools
 # ---------------------------------------------------------------------------

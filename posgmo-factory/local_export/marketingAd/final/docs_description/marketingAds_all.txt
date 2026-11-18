@@ -1,0 +1,6 @@
+Worker-only (X-Worker-Key). Lists one company's ad lookups, oldest first (max 200), via sp_marketingAds_all.
+Filters: lookupStatuses (array, e.g. ["pending","error"]), maxAttempts (rows with fewer attempts), syncedBefore (UTC "YYYY-MM-DDTHH:MM:SS"; rows never synced or synced earlier, for the daily re-sync), adsetId, campaignId.
+Stored procedure: EXEC [dbo].[sp_marketingAds_all] @pjsonfile = '<json>'
+
+Example (what the worker reads every 15 minutes):
+curl -X POST "https://smartloansbackend.azurewebsites.net/all_marketingAds"   -H "Content-Type: application/json" -H "X-Worker-Key: <key>"   -d '{"marketingAds":[{"companyId":1, "lookupStatuses":["pending","error"], "maxAttempts":5}]}'

@@ -2498,6 +2498,86 @@
         "@pjsonfile"
       ],
       "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyFeatures",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyFeatures_all",
+      "module_binding": null,
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_companyFeatures_one",
+      "module_binding": "modules/serviceCompletionNotices.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_demandSignals",
+      "module_binding": "modules/demandSignals.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_demandSignals_all",
+      "module_binding": "modules/demandSignals.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_demandSignals_one",
+      "module_binding": "modules/demandSignals.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_demandSignals_zoneSummary",
+      "module_binding": "modules/demandSignals.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_locationHosts",
+      "module_binding": "modules/locationHosts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_locationHosts_all",
+      "module_binding": "modules/locationHosts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
+    },
+    {
+      "name": "sp_locationHosts_status",
+      "module_binding": "modules/locationHosts.py",
+      "parameters": [
+        "@pjsonfile"
+      ],
+      "source": "knowledge_sync"
     }
   ]
 }

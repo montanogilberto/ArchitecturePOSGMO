@@ -11,3 +11,10 @@ silently failed with KeyError on GEMINI_API_KEY depending on collection order.
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Never refresh the real knowledge files from inside the test suite: tests
+# that drive a runner must see a stable knowledge snapshot, and must not
+# depend on the product repos or the live DB being reachable.
+import os  # noqa: E402
+
+os.environ.setdefault("FACTORY_SKIP_KNOWLEDGE_SYNC", "1")

@@ -48,7 +48,15 @@ class AllowedRole(str, Enum):
 # PRD input — what a human (or orchestrating agent) submits
 # ---------------------------------------------------------------------------
 
-class FieldDef(BaseModel):
+class _StrictPRDModel(BaseModel):
+    """Unknown keys in a PRD fail validation instead of vanishing. Same reason
+    as PRDInput's extra="forbid", one level down: database.hints was dropped
+    silently here (prd_productConsumption: 8 hints in, 0 out), so no agent
+    ever saw them and the generated table had to be finished by hand."""
+    model_config = ConfigDict(extra="forbid")
+
+
+class FieldDef(_StrictPRDModel):
     name: str = Field(
         description="camelCase column name, e.g. 'supplierName'",
         pattern=r"^[a-z][a-zA-Z0-9]*$",
@@ -76,14 +84,14 @@ class FieldDef(BaseModel):
 from pydantic import field_validator
 from typing import Union
 
-class RelationshipDef(BaseModel):
+class RelationshipDef(_StrictPRDModel):
     """Rich relationship object — parentModule, cardinality, notes."""
     parentModule: Optional[str] = None
     cardinality: Optional[str] = None
     notes: Optional[str] = None
 
 
-class PRDEndpoint(BaseModel):
+class PRDEndpoint(_StrictPRDModel):
     """Custom backend endpoint declared in PRD backend.endpoints[]."""
     path: str
     method: str = "POST"
@@ -92,26 +100,31 @@ class PRDEndpoint(BaseModel):
     responseSchema: Optional[str] = None
 
 
-class PRDFrontendComponent(BaseModel):
+class PRDFrontendComponent(_StrictPRDModel):
     step: Optional[int] = None
     name: Optional[str] = None
     description: Optional[str] = None
 
 
-class PRDFrontendHints(BaseModel):
+class PRDFrontendHints(_StrictPRDModel):
     pageRoute: Optional[str] = None
     allowedRoles: List[str] = Field(default_factory=list)
     uiPattern: Optional[str] = None
     components: List[PRDFrontendComponent] = Field(default_factory=list)
 
 
-class PRDDatabaseHints(BaseModel):
+class PRDDatabaseHints(_StrictPRDModel):
     """Author hints forwarded to downstream agents as context (not enforced)."""
     tables: List[str] = Field(default_factory=list)
     storedProcedures: List[str] = Field(default_factory=list)
+    hints: List[str] = Field(
+        default_factory=list,
+        description="Requirements for the SQL (types, CHECKs, SP behaviour). A module "
+                    "with hints skips the CRUD template and goes to the LLM path.",
+    )
 
 
-class PRDBackendHints(BaseModel):
+class PRDBackendHints(_StrictPRDModel):
     endpoints: List[PRDEndpoint] = Field(default_factory=list)
 
 
@@ -223,9 +236,13 @@ class BackendSpec(BaseModel):
 
 
 class FrontendSpec(BaseModel):
+    # MVVM feature layout — see frontend_layout.py (paths are enforced there).
+    area: str = ""                  # e.g. "admin" — lowercase folder under src/pages
     api_file: str                   # e.g. "src/api/supplierApi.ts"
-    page_file: str                  # e.g. "src/pages/SupplierPage.tsx"
-    css_file: str                   # e.g. "src/pages/SupplierPage.css"
+    page_file: str                  # e.g. "src/pages/admin/SupplierPage.tsx"            (router shell)
+    view_file: str = ""             # e.g. "src/pages/admin/Supplier/SupplierView.tsx"   (JSX only)
+    logic_file: str = ""            # e.g. "src/pages/admin/Supplier/SupplierLogic.ts"   (hook)
+    css_file: str                   # e.g. "src/pages/admin/Supplier/Supplier.css"
     route_path: str                 # e.g. "/suppliers"
     roles: List[str]
     has_list_view: bool
@@ -242,6 +259,7 @@ class PRDHints(BaseModel):
     frontend_components: List[PRDFrontendComponent] = Field(default_factory=list)
     database_tables: List[str] = Field(default_factory=list)
     database_sps: List[str] = Field(default_factory=list)
+    database_hints: List[str] = Field(default_factory=list)
 
 
 class SpecificationJSON(BaseModel):
@@ -298,6 +316,10 @@ class SpecificationJSON(BaseModel):
 
         self.backend.module_file = f"modules/{plural}.py"
         self.backend.route_file  = f"routes_/{m}.py"
-        self.frontend.api_file   = f"src/api/{m}Api.ts"
+        # Frontend: MVVM feature layout (area/{Module}Page shell + feature folder)
+        from frontend_layout import layout, resolve_area
+        paths = layout(m, resolve_area(m, self.frontend.area))
+        for key in ("area", "api_file", "page_file", "view_file", "logic_file", "css_file"):
+            setattr(self.frontend, key, paths[key])
 
         return self

@@ -12,16 +12,23 @@ from google.adk.tools.tool_context import ToolContext
 
 _GH_API = "https://api.github.com"
 
-# Representative pages to sample — varied complexity
-_REFERENCE_PAGES = [
-    "src/pages/ClientsPage.tsx",          # simple CRUD list
-    "src/pages/ExpensesPage.tsx",         # financial module
-    "src/pages/UsersPage.tsx",            # admin module with roles
+# Representative MVVM features to sample — varied complexity. Each is a
+# (View, Logic) pair under src/pages/{area}/{Feature}/ (frontend_layout.py);
+# both files are read and analysed together as one page. The old flat
+# src/pages/ClientsPage.tsx-style paths no longer exist in the repo (every
+# fetch 404'd, so the design brief was silently built from nothing).
+_REFERENCE_FEATURES = [
+    ("src/pages/admin/Employees/EmployeesView.tsx",     # simple CRUD list
+     "src/pages/admin/Employees/EmployeesLogic.ts"),
+    ("src/pages/finance/Expenses/ExpensesView.tsx",     # financial module
+     "src/pages/finance/Expenses/ExpensesLogic.ts"),
+    ("src/pages/finance/Accounting/AccountingView.tsx", # multi-tab module
+     "src/pages/finance/Accounting/AccountingLogic.ts"),
 ]
 
 _REFERENCE_CSS = [
-    "src/pages/ClientsPage.css",
-    "src/pages/ExpensesPage.css",
+    "src/pages/admin/Employees/Employees.css",
+    "src/pages/finance/Expenses/Expenses.css",
 ]
 
 
@@ -171,11 +178,12 @@ def fetch_design_reference(tool_context: ToolContext) -> dict:
     results: dict = {"repo": repo, "pages": [], "css": [], "summary": {}}
 
     with httpx.Client(timeout=60) as client:
-        # Fetch TSX pages
-        for path in _REFERENCE_PAGES:
-            content = _fetch_file(client, repo, path)
-            if content:
-                patterns = _extract_patterns(content, path)
+        # Fetch MVVM features (View + Logic analysed together)
+        for view_path, logic_path in _REFERENCE_FEATURES:
+            parts = [c for c in (_fetch_file(client, repo, view_path),
+                                 _fetch_file(client, repo, logic_path)) if c]
+            if parts:
+                patterns = _extract_patterns("\n".join(parts), view_path.rsplit("/", 1)[0])
                 results["pages"].append(patterns)
 
         # Fetch CSS files

@@ -18,7 +18,8 @@ def test_architect_agent_importable():
 def test_database_agent_importable():
     from agents.database import database_agent
     assert database_agent.name == "database_agent"
-    assert database_agent.output_key == "database_artifacts"
+    # database_agent is a deterministic stage now; its LLM fallback owns the output_key.
+    assert database_agent.sub_agents[0].output_key == "database_artifacts"
 
 
 def test_backend_agent_importable():
@@ -88,13 +89,19 @@ def test_root_agent_pipeline_importable():
     agent_names = [a.name for a in root_agent.sub_agents]
     assert "prd_parser_agent"     in agent_names
     assert "schema_analyst_agent" in agent_names
-    assert "architect_agent"      in agent_names
+    # architect_agent runs inside architect_stage (bounded retries, agents/retry.py)
+    assert "architect_stage"      in agent_names
+    architect_stage = next(a for a in root_agent.sub_agents if a.name == "architect_stage")
+    assert architect_stage.sub_agents[0].name == "architect_agent"
     assert "decision_gate_agent"  in agent_names
     assert "generation_stage"     in agent_names
     assert "fixer_agent"          in agent_names
-    assert "frontend_agent"       in agent_names
+    assert "frontend_stage"       in agent_names  # wraps frontend_agent (agents/retry.py)
     assert "review_fix_loop"      in agent_names
-    assert "pr_agent"             in agent_names
+    # pr_agent runs inside pr_stage (deterministic pass/fail gate, agents/pr_gate/)
+    assert "pr_stage"             in agent_names
+    pr_stage = next(a for a in root_agent.sub_agents if a.name == "pr_stage")
+    assert pr_stage.sub_agents[0].name == "pr_agent"
 
 
 def test_generation_stage_contains_parallel_agents():
@@ -102,7 +109,9 @@ def test_generation_stage_contains_parallel_agents():
     gen_stage = next(a for a in root_agent.sub_agents if a.name == "generation_stage")
     sub_names = [a.name for a in gen_stage.sub_agents]
     assert "database_agent"           in sub_names
-    assert "backend_agent"            in sub_names
+    # backend_agent runs inside backend_stage (bounded retries, agents/retry.py)
+    backend_stage = next(a for a in gen_stage.sub_agents if a.name == "backend_stage")
+    assert backend_stage.sub_agents[0].name == "backend_agent"
     assert "design_consistency_agent" in sub_names
 
 

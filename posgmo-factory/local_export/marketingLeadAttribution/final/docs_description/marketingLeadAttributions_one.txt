@@ -1,0 +1,6 @@
+Returns a single marketingLeadAttribution record by its primary key for troubleshooting via sp_marketingLeadAttributions_one.
+Includes rawReferral with ctwa_clid removed by the stored procedure.
+Stored procedure: EXEC [dbo].[sp_marketingLeadAttributions_one] @pjsonfile = '<json>'
+
+Example:
+curl -X POST "https://smartloansbackend.azurewebsites.net/one_marketingLeadAttributions"   -H "Content-Type: application/json"   -d '{"companyId":1,"marketingLeadAttributionId":1}'

@@ -1,4 +1,4 @@
-﻿# Database Agent — tool functions.
+# Database Agent — tool functions.
 # execute_sql_on_server runs generated DDL/SPs against live SQL Server.
 
 import os
@@ -13,6 +13,7 @@ def execute_sql_on_server(
     sp_upsert: str,
     sp_all: str,
     sp_one: str,
+    validate_only: bool | None = None,
 ) -> dict:
     """
     Executes the generated CREATE TABLE and three stored procedures directly
@@ -68,9 +69,17 @@ def execute_sql_on_server(
         2705,   # column name already exists
     }
 
+    # FACTORY_SQL_MODE=validate: run every batch inside one transaction and
+    # roll it back. SQL Server DDL (CREATE TABLE / CREATE OR ALTER PROC) is
+    # transactional, so this proves the generated SQL compiles and executes
+    # against the real server without persisting anything -- used for
+    # reliability runs that must not overwrite live stored procedures.
+    if validate_only is None:
+        validate_only = os.environ.get("FACTORY_SQL_MODE", "apply").lower() == "validate"
+
     details = []
     try:
-        with pyodbc.connect(conn_str, autocommit=True) as conn:
+        with pyodbc.connect(conn_str, autocommit=not validate_only) as conn:
             cursor = conn.cursor()
             for batch in batches:
                 try:
@@ -88,7 +97,12 @@ def execute_sql_on_server(
                         details.append({"status": "skipped (already exists)", "batch_preview": batch[:80]})
                     else:
                         details.append({"status": "error", "message": err_str, "batch_preview": batch[:80]})
+            if validate_only:
+                conn.rollback()
         success = all(d["status"] in ("ok", "skipped (already exists)") for d in details)
-        return {"success": success, "details": details}
+        result = {"success": success, "details": details}
+        if validate_only:
+            result["mode"] = "validate (rolled back)"
+        return result
     except pyodbc.Error as e:
         return {"success": False, "details": [{"status": "connection_error", "message": str(e)}]}

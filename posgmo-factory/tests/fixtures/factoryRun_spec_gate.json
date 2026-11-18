@@ -1,0 +1,150 @@
+{
+  "specification": {
+    "module": "factoryRun",
+    "description": "Factory Run ledger (captured from last_state.json, 2026-09-22)",
+    "db": {
+      "table_name": "FactoryRuns",
+      "sp_prefix": "sp_FactoryRuns",
+      "columns": [
+        {
+          "name": "factoryRunId",
+          "sql_type": "int IDENTITY(1,1) NOT NULL",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "title",
+          "sql_type": "nvarchar(200)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "projectSlug",
+          "sql_type": "nvarchar(100)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "organizationSlug",
+          "sql_type": "nvarchar(100)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "prdModuleName",
+          "sql_type": "nvarchar(80)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "prdSnapshot",
+          "sql_type": "nvarchar(MAX)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "status",
+          "sql_type": "nvarchar(20)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "triggeredByEmail",
+          "sql_type": "nvarchar(200)",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "reviewPassed",
+          "sql_type": "bit",
+          "nullable": true,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "reviewScoreSummary",
+          "sql_type": "nvarchar(200)",
+          "nullable": true,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "gitBranchName",
+          "sql_type": "nvarchar(120)",
+          "nullable": true,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "errorSummary",
+          "sql_type": "nvarchar(MAX)",
+          "nullable": true,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "active",
+          "sql_type": "bit",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "created_At",
+          "sql_type": "datetime",
+          "nullable": false,
+          "fk_table": null,
+          "fk_column": null
+        },
+        {
+          "name": "updated_at",
+          "sql_type": "datetime",
+          "nullable": true,
+          "fk_table": null,
+          "fk_column": null
+        }
+      ],
+      "indexes": [
+        "projectSlug",
+        "organizationSlug",
+        "status",
+        "created_At",
+        "triggeredByEmail",
+        "projectSlug, status, created_At"
+      ]
+    }
+  },
+  "gate_result": {
+    "status": "APPROVED",
+    "tier": "TIER_1_CATALOG",
+    "backend_pattern": "CRUD_ONLY",
+    "tenant_model": "TENANT_INDEPENDENT",
+    "mandatory_constraints": {
+      "database": [
+        "companyId is NOT applicable to this module (explicit tenant_model decision) -- do not add a NOT NULL companyId column or a foreign key to companies.",
+        "Every nullable column in SELECT must be wrapped with ISNULL(col, default).",
+        "SP mutations must be wrapped in BEGIN TRY / BEGIN TRANSACTION / COMMIT / END TRY BEGIN CATCH ROLLBACK END CATCH."
+      ],
+      "backend": [],
+      "frontend": []
+    },
+    "soft_delete_parents": [],
+    "index_recommendations": []
+  },
+  "llm_path_review": {
+    "database": 60,
+    "issues": [
+      "SQL execution error: CREATE/ALTER PROCEDURE must be the first statement in a query batch",
+      "Primary key 'factoryRunId INT IDENTITY(1,1)' missing or malformed",
+      "sp_all must not filter by companyId for TENANT_INDEPENDENT modules"
+    ]
+  }
+}

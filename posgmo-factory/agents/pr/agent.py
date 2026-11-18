@@ -1,5 +1,6 @@
 ﻿"""PR Agent definition."""
 from google.adk.agents import Agent
+from agents.models import CODE_MODEL
 from google.adk.tools import FunctionTool
 from agents.pr.prompt import INSTRUCTION
 from agents.pr.rules import (
@@ -21,7 +22,7 @@ pr_agent = Agent(
         "Pushes all generated module files to GitHub branches and opens "
         "Pull Requests on the frontend and backend repos."
     ),
-    model="gemini-2.5-flash",
+    model=CODE_MODEL,
     instruction=lambda _ctx: INSTRUCTION,
     tools=[
         FunctionTool(func=save_sql_locally),

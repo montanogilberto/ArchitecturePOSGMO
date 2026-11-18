@@ -22,6 +22,7 @@ unchanged (see agents/database/rules.py).
 from __future__ import annotations
 
 import json
+import os
 
 from agents.database.rules import execute_sql_on_server
 
@@ -64,6 +65,14 @@ def merge_execution_result(state: dict) -> dict:
         return artifacts
 
     if not all(artifacts.get(k) for k in _REQUIRED_KEYS):
+        return artifacts
+
+    if os.environ.get("FACTORY_SKIP_DB_EXECUTION") == "1":
+        # LOCAL_DB_* has matched the production database (2026-11-04/07) and
+        # there is no isolated DEV DB: run the pipeline without touching it.
+        # The SQL still goes into the PR, to be reviewed and executed by hand.
+        artifacts["execution"] = {"success": None, "skipped": True, "details": [],
+                                  "reason": "FACTORY_SKIP_DB_EXECUTION=1 -- SQL not executed; review it in the PR"}
         return artifacts
 
     result = execute_sql_on_server(

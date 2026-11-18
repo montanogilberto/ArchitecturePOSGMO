@@ -1,0 +1,61 @@
+diff --git a/main.py b/main.py
+index ee98cf2..362ca30 100644
+--- a/main.py
++++ b/main.py
+@@ -75,6 +75,7 @@ from routes_ import (
+     whatsappCloud,
+     whatsappAssistant,
+     marketingLeadAttribution,
++    marketingAd,
+     demandSignal,
+     locationHost,
+     laundryDevices,
+@@ -275,6 +276,7 @@ app.include_router(factoryRunUsage.router)
+ app.include_router(whatsappCloud.router)
+ app.include_router(whatsappAssistant.router)
+ app.include_router(marketingLeadAttribution.router)
++app.include_router(marketingAd.router)
+ app.include_router(demandSignal.router)
+ app.include_router(locationHost.router)
+ app.include_router(laundryDevices.router)
+diff --git a/modules/whatsappCloud.py b/modules/whatsappCloud.py
+index 908b428..ac191a2 100644
+--- a/modules/whatsappCloud.py
++++ b/modules/whatsappCloud.py
+@@ -40,7 +40,7 @@ import httpx
+ 
+ from fastapi.responses import JSONResponse
+ 
+-from modules import clientContactPreferences, marketingLeadAttributions, whatsappChannels, whatsappReservations
++from modules import clientContactPreferences, marketingAds, marketingLeadAttributions, whatsappChannels, whatsappReservations
+ from modules import whatsappEvidence
+ from modules.whatsapp import log_message_to_database
+ from modules.whatsappAssistant import _sp as assistant_sp
+@@ -384,6 +384,15 @@ def _record_ad_referral(channel: dict, phone: str, msg: dict) -> None:
+             "rawReferral": referral,
+             "referredAt": _sent_at(msg.get("timestamp")),
+         }]})
++        # Meta's referral has the ad id only: leave the ad 'pending' so
++        # marketingAdsSyncWorker resolves its ad set and campaign later.
++        if referral.get("source_id"):
++            marketingAds.ensure_pending({"marketingAds": [{
++                "action": 1,
++                "companyId": channel["companyId"],
++                "provider": "meta",
++                "adId": str(referral["source_id"]),
++            }]})
+     except Exception:
+         logger.warning("[whatsappCloud] ad referral not recorded | id=%s", msg.get("messageId"))
+ 
+diff --git a/tests/test_marketing_attribution.py b/tests/test_marketing_attribution.py
+index 1f9d947..fe22744 100644
+--- a/tests/test_marketing_attribution.py
++++ b/tests/test_marketing_attribution.py
+@@ -101,6 +101,7 @@ class WebhookStubs(unittest.TestCase):
+         patches = [
+             mock.patch.object(wc.whatsappChannels, "get_channel", side_effect=CHANNELS.get),
+             mock.patch.object(wc.marketingLeadAttributions, "record_referral", self.record),
++            mock.patch.object(wc.marketingAds, "ensure_pending", return_value=1),
+             mock.patch.object(wc.clientContactPreferences, "handle_keyword", return_value=None),
+             mock.patch.object(wc.whatsappReservations, "reply_to", self.reply_to),
+             mock.patch.object(wc, "log_message_to_database"),

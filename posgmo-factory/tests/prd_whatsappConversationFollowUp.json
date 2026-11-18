@@ -1,0 +1,159 @@
+{
+  "module": "whatsappConversationFollowUp",
+  "description": "Shared follow-up state of each WhatsApp conversation between a customer and a business, so the team can attend customers like in WhatsApp Web and know who is handling what: is it open, waiting on the customer, or resolved; who it is assigned to; a note ('ya se le llamó', 'pendiente de factura'); and when to follow up next. Today the POS inbox (Agente WhatsApp > Conversaciones, /whatsapp-agent/conversations, built 2026-11-01) can only COMPUTE 'Sin responder' (the customer wrote last, or the agent handed off/failed and nobody answered) and keeps 'unread' per device in localStorage — nothing records that a person took the chat, closed it, or promised to call back, and two cashiers can answer the same customer. ONE ROW PER CONVERSATION holding its current state (not a history log): conversation key = (companyId, channelId, customerPhone) — the same key as dbo.whatsappConversations and the planned dbo.whatsappChatMessages (tests/prd_whatsappChatMessage.json); UNIQUE (companyId, channelId, customerPhone). History of changes comes from the observability audit trail: log_audit on every status/assignee/note change (old -> new, actor userId) — never the note text or the full phone in workflow/application logs. A conversation with no row is 'open' and unassigned (the UI must not require a row to exist). Writes from the POS go through the CRUD SP as upserts on the conversation key (the client never sends the row id). AUTOMATIC TRANSITIONS (backend, not the UI): (1) when a customer message arrives on a conversation whose row is 'resolved' or 'waiting_customer', modules/whatsappCloud.py _handle_message calls this module in-process to set status='open' and clear resolvedAt (keep assignedToUserId so the same person sees it come back); (2) when the agent hands off (pendingAction REQUEST_HUMAN in modules/whatsappReservations.reply_to) the row is upserted to 'open' with reason 'Pidió hablar con una persona'; (3) a staff reply sent from the POS (POST /whatsapp/staffReply, modules/whatsappCloud.staff_reply) sets status='waiting_customer' and, if unassigned, assignedToUserId = the replying user. These hooks must never break the webhook or the reply: try/except + log. Statuses are a lookup table dbo.whatsappConversationFollowUps_status (statusCode PK: open, waiting_customer, resolved — seed rows with es-MX labels Abierta / Esperando al cliente / Resuelta) with an FK from status — the PRD schema has no lookup field, so it is declared here and in database.tables: verify the generated SQL has the table, the seed rows and the FK. Multi-tenant: companyId injected by the SPs from the authenticated session on POS calls; the in-process webhook hooks pass companyId from the resolved whatsappChannels row (Meta has no user session). A row can only be read or written within its companyId even if the phone matches another company's conversation.",
+  "fields": [
+    {
+      "name": "channelId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "whatsappChannels",
+      "fk_column": "channelId",
+      "description": "Business WhatsApp number the conversation is on (dbo.whatsappChannels gives companyId/branchId). Part of the conversation key."
+    },
+    {
+      "name": "customerPhone",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Customer number in E.164 exactly as modules/whatsappCloud.normalize_mx_number produces it ('+52' + 10 digits) — same value stored in whatsappConversations.customerPhone. Part of the conversation key; UNIQUE (companyId, channelId, customerPhone). Never logged in full."
+    },
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "POS client resolved by the last 10 digits of customerPhone against dbo.clients.cellphone WITHIN the same companyId (same match as sp_whatsappCustomerRewards, excluding the 'Desconocido' walk-in placeholder). NULL for customers who are not registered clients — their conversations still get follow-up."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "open | waiting_customer | resolved. FK to dbo.whatsappConversationFollowUps_status.statusCode. 'open' = needs the team; 'waiting_customer' = the team answered and waits for the customer; 'resolved' = done. A new customer message moves waiting_customer/resolved back to open (backend hook)."
+    },
+    {
+      "name": "assignedToUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Staff user responsible for this conversation (users.userId, same company). NULL = unassigned. Plain INT, no FK constraint: dbo.users has no primary key in the live DB (0 FKs reference it), so any FK to users.userId fails with error 1776."
+    },
+    {
+      "name": "note",
+      "type": "string",
+      "required": false,
+      "max_length": 500,
+      "description": "Internal note visible only to the team (never sent to the customer), e.g. 'Ya se le llamó; recoge el sábado'. Replaced on each edit; previous values are in auditLogs. Never written to workflow/application logs."
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Why it is open, short: set by the backend hooks ('Pidió hablar con una persona', 'El agente no pudo responder') or by staff ('Queja por prenda dañada')."
+    },
+    {
+      "name": "followUpAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC of the next promised action ('llamarle mañana a las 10'). The inbox shows overdue rows (followUpAt < now and status <> resolved) first in the 'Seguimiento' filter. Cleared when resolved."
+    },
+    {
+      "name": "resolvedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC set when status becomes resolved; cleared when it reopens."
+    },
+    {
+      "name": "resolvedByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Staff user who resolved it. Plain INT, no FK (dbo.users has no primary key)."
+    },
+    {
+      "name": "updatedByUserId",
+      "type": "integer",
+      "required": false,
+      "description": "Last staff user who changed the row; NULL when a backend hook changed it (customer wrote, agent handed off). Plain INT, no FK (dbo.users has no primary key)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId. POS calls: injected by the SPs from the authenticated session. Webhook hooks: passed from the resolved whatsappChannels row."
+    },
+    {
+      "parentModule": "whatsappChannels",
+      "cardinality": "N:1",
+      "notes": "Every conversation belongs to the business number the customer wrote to."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "N:1",
+      "notes": "Optional: NULL for customers who are not registered clients."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager",
+    "Cashier"
+  ],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/whatsapp-agent/conversations",
+    "allowedRoles": [
+      "Admin",
+      "Manager",
+      "Cashier"
+    ],
+    "uiPattern": "NO NEW PAGE. Extends the existing inbox src/pages/messaging/WhatsAppConversations/ (MVVM: WhatsAppConversationsView/Logic/Constants, components/ConversationList, ThreadView, ReplyBox) — do not generate a second inbox. If tests/prd_whatsappChatMessage.json is generated later, its /whatsapp-chats inbox must be merged into this one rather than shipped as a parallel page. API in src/api/whatsappConversationFollowUpsApi.ts (typed, console.log prefix). (1) Thread header: an IonSelect for status (Abierta / Esperando al cliente / Resuelta) and an IonSelect 'Asignado a' with the company's users (existing users API) plus 'Sin asignar'; 'Tomar' IonButton assigns it to the current user; each change disables the control and shows an IonSpinner while saving, useToast on error, notifyDataChanged('whatsapp_followup') on success. (2) Below the header a collapsible 'Seguimiento' section: IonTextarea note (save button with IonSpinner), IonDatetime for followUpAt, the reason, and 'Resuelto por <name> · <mxDate>' when resolved. (3) Inbox list (ConversationList): each row shows the status badge from a new statusMaps entry WHATSAPP_FOLLOW_UP_STATUS (open=danger 'Abierta', waiting_customer=warning 'Esperando al cliente', resolved=success 'Resuelta') and the assignee's initials in an IonChip; the filter chips become Todos · Sin responder · Míos (assignedToUserId = current user, not resolved) · Seguimiento (followUpAt set, overdue first) · Resueltos — 'Sin responder' keeps its computed meaning. Rows with no follow-up record show as open/unassigned. (4) Data freshness: the inbox already polls every 20 s and listens to onDataChanged; follow-up state must arrive with the list (one request), not one call per row. No inline styles, Ionic components only, es-MX copy.",
+    "components": [
+      {
+        "step": 1,
+        "name": "FollowUpHeaderControls",
+        "description": "Status IonSelect + 'Asignado a' IonSelect + 'Tomar' button in the ThreadView header; upserts by (channelId, customerPhone) with IonSpinner while saving."
+      },
+      {
+        "step": 2,
+        "name": "FollowUpPanel",
+        "description": "Collapsible note + followUpAt + reason + resolved-by line under the thread header."
+      },
+      {
+        "step": 3,
+        "name": "InboxFollowUpBadges",
+        "description": "Status badge + assignee chip per row in ConversationList and the Míos / Seguimiento / Resueltos filter chips with counts."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/whatsappConversationFollowUps",
+        "method": "POST",
+        "description": "Upsert by conversation key for the session's companyId (POS). action 1 = upsert: only the keys sent change (status, assignedToUserId, note, reason, followUpAt); status=resolved sets resolvedAt=now + resolvedByUserId=userId and clears followUpAt; status <> resolved clears resolvedAt/resolvedByUserId; assignedToUserId must belong to the same company (error 'user_not_in_company' otherwise). action 2 = take: assignedToUserId = userId and status = open if it was resolved. clientId is resolved by the SP, never sent by the client. log_audit per changed field (entity 'whatsappConversationFollowUp', note text NOT logged — log only 'note changed'). Returns the full row. action 3 = system transition, used only in-process by the backend hooks described in the module description (modules/whatsappCloud._handle_message: customer wrote -> waiting_customer/resolved become open, resolvedAt cleared; modules/whatsappReservations.reply_to on REQUEST_HUMAN -> upsert open + reason; modules/whatsappCloud.staff_reply after a successful send -> open becomes waiting_customer and, if unassigned, assignedToUserId = the replying user); updatedByUserId stays NULL. Expose these as plain functions in modules/whatsappConversationFollowUps.py (on_customer_message, on_handoff, on_staff_reply), NOT as routes; each wrapped in try/except, failures logged with log_workflow_step('whatsapp_followup', status FAILED, no phone/body) and never block the customer's reply.",
+        "requestSchema": "{ \"whatsappConversationFollowUps\": [{ \"action\": 1|2|3, \"companyId\": int, \"userId\": int, \"channelId\": int, \"customerPhone\": string, \"status\"?: \"open\"|\"waiting_customer\"|\"resolved\", \"assignedToUserId\"?: int|null, \"note\"?: string, \"reason\"?: string, \"followUpAt\"?: datetime|null }] }",
+        "responseSchema": "{ \"result\": [{ \"whatsappConversationFollowUpId\", \"channelId\", \"customerPhone\", \"clientId\", \"status\", \"assignedToUserId\", \"assignedToName\", \"note\", \"reason\", \"followUpAt\", \"resolvedAt\", \"resolvedByUserId\", \"resolvedByName\", \"updatedByUserId\", \"updated_at\" }] }"
+      },
+      {
+        "path": "/all_whatsappConversationFollowUps",
+        "method": "POST",
+        "description": "Rows of the session's companyId for the inbox, in ONE call: optional filters status, assignedToUserId, overdue (followUpAt < now and status <> resolved), and a list of conversation keys (channelId + customerPhone, max 200) so the inbox can fetch the state of exactly the chats it shows. Includes assignedToName / resolvedByName from users (first + last name). The hand-written inbox SP (smartloans_backend sql/sp_whatsappAgentConversations.sql action 'list') may instead LEFT JOIN this table by (companyId, channelId, customerPhone) — either is fine, but never one request per row.",
+        "requestSchema": "{ \"whatsappConversationFollowUps\": [{ \"companyId\": int, \"status\"?: string, \"assignedToUserId\"?: int, \"overdue\"?: bool, \"conversations\"?: [{ \"channelId\": int, \"customerPhone\": string }] }] }",
+        "responseSchema": "{ \"result\": [{ \"whatsappConversationFollowUpId\", \"channelId\", \"customerPhone\", \"clientId\", \"status\", \"assignedToUserId\", \"assignedToName\", \"note\", \"reason\", \"followUpAt\", \"resolvedAt\", \"resolvedByName\", \"updated_at\" }] }"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.whatsappConversationFollowUps",
+      "dbo.whatsappConversationFollowUps_status"
+    ],
+    "storedProcedures": [
+      "dbo.sp_whatsappConversationFollowUps",
+      "dbo.sp_whatsappConversationFollowUps_all",
+      "dbo.sp_whatsappConversationFollowUps_one"
+    ]
+  }
+}

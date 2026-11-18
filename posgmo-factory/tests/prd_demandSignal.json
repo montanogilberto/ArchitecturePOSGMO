@@ -1,0 +1,57 @@
+{
+  "module": "demandSignal",
+  "description": "GMO Client Acquisition: location validation. Records, per company, each person's expressed interest in a service concept (autoservicio_24h, lockers, qr_gmo) gathered by the WhatsApp agent from a Meta Click-to-WhatsApp ad or an organic chat, so demand can be mapped by zone before investing in infrastructure (self-service 24h stores, locker drop-off points). One row per (companyId, customerPhone, concept), upserted as the conversation progresses. The agent proposes RECORD_DEMAND_SIGNAL with the answers; smartloans_backend modules/whatsappReservations sets companyId, channelId and customerPhone from the WhatsApp channel and sender (never from the agent), links the latest marketingLeadAttributions row for that phone and channel and the existing client by phone, then calls sp_demandSignals. intentLevel is computed in the SP, never sent by the caller: 'alta' = wouldUse 'si' AND frequency IN ('semanal','quincenal') AND notifyOptIn = 1; 'media' = wouldUse IN ('si','tal_vez') otherwise; 'baja' = wouldUse 'no' or NULL. Zones are colonia-level only (normalized name + colonia centroid), never a street address. There is no public create route: rows are written only from the WhatsApp webhook path. Design doc: POSVending docs/sistema-adquisicion-validacion-ubicaciones.md.",
+  "fields": [
+    {"name": "channelId", "type": "integer", "required": true, "fk_table": "whatsappChannels", "fk_column": "channelId", "description": "Business WhatsApp number that received the conversation; establishes the tenant. The SP rejects a channel outside companyId."},
+    {"name": "customerPhone", "type": "string", "required": true, "max_length": 20, "description": "WhatsApp sender in E.164. Identifies a distinct person. Never returned by the zone summary."},
+    {"name": "clientId", "type": "integer", "required": false, "fk_table": "clients", "fk_column": "clientId", "description": "Existing client matched by phone at write time (snapshot). NULL = new prospect. This module never writes dbo.clients."},
+    {"name": "marketingLeadAttributionId", "type": "integer", "required": false, "fk_table": "marketingLeadAttributions", "fk_column": "marketingLeadAttributionId", "description": "Latest ad attribution for this phone and channel, when the chat came from an ad."},
+    {"name": "concept", "type": "string", "required": true, "max_length": 30, "description": "CHECK IN ('autoservicio_24h','lockers','qr_gmo')."},
+    {"name": "origin", "type": "string", "required": true, "max_length": 20, "description": "CHECK IN ('anuncio','organico','personal'). 'anuncio' when marketingLeadAttributionId is set."},
+    {"name": "residenceZoneText", "type": "string", "required": false, "max_length": 120, "description": "Where the person lives, as they wrote it."},
+    {"name": "workZoneText", "type": "string", "required": false, "max_length": 120, "description": "Where they work or study, as they wrote it."},
+    {"name": "preferredZoneText", "type": "string", "required": true, "max_length": 120, "description": "Where they would use the service, as they wrote it. Drives the demand map."},
+    {"name": "preferredZoneName", "type": "string", "required": false, "max_length": 120, "description": "Normalized colonia name (Hermosillo catalog). NULL = not located yet; reviewed by hand."},
+    {"name": "preferredZoneLat", "type": "decimal", "required": false, "description": "Colonia centroid latitude, DECIMAL(9,6). Never a street-level point."},
+    {"name": "preferredZoneLng", "type": "decimal", "required": false, "description": "Colonia centroid longitude, DECIMAL(9,6)."},
+    {"name": "frequency", "type": "string", "required": false, "max_length": 20, "description": "CHECK IN ('semanal','quincenal','mensual','ocasional')."},
+    {"name": "preferredTime", "type": "string", "required": false, "max_length": 20, "description": "CHECK IN ('temprano','dia','tarde','noche','madrugada','fin_de_semana')."},
+    {"name": "currentSolution", "type": "string", "required": false, "max_length": 20, "description": "CHECK IN ('lavadora_propia','lavanderia','familiar','otro')."},
+    {"name": "painPoint", "type": "string", "required": false, "max_length": 200, "description": "Main inconvenience in their own words. No personal data."},
+    {"name": "wouldUse", "type": "string", "required": false, "max_length": 10, "description": "CHECK IN ('si','tal_vez','no'). Answer to: if it were near you, would you use it?"},
+    {"name": "notifyOptIn", "type": "boolean", "required": true, "description": "Explicit yes to being notified. Default 0. An ad click is not consent."},
+    {"name": "optInAt", "type": "datetime", "required": false, "description": "UTC moment of the explicit yes. Set by the SP when notifyOptIn turns 1; kept if later updates omit it."},
+    {"name": "intentLevel", "type": "string", "required": true, "max_length": 10, "description": "CHECK IN ('alta','media','baja'). Computed by sp_demandSignals from wouldUse, frequency and notifyOptIn; never accepted from the caller."}
+  ],
+  "relationships": [
+    {"parentModule": "companies", "cardinality": "1:N", "notes": "Tenant, taken from the resolved whatsappChannels row. Every read SP filters by it."},
+    {"parentModule": "whatsappChannels", "cardinality": "1:N", "notes": "Number that received the conversation."},
+    {"parentModule": "clients", "cardinality": "1:N", "notes": "Optional snapshot by phone. Never written here."},
+    {"parentModule": "marketingLeadAttributions", "cardinality": "1:N", "notes": "Optional link to the ad that started the chat."}
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "backend": {
+    "endpoints": [
+      {"path": "/all_demandSignals", "method": "POST", "description": "Read-only list of one company's signals, newest first, max 500. Filters: startDate/endDate (Hermosillo days, fixed UTC-7), concept, origin, intentLevel, sourceId (via the attribution). Returns customerPhone masked except the last 4 digits.", "requestSchema": "{ \"demandSignals\": [{ \"companyId\": int, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\", \"concept\"?: string, \"origin\"?: string, \"intentLevel\"?: string, \"sourceId\"?: string }] }", "responseSchema": "{ \"result\": [ { demandSignalId, concept, origin, preferredZoneText, preferredZoneName, preferredZoneLat, preferredZoneLng, residenceZoneText, workZoneText, frequency, preferredTime, currentSolution, painPoint, wouldUse, notifyOptIn, intentLevel, isExistingClient, sourceId, headline, phoneLast4, created_at, updated_at } ] }"},
+      {"path": "/demandSignals/zoneSummary", "method": "POST", "description": "Aggregate by preferredZoneName and concept for the demand map: distinct people, counts by intentLevel, % semanal+quincenal, dominant preferredTime, new vs existing clients, opt-ins, centroid. Zones with fewer than 3 distinct people are folded into 'otras zonas' so no person is identifiable. Same filters as /all_demandSignals.", "requestSchema": "{ \"demandSignals\": [{ \"companyId\": int, \"startDate\"?: \"YYYY-MM-DD\", \"endDate\"?: \"YYYY-MM-DD\", \"concept\"?: string, \"origin\"?: string }] }", "responseSchema": "{ \"result\": [ { zoneName, lat, lng, concept, people, alta, media, baja, pctRecurring, topPreferredTime, newProspects, existingClients, optIns } ] }"}
+    ]
+  },
+  "database": {
+    "tables": ["dbo.demandSignals"],
+    "storedProcedures": ["dbo.sp_demandSignals", "dbo.sp_demandSignals_all", "dbo.sp_demandSignals_zoneSummary"],
+    "hints": [
+      "UNIQUE (companyId, customerPhone, concept). sp_demandSignals upserts on it: a later call only overwrites the fields it sends (NULL = keep), so the agent can record progressively.",
+      "CHECK constraints for concept, origin, frequency, preferredTime, currentSolution, wouldUse and intentLevel with the exact value lists in the field descriptions.",
+      "intentLevel is computed inside sp_demandSignals after the merge; any intentLevel in @pjsonfile is ignored. optInAt is set to SYSUTCDATETIME() the first time notifyOptIn becomes 1.",
+      "preferredZoneLat/Lng DECIMAL(9,6) NULL. Colonia centroids only; never store a street address.",
+      "Use DATETIME2 for created_at/updated_at and optInAt, default SYSUTCDATETIME(); never GETDATE(). Hermosillo is fixed UTC-7 with no DST: compute period bounds with DATEADD(HOUR, 7, ...).",
+      "Indexes: (companyId, created_at), (companyId, concept, preferredZoneName), (companyId, marketingLeadAttributionId).",
+      "sp_demandSignals_zoneSummary counts DISTINCT customerPhone and folds zones with fewer than 3 people into 'otras zonas'. _all returns only the last 4 digits of customerPhone.",
+      "No public create endpoint: rows are written only by smartloans_backend modules/whatsappReservations on RECORD_DEMAND_SIGNAL (manual step, the factory does not generate the webhook hook).",
+      "This module never inserts or updates dbo.clients, dbo.marketingLeadAttributions or dbo.clientContactPreferences.",
+      "All SPs use the @pjsonfile pattern and TRY/CATCH. Run the factory with FACTORY_SQL_MODE=validate (the default database_executor applies DDL to the live production DB)."
+    ]
+  }
+}

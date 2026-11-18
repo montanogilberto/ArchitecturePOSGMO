@@ -1,0 +1,150 @@
+{
+  "module": "marketingAd",
+  "description": "PHASE 1b of GMO Client Acquisition: the ad dimension that tells which ad set and campaign each attributed lead came from. Phase 1 (marketingLeadAttribution, deployed 2026-11-04, verified in production 2026-11-12) stores Meta's Click-to-WhatsApp referral, but Meta's referral carries only the AD id (referral.source_id, stored as marketingLeadAttributions.sourceId). It does NOT carry the ad set id or the campaign id. Comparing offers (one ad set per offer: Lockers, Autoservicio 24h, Socio) therefore needs a lookup of each ad against the Meta Marketing API. That PRD already said: 'campaign is resolved from sourceId in phase 4' and listed marketingAds as out of scope; this PRD brings forward only that table, so the scorecard can group leads by ad set and campaign. Spend, CPL, CAC and ROAS stay in phase 4.\n\nDESIGN: one row per (companyId, provider, adId), a dimension joined by marketingLeadAttributions.sourceId = marketingAds.adId. Attribution rows stay immutable: no column is added to them and they are never updated. A lead whose ad is not resolved yet is still reported, with NULL ad set and campaign.\n\nHOW ROWS ARE FILLED, in two steps so the customer's WhatsApp reply never waits on Meta:\n(a) The WhatsApp webhook, right after it records an attribution, asks this module to ENSURE a pending row for (companyId, sourceId) (action 1). No call to Meta happens in the webhook.\n(b) A timer worker in smartloans_workers (marketingAdsSyncWorker, every 15 minutes) lists pending/error rows through POST /all_marketingAds, calls GET https://graph.facebook.com/{version}/{adId}?fields=name,account_id,adset{id,name},campaign{id,name} with its own token, and writes the result through POST /marketingAds (action 2). Once a day it also re-syncs rows resolved in the last 30 days, because ads and ad sets get renamed.\n\nTENANT: companyId always comes from the attribution row (which got it from the receiving whatsappChannels row), never from Meta and never from the ad text. The worker must check that Meta's account_id equals the ad account configured for that company; if it does not, it writes lookupStatus='forbidden' with no names or ids, so an ad from another account is never mixed into a tenant's reports. Reads always filter by companyId.\n\nLOOKUP STATUS: 'pending' (created by the webhook or backfill, never looked up), 'resolved' (Meta answered and the account matched), 'not_found' (Meta error 100 / object does not exist: do not retry), 'forbidden' (account mismatch, or Meta error 10/200/190 permission or token: do not retry, log a warning), 'error' (rate limit 4/17/613, HTTP 5xx or timeout: retry). The worker retries only 'pending' and 'error' rows with lookupAttempts < 5.\n\nCREDENTIALS: the worker uses a NEW Meta system-user token with only ads_read on the company's ad account, in env var META_ADS_ACCESS_TOKEN, and a company to ad-account map in META_ADS_ACCOUNT_BY_COMPANY (JSON, e.g. {\"1\":\"act_2212661913013953\"}). Never reuse WA_ACCESS_TOKEN. smartloans_backend is a PUBLIC repo: no token, account map or secret in code, tests, docs or logs. A marketingAdAccounts table replaces the env map in phase 4.\n\nPRIVACY: this table holds no personal data (no phones, no ctwaClid). Never log tokens. adName, adsetName and campaignName are business metadata and may be logged.\n\nSCOPE. IN: table, write SP (actions 1 and 2), list SP, two worker-key routes, the webhook call (manual step), the enriched attribution read (manual step), a one-time backfill. OUT: spend and insights, marketingAdAccounts, Conversions API, any frontend or dashboard, Google Ads, creating or editing ads.\n\nMANUAL APPLY STEPS, which the factory does not generate:\n(1) smartloans_backend modules/whatsappCloud._record_ad_referral: after marketingLeadAttributions.record_referral(...) and inside the SAME try/except, when referral.source_id is present call marketingAds.ensure_pending({\"marketingAds\": [{\"action\": 1, \"companyId\": channel[\"companyId\"], \"provider\": \"meta\", \"adId\": referral[\"source_id\"]}]}). A failure must never delay or break the customer's reply and must never prevent the attribution row.\n(2) Both routes use Depends(require_worker_key) (security/worker_key.py), exactly like the marketingLeadAttribution read routes.\n(3) Update dbo.sp_marketingLeadAttributions_all to LEFT JOIN dbo.marketingAds ma ON ma.companyId = a.companyId AND ma.provider = a.provider AND ma.adId = a.sourceId AND ma.lookupStatus IN ('resolved','error') ('error' keeps the last good lookup), returning adName, adsetId, adsetName, campaignId, campaignName (NULL when never resolved, or after not_found/forbidden), and accept optional filters adsetId and campaignId. Keep every existing rule of that SP: never select ctwaClid or rawReferral.\n(4) Backfill once, after deploy: for each DISTINCT (companyId, provider, sourceId) already in dbo.marketingLeadAttributions with a non-null sourceId, call action 1. Idempotent, safe to re-run.\n(5) smartloans_workers: new timer function marketingAdsSyncWorker (schedule 0 */15 * * * *), calling the backend with X-Worker-Key as shared/ml_api.py does. Wrap each Graph call in timed_integration and log steps with workflow_name 'marketing_attribution'.\n(6) Register the router in main.py.\n\nDEPLOY ORDER: migration and SPs (DEV, then QA, then PROD, promoted by PR) -> backend (webhook call + routes) -> worker with its env vars -> backfill. Apply SQL with FACTORY_SQL_MODE=validate first: the local .env points at the production database.\n\nACCEPTANCE TESTS:\nAT1 A WhatsApp message with a referral writes the attribution row AND one marketingAds row (companyId from the channel, adId = source_id, lookupStatus 'pending', lookupAttempts 0).\nAT2 A second lead from the same ad leaves exactly one marketingAds row; action 1 returns the existing id.\nAT3 If action 1 fails inside the webhook, the attribution row is still written and the customer still gets the agent's reply.\nAT4 Action 2 with a resolved lookup stores adName, adsetId, adsetName, campaignId, campaignName, adAccountId, sets lookupStatus 'resolved', lastSyncedAt = SYSUTCDATETIME(), lookupAttempts + 1.\nAT5 Action 2 with lookupStatus 'forbidden' or 'not_found' stores no names or ids (they stay or become NULL) and increments lookupAttempts.\nAT6 Action 2 for an adId that has no row for that companyId returns error 'ad_not_found' and inserts nothing: the worker can only update rows the webhook or backfill created.\nAT7 POST /all_marketingAds with lookupStatuses ['pending','error'] and maxAttempts 5 returns only those rows of that company, oldest first, max 200.\nAT8 Both routes reject a request without a valid X-Worker-Key.\nAT9 After step (3), /all_marketingLeadAttributions returns adsetId/adsetName/campaignId/campaignName for leads of resolved ads and NULL for the others; no lead disappears from the list; ctwaClid is still never returned.\nAT10 Company A's reads never return company B's ads, even for the same adId.\nAT11 An adId larger than INT (e.g. '120248369825700137') round-trips unchanged as text.\nAT12 Re-running the backfill creates no duplicates.",
+  "fields": [
+    {
+      "name": "provider",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Advertising provider. CHECK IN ('meta'); widened when Google is added. Same value as marketingLeadAttributions.provider."
+    },
+    {
+      "name": "adId",
+      "type": "string",
+      "required": true,
+      "max_length": 64,
+      "description": "Provider's ad id; equals marketingLeadAttributions.sourceId (Meta referral.source_id). NVARCHAR, never numeric: these ids exceed INT."
+    },
+    {
+      "name": "adName",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Ad name from the provider at lastSyncedAt. Truncate to the column size, never fail."
+    },
+    {
+      "name": "adsetId",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "Provider's ad set id. NULL until resolved. NVARCHAR, never numeric."
+    },
+    {
+      "name": "adsetName",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Ad set name at lastSyncedAt. Truncate to the column size, never fail."
+    },
+    {
+      "name": "campaignId",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "Provider's campaign id. NULL until resolved. NVARCHAR, never numeric."
+    },
+    {
+      "name": "campaignName",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Campaign name at lastSyncedAt. Truncate to the column size, never fail."
+    },
+    {
+      "name": "adAccountId",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "Provider's ad account as returned by the lookup (Meta account_id, stored with the 'act_' prefix). Only stored when it matched the company's configured account."
+    },
+    {
+      "name": "lookupStatus",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "CHECK IN ('pending','resolved','not_found','forbidden','error'). Default 'pending'."
+    },
+    {
+      "name": "lookupAttempts",
+      "type": "integer",
+      "required": true,
+      "description": "Times the worker has written a result for this row. Default 0. The worker stops retrying at 5."
+    },
+    {
+      "name": "lastError",
+      "type": "string",
+      "required": false,
+      "max_length": 255,
+      "description": "Short provider error code and message of the last failed lookup (e.g. '190 Invalid OAuth access token'). Never a token, never a full response body. Cleared on 'resolved'."
+    },
+    {
+      "name": "lastSyncedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC moment of the last lookup result written by action 2. NULL while pending."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Tenant. Taken from the attribution row (which took it from whatsappChannels); every read filters by it."
+    },
+    {
+      "parentModule": "marketingLeadAttributions",
+      "cardinality": "1:N",
+      "notes": "Logical join only, NO foreign key: marketingLeadAttributions.(companyId, provider, sourceId) = marketingAds.(companyId, provider, adId). One ad, many leads."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/marketingAds",
+        "method": "POST",
+        "description": "Worker-only write (Depends(require_worker_key)). action 1 = ensure pending row (idempotent; also used by the webhook in-process and by the backfill). action 2 = write a lookup result for an EXISTING row; never creates one. Any other action returns 'unsupported_action'. No delete.",
+        "requestSchema": "{ \"marketingAds\": [{ \"action\": 1, \"companyId\": int, \"provider\": \"meta\", \"adId\": string }] }  |  { \"marketingAds\": [{ \"action\": 2, \"companyId\": int, \"provider\": \"meta\", \"adId\": string, \"lookupStatus\": \"resolved\"|\"not_found\"|\"forbidden\"|\"error\", \"adName\"?: string, \"adsetId\"?: string, \"adsetName\"?: string, \"campaignId\"?: string, \"campaignName\"?: string, \"adAccountId\"?: string, \"lastError\"?: string }] }",
+        "responseSchema": "{ \"result\": [{ \"marketingAds\": [{ \"marketingAdId\": int, \"lookupStatus\": string }] }] }  |  { \"error\": string }"
+      },
+      {
+        "path": "/all_marketingAds",
+        "method": "POST",
+        "description": "Worker-only read (Depends(require_worker_key)) of one company's ads. Filters: lookupStatuses (array), maxAttempts (int, rows with lookupAttempts < maxAttempts), syncedBefore (UTC datetime, for the daily re-sync of resolved rows), adsetId, campaignId. Order: created_At ascending (oldest pending first). Max 200 rows.",
+        "requestSchema": "{ \"marketingAds\": [{ \"companyId\": int, \"lookupStatuses\"?: [string], \"maxAttempts\"?: int, \"syncedBefore\"?: \"YYYY-MM-DDTHH:MM:SS\", \"adsetId\"?: string, \"campaignId\"?: string }] }",
+        "responseSchema": "{ \"result\": [{ \"marketingAds\": [{ \"marketingAdId\", \"provider\", \"adId\", \"adName\", \"adsetId\", \"adsetName\", \"campaignId\", \"campaignName\", \"adAccountId\", \"lookupStatus\", \"lookupAttempts\", \"lastError\", \"lastSyncedAt\" }] }] }"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.marketingAds"
+    ],
+    "storedProcedures": [
+      "dbo.sp_marketingAds",
+      "dbo.sp_marketingAds_all"
+    ],
+    "hints": [
+      "UNIQUE (companyId, provider, adId). CHECK (provider IN ('meta')). CHECK (lookupStatus IN ('pending','resolved','not_found','forbidden','error')). CHECK (lookupAttempts >= 0).",
+      "adId, adsetId, campaignId, adAccountId are NVARCHAR(64), never numeric.",
+      "lookupStatus NVARCHAR(20) NOT NULL DEFAULT 'pending'; lookupAttempts INT NOT NULL DEFAULT 0.",
+      "Use DATETIME2 for lastSyncedAt, created_At and updated_at, defaulting to SYSUTCDATETIME(); never GETDATE(). Everything here is UTC.",
+      "Indexes: (companyId, adsetId), (companyId, campaignId), (companyId, lookupStatus, lookupAttempts). The UNIQUE constraint already covers (companyId, provider, adId): no separate index for it.",
+      "NO foreign key to dbo.marketingLeadAttributions: the relationship is a logical join on (companyId, provider, sourceId = adId). FK only to dbo.companies.",
+      "No FK to dbo.users: the live table has no primary key and the FK fails with error 1776.",
+      "sp_marketingAds action 1: if (companyId, provider, adId) exists return its id and change nothing; else insert with lookupStatus 'pending'. A UNIQUE violation from a concurrent call (error 2627 or 2601) is the same case: return the existing id, not an error.",
+      "sp_marketingAds action 2: UPDATE only; if no row matches (companyId, provider, adId) return error 'ad_not_found'. Set lookupStatus, lookupAttempts = lookupAttempts + 1, lastSyncedAt = SYSUTCDATETIME(), updated_at = SYSUTCDATETIME(). When lookupStatus = 'resolved': write adName, adsetId, adsetName, campaignId, campaignName, adAccountId (LEFT() to column sizes) and set lastError = NULL. When 'not_found' or 'forbidden': set the five name/id columns and adAccountId to NULL and store lastError. When 'error': keep any previously resolved names (a transient failure must not erase good data) and store lastError.",
+      "sp_marketingAds rejects any action other than 1 or 2 with error 'unsupported_action'. No delete action.",
+      "sp_marketingAds_all filters by companyId always; lookupStatuses via OPENJSON array; maxAttempts as lookupAttempts < @maxAttempts; syncedBefore as lastSyncedAt < @syncedBefore OR lastSyncedAt IS NULL. TOP 200 ORDER BY created_At ASC.",
+      "Every exit path must leave @@TRANCOUNT balanced: commit or roll back before any GOTO or RETURN.",
+      "Use only columns that exist in structure_database.csv for any table this SP reads besides dbo.marketingAds (it reads none).",
+      "All SPs use the @pjsonfile pattern and TRY/CATCH. Responses follow the deployed marketingLeadAttribution contract: a single jsonResult column with {\"result\":[{\"marketingAds\":[...]}]} or {\"error\":\"...\"}. SQL Server may split long JSON across rows: the Python reader must join all rows.",
+      "Never ROLLBACK on a non-error path (e.g. ad_not_found): it would also undo a caller's outer transaction (error 266). COMMIT, then report the error."
+    ]
+  }
+}

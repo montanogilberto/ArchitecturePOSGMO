@@ -1,5 +1,9 @@
 # Factory Knowledge & Experience — Roadmap
 
+> **Superseded (2026-09-30)** by [`gmo-agentic-roadmap.md`](gmo-agentic-roadmap.md).
+> The five phases below are completed groundwork, referred to there as
+> Knowledge phases K1–K5 to avoid confusion with the new roadmap's phases.
+
 Five phases, built incrementally — each one proven against real evidence
 before the next starts, not designed on paper and built all at once. This
 mirrors the same discipline `docs/commercial-app-milestones.md` already

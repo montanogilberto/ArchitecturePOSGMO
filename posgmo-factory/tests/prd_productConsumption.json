@@ -1,0 +1,49 @@
+{
+  "module": "productConsumption",
+  "description": "Recipe (receta) of a sellable product: what one sale consumes. A rule says 'selling this product — or this one option choice of it — consumes N of a component'. The component is either a tracked stock item (products.trackInventory = 1, e.g. '8L ARIEL REG' counted in ml) whose inventory goes down on every sale, or a service product included in a kit (e.g. Servicio Completo › Básico includes 1 × 'Servicio de lavado › Basico' and 1 × 'Servicio de secado › 40 Min'), which moves no stock and is only listed. Example: Servicio Completo › Básico = 100 ml Ariel + 100 ml Suavitel + 1 lavado Básico + 1 secado 40 min.",
+  "fields": [
+    { "name": "productId", "type": "integer", "required": true, "fk_table": "products", "fk_column": "productId",
+      "description": "The sellable product (what the cashier sells), e.g. 1004 Servicio Completo." },
+    { "name": "productOptionChoiceId", "type": "integer", "required": false, "fk_table": "productOptionChoices", "fk_column": "productOptionChoiceId",
+      "description": "The choice of the sellable the rule applies to (Servicio Completo › Ciclo › Básico). NULL = every sale of the product. Choice ids are stable since 2026-10-27 (sp_products upserts by id)." },
+    { "name": "componentProductId", "type": "integer", "required": true, "fk_table": "products", "fk_column": "productId",
+      "description": "What is consumed: a stock item (trackInventory = 1) or a service product of the same company. Never the same product as productId." },
+    { "name": "componentProductOptionChoiceId", "type": "integer", "required": false, "fk_table": "productOptionChoices", "fk_column": "productOptionChoiceId",
+      "description": "For a service component, which of its choices is included ('Servicio de secado › 40 Min'). NULL for stock items." },
+    { "name": "quantity", "type": "decimal", "required": true,
+      "description": "Amount consumed per 1 unit sold, expressed in the component's products.stockUnit (ml, g or pz). For a service component: number of cycles (usually 1)." },
+    { "name": "isActive", "type": "boolean", "required": true,
+      "description": "1 = applied on sales; 0 = kept for history but ignored." }
+  ],
+  "relationships": [
+    { "parentModule": "companies", "cardinality": "1:N", "notes": "Multi-tenant isolation via companyId — injected automatically by stored procedures." },
+    { "parentModule": "products", "cardinality": "1:N", "notes": "A sellable has 0..N rules (FK productId); a stock item or service is the component of 0..N rules (FK componentProductId)." },
+    { "parentModule": "productOptionChoices", "cardinality": "1:N", "notes": "Optional: the rule applies to one choice of the sellable; optional: the included choice of a service component." }
+  ],
+  "roles_allowed": ["Admin", "Manager"],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/products-management",
+    "allowedRoles": ["Admin", "Manager"],
+    "uiPattern": "Embedded in ProductWizard (no own page)",
+    "components": [
+      { "step": 1, "name": "ProductWizard › Opciones › 'Incluye / consume'",
+        "description": "Existing src/components/pos/productWizard/ProductWizard.tsx: per option choice, a list of rules (component picker + quantity in the component's stockUnit). Saved with productConsumptionApi after the product is saved (choice ids come back from sp_products_one)." }
+    ]
+  },
+  "database": {
+    "tables": ["dbo.productConsumptions"],
+    "storedProcedures": ["dbo.sp_productConsumptions", "dbo.sp_productConsumptions_all"],
+    "hints": [
+      "Standard CRUD action 1/2/3 in sp_productConsumptions; action=0 not needed.",
+      "Batch replace: action=1 with productId and productConsumptions[] (all rules of that product) replaces the product's set in one transaction — rows not in the payload are deleted; the wizard saves the whole recipe at once.",
+      "sp_productConsumptions_all filters by companyId and optional productId; returns each rule with component name, component stockUnit, component trackInventory, and the names of both choices (LEFT JOIN productOptionChoices).",
+      "CHECK quantity > 0. CHECK componentProductId <> productId.",
+      "Validate in the SP: componentProductId belongs to the same companyId; productOptionChoiceId (if not NULL) belongs to productId; componentProductOptionChoiceId (if not NULL) belongs to componentProductId.",
+      "UNIQUE (productId, productOptionChoiceId, componentProductId, componentProductOptionChoiceId) — use a filtered/computed approach since NULLs are allowed (ISNULL(...,0) in a persisted computed column or validate in the SP).",
+      "Index on (companyId, productId).",
+      "Sale posting is NOT part of this module: trg_incomeDetails_inventory reads this table in a separate hand-written migration."
+    ]
+  }
+}

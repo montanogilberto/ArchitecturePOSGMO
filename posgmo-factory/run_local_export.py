@@ -26,6 +26,7 @@ from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
 from orchestrator import _build_session_state, _REPO_ENV_VARS
+from knowledge_sync import run_before_factory
 from prd_schema import PRDInput
 from agents import root_agent
 from agents.agent import generation_stage
@@ -46,9 +47,17 @@ def _strip_pr_and_design_consistency() -> None:
     unrelated tests asserting root_agent still has pr_agent, since Python
     only runs a module's top level once per process and the mutation is
     on a shared object, not a copy)."""
-    if pr_agent in root_agent.sub_agents:
-        assert root_agent.sub_agents[-1] is pr_agent, "pr_agent is no longer last in root_agent.sub_agents"
-        root_agent.sub_agents = root_agent.sub_agents[:-1]
+    # Strip pr_agent AND any stage that wraps it (e.g. pr_stage from
+    # agents/pr_gate/). Matching only `pr_agent` at top level silently stopped
+    # working when pr_agent got wrapped: a "local export" run then reached
+    # github_create_branch (2026-09-23, Step 1 harness run
+    # supplier-20260923-101448-1; the first GET 404'd, nothing was written).
+    def _contains_pr(agent) -> bool:
+        return agent is pr_agent or any(_contains_pr(a) for a in getattr(agent, "sub_agents", []) or [])
+
+    if any(_contains_pr(a) for a in root_agent.sub_agents):
+        root_agent.sub_agents = [a for a in root_agent.sub_agents if not _contains_pr(a)]
+    assert not any(_contains_pr(a) for a in root_agent.sub_agents), "pr_agent still reachable"
     if any(a is design_consistency_agent for a in generation_stage.sub_agents):
         generation_stage.sub_agents = [
             a for a in generation_stage.sub_agents if a is not design_consistency_agent
@@ -79,6 +88,7 @@ def _parse_maybe_fenced_json(raw) -> dict | None:
 async def run_local(prd_dict: dict, user_id: str = "factory", target: str = "pos") -> dict:
     _strip_pr_and_design_consistency()
     prd = PRDInput.model_validate(prd_dict)
+    await asyncio.to_thread(run_before_factory)  # current knowledge first (best-effort)
     session = await _session_service.create_session(
         app_name="posgmo_factory_local",
         user_id=user_id,

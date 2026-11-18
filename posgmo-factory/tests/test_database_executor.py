@@ -63,3 +63,16 @@ def test_handles_markdown_fenced_json():
     with patch("agents.database_executor.rules.execute_sql_on_server", return_value=fake_result):
         result = merge_execution_result({"database_artifacts": fenced})
     assert result["execution"] == fake_result
+
+
+def test_skip_flag_never_touches_the_database(monkeypatch):
+    """LOCAL_DB_* has pointed at the production DB: FACTORY_SKIP_DB_EXECUTION=1
+    runs the pipeline with the SQL kept for review, never executed."""
+    artifact = {"create_table": "CREATE TABLE dbo.Foo (id INT);", "sp_upsert": "CREATE PROCEDURE a",
+                "sp_all": "CREATE PROCEDURE b", "sp_one": "CREATE PROCEDURE c"}
+    monkeypatch.setenv("FACTORY_SKIP_DB_EXECUTION", "1")
+    with patch("agents.database_executor.rules.execute_sql_on_server") as mock_exec:
+        result = merge_execution_result({"database_artifacts": json.dumps(artifact)})
+        mock_exec.assert_not_called()
+    assert result["execution"]["skipped"] is True and result["execution"]["details"] == []
+    assert result["create_table"] == artifact["create_table"]

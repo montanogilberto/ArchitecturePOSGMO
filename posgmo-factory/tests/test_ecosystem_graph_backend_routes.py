@@ -86,3 +86,12 @@ def test_unresolvable_route_returns_empty_list_not_a_guess():
     extraction = extract_backend_edges(BACKEND_REPO_PATH, modules_in_scope=["nonexistent_module_xyz"])
     resolved = resolve_route_to_sp(extraction)
     assert resolved == []
+
+
+def test_sp_regex_reads_every_exec_form_and_never_returns_dbo():
+    from ecosystem_graph.backend_routes import _SP_NAME_RE
+
+    assert _SP_NAME_RE.findall("EXEC dbo.sp_products @pjsonfile = %s") == ["sp_products"]
+    assert _SP_NAME_RE.findall("EXEC [dbo].[sp_clients]") == ["sp_clients"]
+    assert _SP_NAME_RE.findall("EXEC sp_income_one") == ["sp_income_one"]
+    assert _SP_NAME_RE.findall("EXEC [dbo].[") == []   # f-string helper: EXEC [dbo].[{procedure}]

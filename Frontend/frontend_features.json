@@ -1,0 +1,314 @@
+[
+  {
+    "area": "admin",
+    "feature": "CompanyPaymentAccounts",
+    "folder": "src/pages/admin/CompanyPaymentAccounts",
+    "pageShell": "src/pages/admin/CompanyPaymentAccountsPage.tsx",
+    "mvvm": true,
+    "fileCount": 2
+  },
+  {
+    "area": "admin",
+    "feature": "Employees",
+    "folder": "src/pages/admin/Employees",
+    "pageShell": "src/pages/admin/EmployeesPage.tsx",
+    "mvvm": true,
+    "fileCount": 6
+  },
+  {
+    "area": "clients",
+    "feature": "ClientDashboardPOS",
+    "folder": "src/pages/clients/ClientDashboardPOS",
+    "pageShell": "src/pages/clients/ClientDashboardPOSPage.tsx",
+    "mvvm": true,
+    "fileCount": 25
+  },
+  {
+    "area": "clients",
+    "feature": "ClientsMap",
+    "folder": "src/pages/clients/ClientsMap",
+    "pageShell": "src/pages/clients/ClientsMapPage.tsx",
+    "mvvm": true,
+    "fileCount": 4
+  },
+  {
+    "area": "clients",
+    "feature": "LenderDashboard",
+    "folder": "src/pages/clients/LenderDashboard",
+    "pageShell": "src/pages/clients/LenderDashboardPage.tsx",
+    "mvvm": true,
+    "fileCount": 12
+  },
+  {
+    "area": "clients",
+    "feature": "MyQr",
+    "folder": "src/pages/clients/MyQr",
+    "pageShell": "src/pages/clients/MyQrPage.tsx",
+    "mvvm": true,
+    "fileCount": 5
+  },
+  {
+    "area": "clients",
+    "feature": "RewardsDashboard",
+    "folder": "src/pages/clients/RewardsDashboard",
+    "pageShell": "src/pages/clients/RewardsDashboardPage.tsx",
+    "mvvm": true,
+    "fileCount": 13
+  },
+  {
+    "area": "enrollment",
+    "feature": "Enrollment",
+    "folder": "src/pages/enrollment/Enrollment",
+    "pageShell": "src/pages/enrollment/EnrollmentPage.tsx",
+    "mvvm": true,
+    "fileCount": 3
+  },
+  {
+    "area": "factory",
+    "feature": "FactoryDashboard",
+    "folder": "src/pages/factory/FactoryDashboard",
+    "pageShell": "src/pages/factory/FactoryDashboardPage.tsx",
+    "mvvm": true,
+    "fileCount": 2
+  },
+  {
+    "area": "finance",
+    "feature": "Accounting",
+    "folder": "src/pages/finance/Accounting",
+    "pageShell": "src/pages/finance/AccountingPage.tsx",
+    "mvvm": true,
+    "fileCount": 13
+  },
+  {
+    "area": "finance",
+    "feature": "ExpenseOperation",
+    "folder": "src/pages/finance/ExpenseOperation",
+    "pageShell": null,
+    "mvvm": true,
+    "fileCount": 11
+  },
+  {
+    "area": "finance",
+    "feature": "Expenses",
+    "folder": "src/pages/finance/Expenses",
+    "pageShell": "src/pages/finance/ExpensesPage.tsx",
+    "mvvm": true,
+    "fileCount": 14
+  },
+  {
+    "area": "game",
+    "feature": "Arcade",
+    "folder": "src/pages/game/Arcade",
+    "pageShell": "src/pages/game/ArcadePage.tsx",
+    "mvvm": true,
+    "fileCount": 11
+  },
+  {
+    "area": "game",
+    "feature": "Blackjack",
+    "folder": "src/pages/game/Blackjack",
+    "pageShell": "src/pages/game/BlackjackPage.tsx",
+    "mvvm": true,
+    "fileCount": 4
+  },
+  {
+    "area": "game",
+    "feature": "Bowling",
+    "folder": "src/pages/game/Bowling",
+    "pageShell": "src/pages/game/BowlingPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "ChipStore",
+    "folder": "src/pages/game/ChipStore",
+    "pageShell": "src/pages/game/ChipStorePage.tsx",
+    "mvvm": true,
+    "fileCount": 6
+  },
+  {
+    "area": "game",
+    "feature": "Coinflip",
+    "folder": "src/pages/game/Coinflip",
+    "pageShell": "src/pages/game/CoinflipPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "Dice",
+    "folder": "src/pages/game/Dice",
+    "pageShell": "src/pages/game/DicePage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "HigherLower",
+    "folder": "src/pages/game/HigherLower",
+    "pageShell": "src/pages/game/HigherLowerPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "Mines",
+    "folder": "src/pages/game/Mines",
+    "pageShell": "src/pages/game/MinesPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "MissionCleanRoom",
+    "folder": "src/pages/game/MissionCleanRoom",
+    "pageShell": "src/pages/game/MissionCleanRoomPage.tsx",
+    "mvvm": false,
+    "fileCount": 83
+  },
+  {
+    "area": "game",
+    "feature": "Mole",
+    "folder": "src/pages/game/Mole",
+    "pageShell": "src/pages/game/MolePage.tsx",
+    "mvvm": true,
+    "fileCount": 3
+  },
+  {
+    "area": "game",
+    "feature": "Penalty",
+    "folder": "src/pages/game/Penalty",
+    "pageShell": "src/pages/game/PenaltyPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "Scratch",
+    "folder": "src/pages/game/Scratch",
+    "pageShell": "src/pages/game/ScratchPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "game",
+    "feature": "Wheel",
+    "folder": "src/pages/game/Wheel",
+    "pageShell": "src/pages/game/WheelPage.tsx",
+    "mvvm": false,
+    "fileCount": 1
+  },
+  {
+    "area": "iot",
+    "feature": "IotDashboard",
+    "folder": "src/pages/iot/IotDashboard",
+    "pageShell": "src/pages/iot/IotDashboardPage.tsx",
+    "mvvm": true,
+    "fileCount": 8
+  },
+  {
+    "area": "juridical",
+    "feature": "JuridicalDashboard",
+    "folder": "src/pages/juridical/JuridicalDashboard",
+    "pageShell": "src/pages/juridical/JuridicalDashboardPage.tsx",
+    "mvvm": true,
+    "fileCount": 2
+  },
+  {
+    "area": "loans",
+    "feature": "BorrowerOnboarding",
+    "folder": "src/pages/loans/BorrowerOnboarding",
+    "pageShell": "src/pages/loans/BorrowerOnboardingPage.tsx",
+    "mvvm": true,
+    "fileCount": 13
+  },
+  {
+    "area": "loans",
+    "feature": "MyLoans",
+    "folder": "src/pages/loans/MyLoans",
+    "pageShell": "src/pages/loans/MyLoansPage.tsx",
+    "mvvm": true,
+    "fileCount": 5
+  },
+  {
+    "area": "marketing",
+    "feature": "DemandMap",
+    "folder": "src/pages/marketing/DemandMap",
+    "pageShell": "src/pages/marketing/DemandMapPage.tsx",
+    "mvvm": true,
+    "fileCount": 4
+  },
+  {
+    "area": "messaging",
+    "feature": "NotificationDetail",
+    "folder": "src/pages/messaging/NotificationDetail",
+    "pageShell": "src/pages/messaging/NotificationDetailPage.tsx",
+    "mvvm": true,
+    "fileCount": 5
+  },
+  {
+    "area": "messaging",
+    "feature": "NotificationDispatchLog",
+    "folder": "src/pages/messaging/NotificationDispatchLog",
+    "pageShell": "src/pages/messaging/NotificationDispatchLogPage.tsx",
+    "mvvm": true,
+    "fileCount": 24
+  },
+  {
+    "area": "messaging",
+    "feature": "PushNotifications",
+    "folder": "src/pages/messaging/PushNotifications",
+    "pageShell": null,
+    "mvvm": true,
+    "fileCount": 15
+  },
+  {
+    "area": "messaging",
+    "feature": "VoiceCall",
+    "folder": "src/pages/messaging/VoiceCall",
+    "pageShell": "src/pages/messaging/VoiceCallPage.tsx",
+    "mvvm": true,
+    "fileCount": 3
+  },
+  {
+    "area": "messaging",
+    "feature": "WhatsAppAgent",
+    "folder": "src/pages/messaging/WhatsAppAgent",
+    "pageShell": "src/pages/messaging/WhatsAppAgentPage.tsx",
+    "mvvm": false,
+    "fileCount": 7
+  },
+  {
+    "area": "messaging",
+    "feature": "WhatsAppConversations",
+    "folder": "src/pages/messaging/WhatsAppConversations",
+    "pageShell": "src/pages/messaging/WhatsAppConversationsPage.tsx",
+    "mvvm": true,
+    "fileCount": 5
+  },
+  {
+    "area": "messaging",
+    "feature": "WhatsAppSetup",
+    "folder": "src/pages/messaging/WhatsAppSetup",
+    "pageShell": "src/pages/messaging/WhatsAppSetupPage.tsx",
+    "mvvm": true,
+    "fileCount": 12
+  },
+  {
+    "area": "pos",
+    "feature": "PosRewards",
+    "folder": "src/pages/pos/PosRewards",
+    "pageShell": "src/pages/pos/PosRewardsPage.tsx",
+    "mvvm": true,
+    "fileCount": 6
+  },
+  {
+    "area": "profile",
+    "feature": "Profile",
+    "folder": "src/pages/profile/Profile",
+    "pageShell": "src/pages/profile/ProfilePage.tsx",
+    "mvvm": true,
+    "fileCount": 9
+  }
+]

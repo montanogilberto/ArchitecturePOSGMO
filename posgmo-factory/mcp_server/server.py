@@ -58,6 +58,23 @@ def _json(relative: str) -> any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _live(entries):
+    """Drop entries knowledge_sync marked stale (removed from the real repos /
+    live DB). They stay on disk for history, never in an agent's context."""
+    if isinstance(entries, list):
+        return [e for e in entries if not (isinstance(e, dict) and e.get("stale"))]
+    return entries
+
+
+def _conventions(layer: str) -> dict:
+    """One layer of Conventions/repo_conventions.json (written by knowledge_sync):
+    the repo's own rule document + a real, recent reference implementation."""
+    data = _json("Conventions/repo_conventions.json")
+    if not isinstance(data, dict) or "error" in data:
+        return {"unavailable": "run `python -m knowledge_sync` to generate conventions"}
+    return data.get(layer, {})
+
+
 def _csv_rows(relative: str, fieldnames: list[str]) -> list[dict]:
     path = KNOWLEDGE_ROOT / relative
     if not path.exists():
@@ -81,9 +98,17 @@ def get_frontend_patterns() -> dict:
     return {
         "architecture":  _json("Frontend/frontend_knowledge.json"),
         "modules":       _json("Frontend/frontend_modules.json.json"),
-        "routes":        _json("Frontend/frontend_routes.json.json"),
+        "routes":        _live(_json("Frontend/frontend_routes.json.json")),
         "ui_patterns":   _json("Frontend/frontend_ui_patterns.json.json"),
-        "components":    _json("Frontend/frontend_components.json.json"),
+        # Names + paths only: the full catalog with props is get_component_catalog()
+        # (frontend_agent preloads both — don't ship the props twice).
+        "components":    [{"componentName": c.get("componentName"), "filePath": c.get("filePath")}
+                          for c in _live(_json("Frontend/frontend_components.json.json"))],
+        # Current style, synced from the POSVending repo: its own CLAUDE.md
+        # rules (MVVM feature folders, shared layer, UI rules) + a real
+        # reference feature. Where this conflicts with older entries above,
+        # the conventions win — they are newer and come from the repo itself.
+        "conventions":   _conventions("frontend"),
     }
 
 
@@ -116,7 +141,7 @@ def get_component_catalog() -> list:
 
     Agents must reuse these components rather than inventing new ones.
     """
-    return _json("Frontend/frontend_components.json.json")
+    return _live(_json("Frontend/frontend_components.json.json"))
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +164,10 @@ def get_backend_patterns() -> dict:
         "domains":      _json("Backend/backend_business_domains.json.json"),
         "ai_features":  _json("Backend/backend_ai_features.json.json"),
         "prompts":      _json("Backend/backend_prompts.json.json"),
+        # Current style, synced from smartloans_backend: the newest complete,
+        # observable module (routes_/ + modules/) and the newest migration
+        # with its _ROLLBACK partner — imitate these.
+        "conventions":  _conventions("backend"),
     }
 
 
@@ -150,7 +179,10 @@ def get_backend_routes() -> list:
     Use this to check for naming conflicts before registering a new route
     and to understand the existing route structure.
     """
-    return _json("Backend/backend_routes.json.json").get("routes", [])
+    # Compact: path/methods/file is what conflict checks need; curated tags
+    # and handler names stay in the file (~4x smaller in an agent prompt).
+    return [{"path": r["path"], "methods": r.get("methods", []), "file": r.get("file")}
+            for r in _live(_json("Backend/backend_routes.json.json").get("routes", []))]
 
 
 @mcp.tool()
@@ -163,7 +195,127 @@ def get_sp_patterns() -> list:
     Naming convention: sp_{module}, sp_{module}_all, sp_{module}_one.
     """
     data = _json("Backend/backend_stored_procedures.json.json")
-    return data.get("stored_procedures", data)
+    return _live(data.get("stored_procedures", data))
+
+
+# ---------------------------------------------------------------------------
+# Synced repo inventory (knowledge_sync)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def get_repo_conventions(layer: str = "") -> dict:
+    """
+    Returns the CURRENT conventions of the GMO repos, synced by knowledge_sync:
+    each repo's own rule document plus a real, recent reference implementation
+    (frontend MVVM feature, backend module + migration, agent with PROPOSE).
+
+    Args:
+        layer: "frontend", "backend" or "agents"; empty returns all three.
+    """
+    if layer:
+        return _conventions(layer)
+    data = _json("Conventions/repo_conventions.json")
+    return data if isinstance(data, dict) else {}
+
+
+@mcp.tool()
+def get_api_clients() -> list:
+    """
+    Returns every src/api/*.ts client in POSVending with its exported functions
+    and the backend path + method each calls (path is null when built dynamically).
+
+    Use this to reuse an existing client instead of duplicating an endpoint call.
+    """
+    return _json("Frontend/frontend_api_clients.json")
+
+
+@mcp.tool()
+def get_frontend_features() -> list:
+    """
+    Returns the feature folders under POSVending src/pages/{area}/{Feature}/ and
+    whether each follows the MVVM layout ({Feature}View.tsx + {Feature}Logic.ts).
+
+    Use this to place a new page in the right area folder.
+    """
+    return _json("Frontend/frontend_features.json")
+
+
+@mcp.tool()
+def get_backend_modules() -> list:
+    """
+    Returns every smartloans_backend modules/*.py: the routes_ files that use it,
+    its stored procedures, whether it is instrumented, and its size.
+
+    Use this to reuse an existing module and to see what a change touches.
+    """
+    return _json("Backend/backend_modules.json")
+
+
+@mcp.tool()
+def get_firmware_catalog() -> list:
+    """
+    Returns the ESP32 machine firmware files in smartloans_backend/esp32/ and the
+    backend endpoints each calls. A change to those endpoints must stay compatible
+    with firmware already installed on the machines.
+    """
+    return _json("Backend/backend_firmware.json")
+
+
+@mcp.tool()
+def get_db_programmability(table_name: str = "") -> list:
+    """
+    Returns live SQL Server triggers and functions. Triggers change data outside
+    the stored procedures: inventory moves through trg_incomeDetails_inventory and
+    trg_expenseDetails_inventory, so a write to those tables has side effects.
+
+    Args:
+        table_name: only this table's triggers; empty returns triggers + functions.
+    """
+    data = _json("Database/db_programmability.json")
+    if not isinstance(data, list) or not table_name:
+        return data
+    return [d for d in data if str(d.get("table", "")).lower() == table_name.lower()]
+
+
+@mcp.tool()
+def get_agents_catalog() -> list:
+    """
+    Returns every agent in LoanAgents_SmartLoans: name, model, tools, and whether
+    it PROPOSES writes through tools/pending_actions.py (human-confirmed) or is
+    read-only.
+    """
+    return _json("Agents/agents_catalog.json")
+
+
+@mcp.tool()
+def get_customer_app_modules(module_key: str = "") -> dict:
+    """
+    Returns the breakdown of the customer-facing app modules (reference app:
+    menuLaundy) and the rules for giving a NEW COMPANY a customer page:
+    deliveryModels (new page vs add a module to an existing page),
+    featureFlags (dbo.companyFeatures), modules (route, frontend files,
+    endpoints, tables, dependsOn, perCompanyData, hardcodedToday, rules) and
+    companyOnboarding (steps + the data to collect up front).
+
+    Call this BEFORE writing a PRD or spec for a new company, a customer page,
+    or anything a customer sees in the app — reuse a listed module instead of
+    generating a new one. Curated, not synced: if it conflicts with the real
+    menuLaundy repo, the repo wins.
+
+    Args:
+        module_key: one module's key (e.g. "reservations", "wallet");
+            empty returns the whole file.
+    """
+    data = _json("Frontend/customer_app_modules.json")
+    if not module_key or not isinstance(data, dict) or "error" in data:
+        return data
+    key = module_key.lower().strip()
+    found = [m for m in data.get("modules", []) if m.get("key") == key]
+    if not found:
+        return {"error": f"Unknown module key: {module_key}",
+                "known": [m.get("key") for m in data.get("modules", [])]}
+    return {"module": found[0], "deliveryModels": data.get("deliveryModels"),
+            "featureFlags": data.get("featureFlags")}
 
 
 # ---------------------------------------------------------------------------
@@ -276,11 +428,11 @@ def get_generation_rules() -> dict:
             "Always declare a @payload TABLE variable and INSERT from OPENJSON before using data.",
             "Standard output: @Outputmessage with result[0].value/msg/error JSON, finalized via GOTO Finish.",
             "Run duplicate validations (payload-internal + table join) before INSERT/UPDATE.",
-            "sp_{plural}_all: no parameter, FOR JSON AUTO, ROOT('{plural}') — NOT FOR JSON PATH.",
+            "sp_{plural}_all: @pjsonfile VARCHAR(MAX) parameter (companyId read from it for tenant-scoped modules), FOR JSON AUTO, ROOT('{plural}') — NOT FOR JSON PATH.",
             "sp_{plural}_one: reads {module}Id via OPENJSON, FOR JSON AUTO, ROOT('{plural}').",
             "Wrap nullable columns with ISNULL(col, 0/''). updated_at uses ISNULL(CONVERT(VARCHAR(30), updated_at, 126), '').",
             "Audit columns EXACT casing: created_At (capital A) and updated_at (all lowercase). No other form is accepted.",
-            "Column names: snake_case (first_name, last_name). Audit fields: created_At, updated_at.",
+            "Column names: camelCase, verbatim from the specification (live DB convention, e.g. projectName). Audit fields: created_At, updated_at.",
             "POS tables use DATETIME not DATETIME2.",
             "Primary keys: {module}Id INT IDENTITY(1,1) NOT NULL.",
             "Never issue raw SQL from Python — always EXEC via pyodbc.",

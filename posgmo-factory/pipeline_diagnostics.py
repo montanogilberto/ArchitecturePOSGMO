@@ -28,7 +28,15 @@ from typing import Any, Optional
 # reviewer_agent) -- is an LLM Agent wrapping a single tool call, and is
 # therefore expected to produce a function_call, text, or a state_delta on
 # every turn. See agents/decision_gate/agent.py vs agents/fixer/agent.py.
-PURE_PYTHON_AGENTS = {"decision_gate_agent"}
+PURE_PYTHON_AGENTS = {
+    "decision_gate_agent",
+    # Step 1: deterministic stages (agents/deterministic_stage.py, spec
+    # reconciler, database stage + retry wrappers). They legitimately emit an
+    # empty state_delta when there is nothing to change.
+    "spec_reconciler_agent", "database_agent", "database_executor_agent",
+    "fixer_agent", "reviewer_agent", "loop_exit_agent", "review_fixer_agent",
+    "architect_stage", "backend_stage", "frontend_stage",
+}
 
 
 def classify_event(event: Any) -> Optional[dict]:

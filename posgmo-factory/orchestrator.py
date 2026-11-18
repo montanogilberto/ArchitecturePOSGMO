@@ -23,10 +23,12 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
+from knowledge_sync import run_before_factory
 from agents import root_agent
 from prd_schema import PRDInput
 from pipeline_diagnostics import classify_event, summarize as summarize_diagnostics
 from agent_contracts import ContractTracker, summarize as summarize_contracts
+from llm_usage import UsageTracker, format_summary as format_usage
 from artifact_contracts import (
     check_backend_endpoint_completeness,
     check_backend_duplicate_error_propagation,
@@ -159,6 +161,9 @@ async def run_factory(prd_dict: dict, user_id: str = "factory", target: str = "p
     target: "pos" (default) or "commercial" — see _build_session_state.
     """
     prd = PRDInput.model_validate(prd_dict)
+    # Refresh knowledge from the real repos + live DB first, so generation
+    # follows the CURRENT architecture/style (best-effort, never blocks).
+    await asyncio.to_thread(run_before_factory)
 
     session = await _session_service.create_session(
         app_name="posgmo_factory",
@@ -173,12 +178,14 @@ async def run_factory(prd_dict: dict, user_id: str = "factory", target: str = "p
 
     diagnostics: list[dict] = []
     contracts = ContractTracker()
+    usage = UsageTracker()
     async for event in _runner.run_async(
         user_id=user_id,
         session_id=session.id,
         new_message=message,
     ):
         contracts.observe(event)
+        usage.observe(event)
         flagged = classify_event(event)
         if flagged:
             diagnostics.append(flagged)
@@ -198,6 +205,8 @@ async def run_factory(prd_dict: dict, user_id: str = "factory", target: str = "p
     result = dict(updated.state)
     result["pipeline_diagnostics"] = diagnostics
     result["pipeline_diagnostics_summary"] = summarize_diagnostics(diagnostics)
+    result["llm_usage"] = usage.summary()
+    print(format_usage(result["llm_usage"]), flush=True)
 
     contract_report = contracts.finalize(result)
     result["contract_report"] = contract_report

@@ -124,6 +124,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
+from knowledge_sync import run_before_factory
 from agents.host_architect import host_architect_agent
 from agents.prd_parser import prd_parser_agent
 from agents.prd_enricher import prd_enricher_agent
@@ -289,6 +290,7 @@ def _parse_maybe_fenced_json(raw) -> dict | None:
 
 async def run_export_only(prd_dict: dict, user_id: str = "factory") -> dict:
     prd = PRDInput.model_validate(prd_dict)
+    await asyncio.to_thread(run_before_factory)  # current knowledge first (best-effort)
 
     session = await _session_service.create_session(
         app_name=_APP_NAME, user_id=user_id, state=_build_session_state(prd)

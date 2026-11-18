@@ -1,13 +1,13 @@
 {
   "module": "notificationDispatch",
-  "description": "Cost-minimizing multi-channel notification router for customer/staff-facing events (POS income tickets, expense alerts, generic messaging). One row per dispatch decision, not per channel: records which channel was preferred, which one actually carried the message, and the full attempt history so a fallback is auditable after the fact. Cascade order is push -> whatsapp -> sms by default (push is free, WhatsApp is cheaper than SMS, SMS is last resort). OTP and other security-critical sends bypass this cascade entirely and go straight to sms via the existing OTP flow -- notificationDispatch is not used for OTP.",
+  "description": "Cost-minimizing multi-channel notification router for customer/staff-facing events (POS income tickets, expense alerts, generic messaging). One row per dispatch decision, not per channel: records which channel was preferred, which one actually carried the message, and the full attempt history so a fallback is auditable after the fact. Cascade order is push -> whatsapp -> sms by default (push is free, WhatsApp is cheaper than SMS, SMS is last resort). OTP and other security-critical sends bypass this cascade entirely and go straight to sms via the existing OTP flow -- notificationDispatch is not used for OTP. Fase 2 (2026-10-29): adds campaign linkage (campaignId), interaction (readAt for WhatsApp, openedAt for push taps), and cost (billable, pricingCategory, costAmount, costCurrency, costSource) so the Notification Center can compare campaigns and channels; adds an aggregate analytics endpoint so the screen stops downloading every row.",
   "fields": [
     {
       "name": "sourceType",
       "type": "string",
       "required": true,
       "max_length": 20,
-      "description": "Domain event that triggered this notification. Allowed values: income, expense, ticket (extensible later to loan, p2p). Selects which row in notificationDispatch_policy governs the cascade for this event."
+      "description": "Domain event that triggered this notification. Allowed values: income, expense, ticket, campaign (extensible later to loan, p2p). 'campaign' = a broadcast send from notificationCampaigns; sourceId is then the notificationCampaignId. Selects which row in notificationDispatch_policy governs the cascade for this event."
     },
     {
       "name": "sourceId",
@@ -67,7 +67,7 @@
       "type": "string",
       "required": true,
       "max_length": 20,
-      "description": "pending -> sent -> confirmed, or failed. FK to notificationDispatch_status.statusCode. 'confirmed' means the provider's own delivery callback came back positive for selectedChannel (Twilio delivered/read status webhook, or a push read receipt) -- this is a channel-delivery confirmation, not a money-movement confirmation like transactionNotifications.status."
+      "description": "pending -> sent -> confirmed, or failed. FK to notificationDispatch_status.statusCode. 'confirmed' means the provider's own delivery callback came back positive for selectedChannel (Twilio delivered/read status webhook, or a push read receipt) -- this is a channel-delivery confirmation, not a money-movement confirmation like transactionNotifications.status. A WhatsApp 'read' receipt still sets confirmed (it implies delivery) but ALSO stamps readAt -- it must no longer be collapsed into confirmed and lost."
     },
     {
       "name": "providerMessageId",
@@ -107,6 +107,73 @@
       "type": "datetime",
       "required": false,
       "description": "When status moved to failed -- i.e. every channel in the eventName's configured cascade was exhausted without success."
+    },
+    {
+      "name": "providerErrorCode",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Provider error code for a FAILED send, saved for every future failure (no backfill of older rows). Twilio ErrorCode from the status callback (e.g. 63016 = WhatsApp free-form outside the 24h window, needs a template; 63003 = number not on WhatsApp; 21211 = invalid number; 30008 = unknown carrier error), or the code from a synchronous provider exception at send time. NULL while pending/sent/confirmed."
+    },
+    {
+      "name": "providerErrorMessage",
+      "type": "string",
+      "required": false,
+      "max_length": 300,
+      "description": "Provider's human-readable error text when available (Twilio ErrorMessage / exception message), truncated to 300 chars. Never store phone numbers, message bodies or credentials here."
+    },
+    {
+      "name": "campaignId",
+      "type": "integer",
+      "required": false,
+      "fk_table": "notificationCampaigns",
+      "fk_column": "notificationCampaignId",
+      "description": "Campaign this message belongs to (Fase 2). Set by /notificationCampaigns/send for broadcast sends, and by the dispatch cascade for transactional sends when a RUNNING always_on campaign exists for (companyId, eventName) and created_At is within its startAt/endAt. NULL for messages outside any campaign. No backfill of older rows. Index (companyId, campaignId, created_At)."
+    },
+    {
+      "name": "readAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC instant the provider reported the message as read (Meta WhatsApp status 'read'; Twilio WhatsApp 'read'). SMS never has it. First read wins (later duplicates do not overwrite). Measures interaction for WhatsApp; a delivered message without readAt is NOT 'not read' when the client disabled read receipts -- the UI must say 'leídos (con confirmación de lectura)'."
+    },
+    {
+      "name": "openedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "UTC instant the client tapped the push notification. Reported by the app through POST /notificationDispatch/interaction using data.notificationDispatchId carried in the push payload (alongside data.navigationRoute). Push's only measurable interaction; Notification Hub itself has no delivery receipt."
+    },
+    {
+      "name": "billable",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether the provider charges this message. Meta: pricing.billable from the status webhook (free-tier / service-window messages are not billable). Twilio SMS/WhatsApp: true once a price is known. Push: always false. NULL until known."
+    },
+    {
+      "name": "pricingCategory",
+      "type": "string",
+      "required": false,
+      "max_length": 20,
+      "description": "Meta pricing category from the status webhook pricing object: marketing, utility, authentication, service. NULL for SMS/Push. Needed because Meta bills per category, and campaign sends (marketing) cost more than receipts (utility)."
+    },
+    {
+      "name": "costAmount",
+      "type": "decimal",
+      "required": false,
+      "description": "decimal(10,4). Cost of this message in costCurrency. Twilio: the Message resource 'price' (negative in the API -- store the absolute value), fetched by a deferred job because Twilio prices settle after delivery. Meta: estimated from the company's configured rate per pricingCategory when billable = 1 (the webhook carries no amount). Push: 0. NULL while unknown -- the UI shows 'pendiente', never 0."
+    },
+    {
+      "name": "costCurrency",
+      "type": "string",
+      "required": false,
+      "max_length": 3,
+      "description": "ISO 4217 of costAmount as reported by the provider (Twilio usually USD). The UI converts nothing: it shows the currency it got."
+    },
+    {
+      "name": "costSource",
+      "type": "string",
+      "required": false,
+      "max_length": 12,
+      "description": "provider (amount reported by Twilio) | estimated (Meta rate card x category) | none (push). Lets the campaign card say how much of the cost is real vs estimated."
     }
   ],
   "relationships": [
@@ -124,14 +191,25 @@
       "parentModule": "users",
       "cardinality": "N:1",
       "notes": "Informational only, not a DB-enforced FK: recipientId resolves to users.userId when recipientType = 'user'."
+    },
+    {
+      "parentModule": "notificationCampaign",
+      "cardinality": "N:1",
+      "notes": "Nullable FK campaignId -> notificationCampaigns (prd_notificationCampaign.json). Deploy notificationCampaigns first."
     }
   ],
-  "roles_allowed": ["Admin", "Manager"],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
   "has_list_view": true,
   "has_detail_view": true,
   "frontend": {
     "pageRoute": "/notification-dispatch-log",
-    "allowedRoles": ["Admin", "Manager"],
+    "allowedRoles": [
+      "Admin",
+      "Manager"
+    ],
     "uiPattern": "List + Detail Layout",
     "components": [
       {
@@ -142,7 +220,7 @@
       {
         "step": 2,
         "name": "DispatchDetailModal",
-        "description": "IonModal opened from a feed row: full attemptedChannels timeline (channel, outcome, timestamp per hop), fallbackReason, providerMessageId, providerName, sentAt/confirmedAt/failedAt. Answers 'why did this end up on SMS.'"
+        "description": "IonModal opened from a feed row: full attemptedChannels timeline (channel, outcome, timestamp per hop), fallbackReason, providerMessageId, providerName, sentAt/confirmedAt/failedAt. Answers 'why did this end up on SMS.' When status=failed, show a 'Motivo del fallo' row: providerErrorCode plus a Spanish explanation for known codes (63016/63005: WhatsApp requiere plantilla aprobada (fuera de la ventana de 24 h); 63003: el número no tiene WhatsApp; 21211: número inválido; 30008: error del operador), falling back to providerErrorMessage, or 'Sin detalle del proveedor' for rows failed before this field existed. Also show failedAt."
       },
       {
         "step": 3,
@@ -156,12 +234,27 @@
       {
         "path": "/notificationDispatch/dispatch",
         "method": "POST",
-        "description": "Body: { companyId, sourceType, sourceId, recipientType, recipientId, eventName, messagePreview }. Idempotent per (sourceType, sourceId, eventName) -- if a row already has status in (sent, confirmed) for that triple, returns it unchanged instead of re-sending. Otherwise: looks up the ordered channel list for eventName from notificationDispatch_policy, then walks it in order. For channel=push: resolve the recipient's registered push target (existing pushNotifications/registerDevice recipient-resolution logic) -- if none exists, record fallbackReason=NO_DEVICE and advance without attempting a send; otherwise call azure_notifications.send_azure_push -- a hard rejection records PUSH_REJECTED and advances, a timeout records PUSH_TIMEOUT and advances (never straight to sms -- always to the next channel in the policy list, i.e. whatsapp). For channel=whatsapp: call the existing Twilio freeform WhatsApp send (modules/ticket_notifications.py-style) -- any Twilio error, including a 63016-shaped 24h-window rejection, records fallbackReason=WHATSAPP_UNAVAILABLE and advances to sms only if sms is in the policy's channel list for this eventName. For channel=sms: call the existing Twilio SMS send -- this is always the last hop, no further fallback. Writes exactly one notificationDispatch row per call, with attemptedChannels holding every hop tried. Must wrap each provider call in timed_integration() (twilio_whatsapp / twilio_sms / azure_notification_hub) and the whole cascade in a workflow_step(), per Core Rule 6 -- the existing ticket_notifications.py and pushNotifications.py sends this module reuses do not have this instrumentation today, so it must not be silently inherited as a gap here."
+        "description": "Body: { companyId, sourceType, sourceId, recipientType, recipientId, eventName, messagePreview }. Idempotent per (companyId, sourceType, sourceId, eventName, recipientType, recipientId) -- recipient added in Fase 2 so a campaign broadcast (one sourceId, many clients) can send to each client once; transactional events have one recipient per source so their behavior is unchanged -- if a row already has status in (sent, confirmed) for that triple, returns it unchanged instead of re-sending. Otherwise: looks up the ordered channel list for eventName from notificationDispatch_policy, then walks it in order. For channel=push: resolve the recipient's registered push target (existing pushNotifications/registerDevice recipient-resolution logic) -- if none exists, record fallbackReason=NO_DEVICE and advance without attempting a send; otherwise call azure_notifications.send_azure_push -- a hard rejection records PUSH_REJECTED and advances, a timeout records PUSH_TIMEOUT and advances (never straight to sms -- always to the next channel in the policy list, i.e. whatsapp). For channel=whatsapp: call the existing Twilio freeform WhatsApp send (modules/ticket_notifications.py-style) -- any Twilio error, including a 63016-shaped 24h-window rejection, records fallbackReason=WHATSAPP_UNAVAILABLE and advances to sms only if sms is in the policy's channel list for this eventName. For channel=sms: call the existing Twilio SMS send -- this is always the last hop, no further fallback. Writes exactly one notificationDispatch row per call, with attemptedChannels holding every hop tried. Must wrap each provider call in timed_integration() (twilio_whatsapp / twilio_sms / azure_notification_hub) and the whole cascade in a workflow_step(), per Core Rule 6 -- the existing ticket_notifications.py and pushNotifications.py sends this module reuses do not have this instrumentation today, so it must not be silently inherited as a gap here. When a provider call raises synchronously on the LAST hop (row ends failed), store the provider error code/message in providerErrorCode/providerErrorMessage and stamp failedAt in the same write. Fase 2: accepts optional campaignId (only from /notificationCampaigns/send) and otherwise tags the row with the running always_on campaign for (companyId, eventName), if any. Push sends add data.notificationDispatchId to the payload so a tap can be reported. companyId comes from the authenticated session, not the body."
       },
       {
         "path": "/notificationDispatch/confirm",
         "method": "POST",
-        "description": "Webhook-style callback target: Twilio status callback (delivered/read/undelivered) for whatsapp/sms rows, or a push read-receipt hook for push rows. Matches by providerMessageId, updates status to confirmed (stamping confirmedAt) or failed (stamping failedAt), and appends the callback outcome to attemptedChannels for audit."
+        "description": "Webhook-style callback target: Twilio status callback (delivered/read/undelivered) for whatsapp/sms rows, or a push read-receipt hook for push rows. Matches by providerMessageId, updates status to confirmed (stamping confirmedAt) or failed (stamping failedAt), and appends the callback outcome to attemptedChannels for audit. On failed/undelivered it MUST also store the callback's ErrorCode in providerErrorCode and ErrorMessage (if present) in providerErrorMessage, and stamp failedAt -- the previous implementation only logged ErrorCode and left failedAt NULL, so the dispatch log could not say why a message failed. Only callbacks with a valid Twilio signature may update the row. Fase 2: a 'read' status stamps readAt (first one wins) in addition to confirmed; Meta status webhooks also write billable + pricingCategory from the pricing object and, when billable, an estimated costAmount/costCurrency with costSource='estimated'."
+      },
+      {
+        "path": "/notificationDispatch/interaction",
+        "method": "POST",
+        "description": "Body: { notificationDispatchId, type: 'opened' }. Called by the app when the user taps a push (App.tsx pushNotificationActionPerformed, reading data.notificationDispatchId). Stamps openedAt once (first tap wins); ignores ids of another company or of non-push rows. Authenticated client/user session required; never trusts a companyId from the body."
+      },
+      {
+        "path": "/notificationDispatch/analytics",
+        "method": "POST",
+        "description": "Body: { from, to, granularity: 'hour'|'day'|'week', campaignId? } (UTC). Read-only aggregate that replaces downloading every row to the browser: per bucket (Hermosillo calendar, weeks start Monday) and per channel -> total, delivered, failed, awaiting, read, opened, cost. Same delivery rules as the screen (later delivery receipt wins over an earlier failure; push is never 'delivered'). sp_notificationDispatches_analytics (@pjsonfile), companyId from the authenticated session. Also fixes the open tenant gap: _all/_one/analytics must take companyId from the session, not the request body."
+      },
+      {
+        "path": "/notificationDispatch/costs/sync",
+        "method": "POST",
+        "description": "Worker-only (Depends(require_worker_key)). For Twilio rows with providerMessageId and costAmount IS NULL older than 1 h, fetch the Message resource price and store costAmount/costCurrency/costSource='provider'. Batches of 100; wrapped in timed_integration('twilio_pricing'). Idempotent."
       }
     ]
   },
@@ -174,7 +267,8 @@
     "storedProcedures": [
       "dbo.sp_notificationDispatch",
       "dbo.sp_notificationDispatch_all",
-      "dbo.sp_notificationDispatch_one"
+      "dbo.sp_notificationDispatch_one",
+      "dbo.sp_notificationDispatches_analytics"
     ]
   }
 }

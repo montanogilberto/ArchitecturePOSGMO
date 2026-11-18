@@ -1,0 +1,5 @@
+2026-09-23T16:12:57Z
+review_fixer CustomEvent<any> repair landed at 2026-09-23T16:13:41Z -- batch-3 invocations started before this lack it
+fixer one_{module}_sp rename landed at 2026-09-23T16:18:23Z
+frontend_stage retry landed at 2026-09-23T16:20:00Z. Batch 3 = mixed code, diagnostic only; batch 4 = frozen code, exit-criterion evidence.
+backend/frontend tool removal (pre-loaded knowledge) landed at 2026-09-23T16:26:16Z

@@ -10,7 +10,11 @@
       "src/pages/Authentication/Logout.tsx",
       "src/hooks/useInactivityTimer.tsx"
     ],
-    "dependencies": ["@ionic/react", "react-router-dom", "src/components/UserContext.tsx"]
+    "dependencies": [
+      "@ionic/react",
+      "react-router-dom",
+      "src/components/UserContext.tsx"
+    ]
   },
   {
     "moduleId": "pos_cart",
@@ -23,7 +27,11 @@
       "src/pages/CartPage/CheckoutActions.tsx",
       "src/context/CartContext.tsx"
     ],
-    "dependencies": ["@ionic/react", "src/api/cartApi.ts", "src/api/laundryApi.ts"]
+    "dependencies": [
+      "@ionic/react",
+      "src/api/cartApi.ts",
+      "src/api/laundryApi.ts"
+    ]
   },
   {
     "moduleId": "cash_register",
@@ -33,7 +41,9 @@
       "src/components/CashRegisterCard.tsx",
       "src/api/cashRegisterApi.ts"
     ],
-    "dependencies": ["@ionic/react"]
+    "dependencies": [
+      "@ionic/react"
+    ]
   },
   {
     "moduleId": "inventory_products",
@@ -47,7 +57,11 @@
       "src/components/ProductWizard/ProductWizard.tsx",
       "src/context/ProductContext.tsx"
     ],
-    "dependencies": ["@ionic/react", "src/api/productsApi.ts", "src/api/saveImageApi.ts"]
+    "dependencies": [
+      "@ionic/react",
+      "src/api/productsApi.ts",
+      "src/api/saveImageApi.ts"
+    ]
   },
   {
     "moduleId": "receipts_printing",
@@ -60,7 +74,11 @@
       "src/services/receipt/printRuntime.ts",
       "src/services/receipt/printTemplate.ts"
     ],
-    "dependencies": ["ionicons", "@ionic/react", "src/api/ticketApi.ts"]
+    "dependencies": [
+      "ionicons",
+      "@ionic/react",
+      "src/api/ticketApi.ts"
+    ]
   },
   {
     "moduleId": "accounting_ledger",
@@ -74,7 +92,11 @@
       "src/components/ExpensesFilters.tsx",
       "src/components/ExpensesList.tsx"
     ],
-    "dependencies": ["chart.js", "react-chartjs-2", "@ionic/react"]
+    "dependencies": [
+      "chart.js",
+      "react-chartjs-2",
+      "@ionic/react"
+    ]
   },
   {
     "moduleId": "p2p_lending",
@@ -90,7 +112,11 @@
       "src/pages/ClientFollowUpPage.tsx",
       "src/api/walletBalanceApi.ts"
     ],
-    "dependencies": ["@ionic/react", "src/api/loansApi.ts", "src/api/loanProposalsApi.ts"]
+    "dependencies": [
+      "@ionic/react",
+      "src/api/loansApi.ts",
+      "src/api/loanProposalsApi.ts"
+    ]
   },
   {
     "moduleId": "stripe_payments",
@@ -101,7 +127,12 @@
       "src/components/SavedCardSetup.tsx",
       "src/components/SavedCardSetup.css"
     ],
-    "dependencies": ["@stripe/connect-js", "@stripe/react-connect-js", "@stripe/stripe-js", "@stripe/react-stripe-js"]
+    "dependencies": [
+      "@stripe/connect-js",
+      "@stripe/react-connect-js",
+      "@stripe/stripe-js",
+      "@stripe/react-stripe-js"
+    ]
   },
   {
     "moduleId": "kyc_biometric_capture",
@@ -115,7 +146,12 @@
       "src/utils/idOcr.ts",
       "src/utils/signatureCrop.ts"
     ],
-    "dependencies": ["@vladmandic/face-api", "tesseract.js", "@capacitor/geolocation", "@capacitor/camera"]
+    "dependencies": [
+      "@vladmandic/face-api",
+      "tesseract.js",
+      "@capacitor/geolocation",
+      "@capacitor/camera"
+    ]
   },
   {
     "moduleId": "biometric_device_lock",
@@ -125,6 +161,74 @@
       "src/components/BiometricLockScreen.tsx",
       "src/utils/biometricAuth.ts"
     ],
-    "dependencies": ["@ionic/react", "@aparajita/capacitor-biometric-auth"]
+    "dependencies": [
+      "@ionic/react",
+      "@aparajita/capacitor-biometric-auth"
+    ]
+  },
+  {
+    "moduleId": "iot_dashboard",
+    "moduleName": "IoT Dashboard",
+    "description": "Laundry machines, water tanks and LED status: device state, usage and telemetry.",
+    "files": [
+      "src/pages/iot/IotDashboardPage.tsx",
+      "src/pages/iot/IotDashboard/IotDashboardView.tsx",
+      "src/pages/iot/IotDashboard/IotDashboardLogic.ts",
+      "src/pages/iot/WaterTanksPage.tsx",
+      "src/pages/iot/LedStatusPage.tsx",
+      "src/api/laundryDevicesApi.ts",
+      "src/api/waterTanksApi.ts"
+    ],
+    "dependencies": [
+      "auth"
+    ]
+  },
+  {
+    "moduleId": "laundry_wallet_qr",
+    "moduleName": "Laundry Wallet & Client QR",
+    "description": "Signed GMO1 client QR from the backend, the client's laundry balance and top-ups.",
+    "files": [
+      "src/pages/clients/MyQr/MyQrView.tsx",
+      "src/pages/clients/MyQr/MyQrLogic.ts",
+      "src/hooks/useClientQr.ts",
+      "src/api/laundryWalletApi.ts",
+      "src/components/payments/StripePaySheet.tsx"
+    ],
+    "dependencies": [
+      "auth",
+      "stripe_payments"
+    ]
+  },
+  {
+    "moduleId": "whatsapp_assistant",
+    "moduleName": "WhatsApp Assistant & Follow-up",
+    "description": "Agent dashboard, insights, conversations, staff replies through the chat dock, and business setup.",
+    "files": [
+      "src/pages/messaging/WhatsAppAgentPage.tsx",
+      "src/pages/messaging/WhatsAppConversationsPage.tsx",
+      "src/pages/messaging/WhatsAppConversations/WhatsAppConversationsLogic.ts",
+      "src/components/messaging/WhatsAppDock.tsx",
+      "src/hooks/useWhatsAppThread.ts",
+      "src/api/whatsappAgentApi.ts"
+    ],
+    "dependencies": [
+      "auth"
+    ]
+  },
+  {
+    "moduleId": "notifications_center",
+    "moduleName": "Notifications Center",
+    "description": "Dispatch log, delivery statistics, channel comparison, inbox and push sending.",
+    "files": [
+      "src/pages/messaging/NotificationDispatchLogPage.tsx",
+      "src/pages/messaging/NotificationDispatchLog/NotificationDispatchLogLogic.ts",
+      "src/pages/messaging/NotificationsInboxPage.tsx",
+      "src/pages/messaging/PushNotificationPage.tsx",
+      "src/api/notificationDispatchApi.ts",
+      "src/api/pushNotificationsApi.ts"
+    ],
+    "dependencies": [
+      "auth"
+    ]
   }
 ]

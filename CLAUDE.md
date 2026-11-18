@@ -23,6 +23,11 @@ posgmo-factory/scripts/setup_dev_ui.sh
 # the app dropdown (NOT the hyphenated names, which cannot load)
 adk web
 
+# Refresh the knowledge files from the real repos + live DB (also runs
+# automatically before every Factory run; skip with FACTORY_SKIP_KNOWLEDGE_SYNC=1)
+python -m knowledge_sync            # sync + drift report (knowledge_sync/last_report.md)
+python -m knowledge_sync --check    # report drift only, write nothing
+
 # Start the MCP knowledge server (stdio transport)
 python -m mcp_server.server
 
@@ -40,6 +45,7 @@ pytest tests/test_prd_schema.py -v
 - `GOOGLE_API_KEY` — Gemini API key for ADK agents
 - `GITHUB_TOKEN`, `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME` — for PR agent
 - Any Azure / Twilio credentials the target backend modules use
+- `POS_FRONTEND_REPO_PATH`, `BACKEND_REPO_PATH`, `AGENTS_REPO_PATH` — local checkouts read by `knowledge_sync` (defaults in `.env.example`)
 
 ## Factory Code Architecture (`posgmo-factory/`)
 
@@ -47,22 +53,24 @@ The factory itself is a **Google ADK** multi-agent pipeline written in Python:
 
 - `orchestrator.py` — CLI entry point; creates an ADK `Runner` with `InMemorySessionService`, validates the PRD via `PRDInput`, builds session state (template variable map), and streams the pipeline.
 - `prd_schema.py` — Pydantic models for PRD input (`PRDInput`) and Architect output (`SpecificationJSON`). `companyId` is always injected by SPs and must never appear in PRD fields.
-- `agents/agent.py` — Assembles `root_agent` as a `SequentialAgent` over the six sub-agents in pipeline order.
+- `agents/agent.py` — Assembles `root_agent` as a `SequentialAgent` in pipeline order (host_architect → prd_parser → schema_analyst → architect → decision_gate → spec_reconciler → generation [database ∥ backend ∥ design_consistency] → fixer → frontend → review/fix loop → pr).
 - `agents/*.py` — One file per agent; each agent reads knowledge via MCP tools before generating artifacts and writes its output to ADK session state for the next agent.
 - `mcp_server/server.py` — `FastMCP` server that exposes architecture knowledge files as callable tools. Resolves paths relative to the repo root (`KNOWLEDGE_ROOT = Path(__file__).parent.parent.parent`).
 
 **Session state keys written by agents** (consumed by downstream agents):
-- `spec` — `SpecificationJSON` dict from Architect Agent
-- `sql_output` — SQL DDL + SPs from Database Agent
-- `backend_output` — Python model/schema/route files from Backend Agent
-- `frontend_output` — TS/TSX/CSS files from Frontend Agent
-- `review_output` — Score JSON from Reviewer Agent
+- `specification` — Architect output (raw JSON; see Factory working rules #2)
+- `gate_result` — Decision Gate tier + constraints; `spec_reconciliation` — what spec_reconciler corrected
+- `database_artifacts` — SQL DDL + SPs; `backend_artifacts` — `modules/` + `routes_/` files
+- `design_brief` — patterns from real MVVM pages; `frontend_artifacts` — api/page/view/logic/css files + App.tsx patches
+- `review_result` — scores + issues; `pr_result` — PR links
 
 **Monkey-patch note:** `orchestrator.py` patches `google.genai._api_client.BaseApiClient.async_request` to redirect `gemini-2.0-flash` calls to `gemini-2.5-flash`. Do not remove this unless the ADK default model is updated.
 
 ## What This Repo Is
 
 This is the **POS GMO AI Factory** — an autonomous software factory that generates production-ready modules (frontend, backend, SQL, stored procedures, docs, tests, PRs) for the POS GMO platform while strictly following its existing architecture. The repo contains JSON/CSV knowledge files that agents must read before generating any code.
+
+**Canonical roadmap:** `posgmo-factory/docs/gmo-agentic-roadmap.md` — moving GMO apps from deterministic (L1) to reasoning, proactive, self-improving (L6), with the Factory performing that transformation. Inventory is the first vertical slice.
 
 **Architecture repository (source of truth):** https://github.com/montanogilberto/ArchitecturePOSGMO
 
@@ -90,12 +98,15 @@ Three-layer pipeline:
 
 ## Frontend Architecture
 
-New modules follow this file pattern:
+New modules follow the **MVVM feature layout** (POSVending's own CLAUDE.md §2; reference features `finance/Expenses`, `finance/Accounting`, `admin/Employees`). Paths come from `posgmo-factory/frontend_layout.py` — the single source of truth, enforced on every spec by `spec_reconciler` and checked by the reviewer:
 ```
-src/api/{module}Api.ts          # fetch-based API client with TypeScript interfaces
-src/pages/{Module}Page.tsx      # IonPage → IonHeader/IonToolbar/IonContent shell
-src/pages/{Module}Page.css
+src/api/{module}Api.ts                      # fetch-based API client with TypeScript interfaces — the only place fetch() appears
+src/pages/{area}/{Module}Page.tsx           # router shell: imports the CSS + View, nothing else
+src/pages/{area}/{Module}/{Module}View.tsx  # JSX only — const vm = use{Module}(); Header from components/layout + usePopovers
+src/pages/{area}/{Module}/{Module}Logic.ts  # hook: all state/effects/API calls; exports type {Module}VM; useIonViewWillEnter + refreshBus
+src/pages/{area}/{Module}/{Module}.css
 ```
+`area` is an existing lowercase folder under `src/pages` (admin, finance, products, …), chosen by the architect.
 
 Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` only.
 
@@ -112,12 +123,14 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 |---|---|
 | POS & Cash Operations | `cashRegister`, `tickets`, `income`, `expenses` |
 | Marketplace Aggregator | `unifiedProducts`, `productMatches`, `marketplaceOrders`, `opportunities`, `sellListings` |
-| IoT & Automation | `IOT`, `vending`, `laundry`, `waterTanks` |
+| IoT & Laundry Machines | `IOT` (LED status, water tanks), `vending`, `laundry`, `laundryDevices`, `maintenancePredictor`; firmware in `esp32/` |
+| Inventory & Recipes | `products`; ledger is database-first (see **Inventory**), no dedicated module yet |
+| WhatsApp Assistant & Follow-up | `whatsappAssistant`, `whatsappCloud`, `whatsappReservations`, `whatsappChannels`, `whatsapp`, `clientContactPreferences` |
 | ERP / HR | `employees`, `contractors`, `departaments`, `projects`, `employeeProjectAssignments` |
 | P2P Lending Core | `loans`, `loanOffers`, `loanProposals`, `loanChat`, `creditScore` |
 | Stripe Payments, Wallets & Automated Collection | `stripe_payments`, `automatedPayments`, `walletBalance`, `onboardingReminders`, `disbursement` (legacy/dormant) |
 | SPEI Banking Rail (primary money-out) | `bankAccounts`, `transfers`, `stpProvider`, `walletTransactions` |
-| Push Notifications & Client Comms | `pushNotifications`, `azure_notifications`, `ticket_notifications`, `contact_email` |
+| Push Notifications & Client Comms | `pushNotifications`, `notificationDispatch`, `notificationPush`, `notificationUsage`, `azure_notifications`, `ticket_notifications`, `contact_email` |
 | KYC, Biometric Verification & Legal Recovery | `clientFaceRecognitions`, `document_intelligence`, `signatureMatching`, `geocoding`, `digitalContracts`, `legalCases` |
 
 ## AI Features
@@ -136,6 +149,20 @@ Route guard uses roles: `Admin`, `Manager`, `Cashier`. Public routes: `/login` o
 - `income` + `incomeDetails` + `incomeDetailOptions` form the sales receipt hierarchy.
 - `unifiedProducts` is the master catalog; `productMatches` links marketplace listings to it.
 - `tickets` stores receipt blobs (Azure Blob) and tracks WhatsApp/SMS delivery status.
+
+## Inventory
+
+`inventoryStock` (balance) + `inventoryMovements` (ledger) are the only stock; `productDetails.stockQuantity` is frozen. `sp_inventory_post` is the one write path. Triggers post sales and purchases by themselves (`trg_incomeDetails_inventory`, `trg_expenseDetails_inventory`), and `trg_incomeDetails_consumption` / `trg_incomeDetailOptions_consumption` apply recipes from `productConsumptions`, so **writing those tables has side effects** (`get_db_programmability`). Only `products.trackInventory = 1` moves. Never write `inventoryStock` directly; `sp_inventory_list` and `sp_inventory_adjust` are unused and don't fit the `@pjsonfile` shape. Remaining work: `posgmo-factory/plans/plan-2026-10-inventory.json`; design in POSVending `docs/inventory-portions-design.md`.
+
+## IoT & Laundry Machines
+
+ESP32 controllers with a QR reader and Nextion screen (`smartloans_backend/esp32/`, catalog in `get_firmware_catalog`) call `/laundryDevices/heartbeat`, `quote`, `balance` and `authorize`. `quote` and `balance` never charge; `authorize` charges idempotently on `deviceId + requestId` and creates a ticket with `paymentMethod` `monedero`. The client QR is `GMO1.<companyId>.<clientId>.<firma>`, HMAC-signed server-side only (`/laundryDevices/clientQr`). Firmware is already on machines, so these endpoints must stay backward compatible. `esp32/config.py` holds real keys: git-ignored, never read or copy it.
+
+**Open:** RFC-009/010 (approved) require a separate `laundryWalletEntries` ledger; it doesn't exist yet and usage still debits `walletTransactions`.
+
+## WhatsApp Assistant
+
+`whatsapp_reservations` answers customers; `whatsapp_topic` and `whatsapp_insights` feed the POS dashboard. The agent is never paused; it keeps answering after a hand-off. Empty business data must reach the agent as `NO REGISTRADO`, never null (Gemini invented an address from a null in production). A 200 from Meta means accepted, not delivered.
 
 ## Payments & Money Rails (2026-08)
 
@@ -175,6 +202,20 @@ Observability is a first-class layer, not ad-hoc logging. Goal: **every user act
 
 **Frontend** propagates the trace: a global `window.fetch` interceptor (`src/utils/observability.ts`) stamps the `X-Correlation-Id`/`X-Workflow-Id`/identity/version headers on backend calls; `ObservabilityContext` manages `startWorkflow`/`endWorkflow`.
 
+## Customer App & New Companies
+
+The customer-facing app (reference implementation: **menuLaundy**, companyId 1) is broken down into modules in `Frontend/customer_app_modules.json` (MCP: `get_customer_app_modules`): session, home, receipts, client_qr, reservations, points, rewards_catalog, wallet, alerts, support_chat, whatsapp, gmo_apps — each with its route, files, endpoints, tables, dependencies, per-company data and what is still hardcoded for the laundry.
+
+**When a new company comes in:**
+1. **Delivery model** — `new_company_page` (no customer app yet: new Static Web App from the same code, its own `VITE_COMPANY_ID`) or `add_module_to_existing_page` (enable another module for a company that has one). Forking the code per company needs an ADR.
+2. **Modules** — pick by key and add each one's `dependsOn`.
+3. **Data** — collect `companyOnboarding.requiredData` + each module's `perCompanyData` up front, so nobody has to ask again.
+4. **Hardcoded values** — a module's `hardcodedToday` items (laundry prices, hours, contact, reservation services/slots, low-balance threshold) must move to backend data before a second company uses that module. Each is a PRD, never a copy of the laundry's values.
+5. **Switches** — one `dbo.companyFeatures` row per enabled `CUSTOMER_APP_*` key (missing row = disabled; the backend decides, never the frontend from a companyId). Not seeded yet, and the app doesn't read them yet — that's a `companyFeature` PRD.
+6. Modules with `status: pending_backend` (today: `support_chat` → `/webSupportChat`) stay hidden until their endpoint ships.
+
+`tests/test_customer_app_modules.py` fails when the file lists an endpoint that isn't in `Backend/backend_routes.json.json` (mark not-yet-built ones `"pending": true`).
+
 ## Agent Architecture
 
 The generation pipeline is: **PRD → Architect Agent → Specification JSON → Database Agent + Backend Agent → Frontend Agent → Reviewer Agent → Pull Request**
@@ -184,7 +225,7 @@ The generation pipeline is: **PRD → Architect Agent → Specification JSON →
 | **Architect** | Reads PRD + knowledge files, produces spec. Never writes code. | Specification JSON (`module`, `fields`, `relationships`, `frontend`, `backend`, `database`) |
 | **Database** | Generates tables, indexes, FKs, stored procedures following POS GMO patterns | `.sql` |
 | **Backend** | Generates Pydantic models, schemas, FastAPI routes with full docstrings + type hints | `models/`, `schemas/`, `routes/` |
-| **Frontend** | Generates API client, page TSX, CSS following Ionic design system | `src/api/`, `src/pages/` |
+| **Frontend** | Generates API client + MVVM page (shell, View, Logic, CSS) following Ionic design system | `src/api/`, `src/pages/{area}/` |
 | **Reviewer** | Validates architecture compliance, naming, security, type safety | Score JSON with issues list |
 
 **Every feature request must be expressed as a PRD JSON before agents consume it:**
@@ -201,13 +242,24 @@ The generation pipeline is: **PRD → Architect Agent → Specification JSON →
 5. Never invent a new database architecture.
 6. Every generated module must be observable (see **Observability**): instrument business logic via the `observability` package — `timed_integration()` around external-service calls, `log_audit(...)` on data mutations, and `workflow_step(...)` for multi-step flows. Never write secrets, PII, or base64 into the log tables (the redactor enforces this — don't bypass it). Do NOT regenerate the four log tables or their SPs.
 
+## Factory working rules (learned 2026-10 — knowledge_sync / MVVM work)
+
+1. **The real repos are the authority, not this repo's hard-coded rules.** When a prompt or reviewer rule conflicts with `Conventions/repo_conventions.json` or the code in the product repos, the product repo wins — fix the rule. (Found: reviewer required `../components/Header` long after it moved to `components/layout/Header`; design_consistency sampled pages that no longer existed, so every design brief was empty.)
+2. **Enforce invariants in a deterministic stage, never only in a prompt or Pydantic model.** `SpecificationJSON`'s validator is **not** run in the pipeline — the architect's raw JSON goes straight to generation. Anything that must hold goes in `spec_reconciler`, `fixer`, or `reviewer` (zero-LLM stages).
+3. **One source per convention.** Frontend paths and import lines come only from `posgmo-factory/frontend_layout.py`; never re-type them in another file.
+4. **Run `knowledge_sync --check` before trusting knowledge** in a manual session; it reads whatever branch each product repo has checked out — note it if that isn't `development`.
+5. **Tests must not assert facts about the live snapshot that will change** (e.g. "no reward tables" broke when rewards shipped). Use synthetic names or fixture repos.
+6. **Roadmap is frozen** (`docs/gmo-agentic-roadmap.md`): no new Factory infrastructure ahead of the Inventory slice; work that the slice needs is recorded as an inventory task.
+7. **This repo often has the owner's in-progress work uncommitted.** Commit with an explicit path list (`git commit -- <paths>`), never `git add -A`; leave unrelated changes and staged deletions alone.
+8. **Done = full `pytest` passes** (the factory's equivalent of type-check + build), with the count reported.
+
 ## Frontend Folder Structure
 
 ```text
 src/
 ├── api/          # {module}Api.ts — fetch-based clients with TypeScript interfaces
 ├── components/
-├── pages/        # {Module}Page.tsx + {Module}Page.css
+├── pages/        # {area}/{Module}Page.tsx shell + {area}/{Module}/ (View, Logic, .css)
 ├── contexts/
 ├── hooks/
 ├── utils/
@@ -253,6 +305,16 @@ New modules follow: `sql/sp_{module}.sql` → `modules/{module}.py` (imports `da
 | `Frontend/frontend_api_contracts.json.json` | Request/response contracts |
 | `Database/structure_database.csv` + `Database/sql_relationships.json` | **Live source of truth for DB schema** — read together by the `get_database_schema` MCP tool (format: schema,table,column,type,length,nullable,pk,fk) |
 | `Database/ER_Diagram.csv` | Entity relationships |
+| `Backend/backend_modules.json` | Every `modules/*.py`: route files, SPs, observability, size — **generated** (`get_backend_modules`) |
+| `Backend/backend_firmware.json` | ESP32 firmware files and the endpoints each calls — **generated** (`get_firmware_catalog`) |
+| `Database/db_programmability.json` | Live triggers and functions — **generated** (`get_db_programmability`) |
+| `Frontend/frontend_api_clients.json` | Every `src/api/*.ts` client, its functions and the backend path each calls — **generated by `knowledge_sync`** |
+| `Frontend/frontend_features.json` | `src/pages/{area}/{Feature}/` folders and whether each is MVVM — **generated** |
+| `Agents/agents_catalog.json` | LoanAgents_SmartLoans agents: model, tools, PROPOSE vs read-only — **generated** |
+| `Frontend/customer_app_modules.json` | Customer-app modules (reference: menuLaundy) + new-company onboarding rules — **curated** (`get_customer_app_modules`); update it in the same change as the module |
+| `Conventions/repo_conventions.json` | Each repo's own rule doc + a real recent reference implementation per layer (frontend MVVM feature, backend module + migration, agent) — **generated**; served inside `get_frontend_patterns` / `get_backend_patterns` and via `get_repo_conventions` |
 | `smartloans_backend/sql/sp_observability.sql` + `smartloans_backend/observability/` | Observability layer — the four log tables, insert/batch SPs, and the backend middleware/logger package (see **Observability**) |
 
-Note: `Database/sql_tables.json` exists on disk but is **not read by any MCP tool** (`structure_database.csv` is canonical instead) — do not rely on it being current; `Backend/backend_modules.json.json` referenced in earlier versions of this table does not exist as a file.
+**Knowledge sync:** `posgmo-factory/knowledge_sync/` keeps the files above current. Backend routes, SPs, schema CSV, relationships, frontend routes and components are refreshed from the repos/live DB: curated fields (descriptions, tags, roles) are preserved, moved files are tracked, and removed entries are marked `"stale": true` (MCP tools filter them out) rather than deleted. Don't hand-edit the generated files — fix the extractor instead. `knowledge_sync/manifest.json` records which repo commits the knowledge reflects.
+
+Note: `Database/sql_tables.json` exists on disk but is **not read by any MCP tool** (`structure_database.csv` is canonical instead) — do not rely on it being current.

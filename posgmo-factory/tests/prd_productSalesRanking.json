@@ -1,0 +1,94 @@
+{
+  "module": "productSalesRanking",
+  "description": "READ-ONLY sales ranking per product for the POS product picker (ProductListPage, /product/:categoryId), so the list opens ordered by best seller. Projection over EXISTING tables only: SUM(dbo.incomeDetails.quantity) grouped by productId, joined to dbo.income for companyId + paymentDate, over a rolling window (default last 90 days, America/Hermosillo dates). NO NEW TABLE: do not create dbo.productSalesRankings; the fields below describe the result row, not columns to persist. Single action 'get' on sp_productSalesRanking(@pjsonfile) taking {\"productSalesRanking\":[{\"companyId\":1,\"categoryId\":1002,\"days\":90}]}; categoryId optional (NULL = all categories of the company); days optional (default 90, clamp 1..365). Returns every product of the company/category, including products with zero sales (LEFT JOIN from dbo.products so new items still appear, unitsSold=0), ordered unitsSold DESC, then name ASC. Multi-tenant: always filter dbo.products.companyId AND dbo.income.companyId by the requested companyId.",
+  "fields": [
+    {
+      "name": "categoryId",
+      "type": "integer",
+      "required": false,
+      "description": "Optional filter on dbo.products.categoryId. NULL = all categories."
+    },
+    {
+      "name": "days",
+      "type": "integer",
+      "required": false,
+      "description": "Rolling window in days over dbo.income.paymentDate. Default 90, clamp 1..365. Request-only."
+    },
+    {
+      "name": "productId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "products",
+      "fk_column": "productId",
+      "description": "Result row: the product."
+    },
+    {
+      "name": "unitsSold",
+      "type": "integer",
+      "required": true,
+      "description": "Result row: SUM(incomeDetails.quantity) in the window; 0 when the product has no sales."
+    },
+    {
+      "name": "salesRank",
+      "type": "integer",
+      "required": true,
+      "description": "Result row: 1-based position, ROW_NUMBER() OVER (ORDER BY unitsSold DESC, products.name ASC)."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId on both products and income."
+    },
+    {
+      "parentModule": "products",
+      "cardinality": "1:1",
+      "notes": "One ranking row per product (LEFT JOIN products -> incomeDetails -> income)."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager",
+    "Cashier"
+  ],
+  "has_list_view": false,
+  "has_detail_view": false,
+  "frontend": {
+    "pageRoute": "/product/:categoryId",
+    "allowedRoles": [
+      "Admin",
+      "Manager",
+      "Cashier"
+    ],
+    "uiPattern": "Existing page enhancement (no new page)",
+    "components": [
+      {
+        "step": 1,
+        "name": "productSalesRankingApi",
+        "description": "src/api/productSalesRankingApi.ts: getProductSalesRanking({companyId, categoryId, days}) -> {productId, unitsSold, salesRank}[]. ProductListPage adds 'Más vendidos' as the DEFAULT option of its existing A-Z / Z-A IonSegment, ordering by salesRank; on API failure fall back to A-Z silently (log with the module prefix)."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/productSalesRanking",
+        "method": "POST",
+        "description": "Thin route -> modules/productSalesRanking.py -> EXEC [dbo].[sp_productSalesRanking] @pjsonfile. Read-only; no audit log needed.",
+        "requestSchema": "{\"productSalesRanking\":[{\"companyId\":int,\"categoryId\":int|null,\"days\":int|null}]}",
+        "responseSchema": "{\"productSalesRanking\":[{\"productId\":int,\"unitsSold\":int,\"salesRank\":int}]}"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.income (existing, read-only)",
+      "dbo.incomeDetails (existing, read-only)",
+      "dbo.products (existing, read-only)"
+    ],
+    "storedProcedures": [
+      "dbo.sp_productSalesRanking"
+    ]
+  }
+}

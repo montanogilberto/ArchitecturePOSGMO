@@ -12,12 +12,10 @@ const toHermosillo = (utc: string | undefined): string => {
 };
 """
 
-# Custom Header import block (replaces IonHeader in all pages)
-HEADER_IMPORT = "import Header from '../components/Header';"
-POPOVER_IMPORTS = (
-    "import AlertPopover from '../components/PopOver/AlertPopover';\n"
-    "import MailPopover from '../components/PopOver/MailPopover';"
-)
+# Custom Header + popovers, as written from a View in the MVVM feature folder
+# (src/pages/{area}/{Module}/{Module}View.tsx — see frontend_layout.py)
+HEADER_IMPORT = "import Header from '../../../components/layout/Header';"
+POPOVER_IMPORTS = "import { usePopovers } from '../../../hooks/usePopovers';"
 
 # API body shape: all endpoints are POST, payload wrapped under plural key
 API_BODY_SHAPE = "{plural}: [{ ...fields }]"

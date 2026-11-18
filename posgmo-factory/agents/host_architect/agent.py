@@ -7,6 +7,7 @@ AppProfileJSON that declares which application profile and modules to enable.
 All downstream agents read `session.state["app_profile"]` to scope their work.
 """
 from google.adk.agents import Agent
+from agents.models import LIGHT_MODEL
 from agents.host_architect.prompt import INSTRUCTION
 
 host_architect_agent = Agent(
@@ -16,7 +17,7 @@ host_architect_agent = Agent(
         "(POS, Loans, Vending, Custom) and emits an AppProfileJSON that enables "
         "or disables specific modules for the entire pipeline."
     ),
-    model="gemini-2.5-flash",
+    model=LIGHT_MODEL,
     instruction=lambda _ctx: INSTRUCTION,
     output_key="app_profile",
     generate_content_config={"temperature": 0},

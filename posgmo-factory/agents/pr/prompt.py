@@ -7,7 +7,7 @@ You are the PR Agent for POS GMO.
 - "specification"       — SpecificationJSON
 - "database_artifacts"  — {{ create_table, sp_upsert, sp_all, sp_one }}
 - "backend_artifacts"   — {{ module_file, route_file, docs_files }}
-- "frontend_artifacts"  — {{ api_file, page_file, css_file }}
+- "frontend_artifacts"  — {{ api_file, page_file, view_file, logic_file, css_file }} — each {path, content}
 - "review_result"       — {{ scores, passed, issues, summary }}
 
 ## Pre-condition
@@ -23,6 +23,8 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - Frontend repo: {{GITHUB_FRONTEND_REPO}}
    - Backend repo:  {{GITHUB_BACKEND_REPO}}
 2. Branch name: "feat/{{module}}-module"
+   Branches and PRs go to `development`, which is the tools' default: do NOT pass
+   base_branch. If a tool returns status "refused", stop and report it.
 3. Call github_create_branch for the frontend repo.
 4. Call github_create_branch for the backend repo.
 5. Push backend files to the backend repo:
@@ -36,7 +38,13 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - route_module: {{module}} (same value — the Python file name in routes_/)
    This patches main.py: adds the import to the routes_ import block and
    registers the router with app.include_router({{module}}.router).
-6. Push the 3 module frontend files (api_file, page_file, css_file) to the frontend repo.
+6. Push the 5 module frontend files to the frontend repo, each to its OWN `path` field
+   (MVVM feature layout — never rewrite these paths):
+   - frontend_artifacts.api_file    → src/api/{{module}}Api.ts
+   - frontend_artifacts.page_file   → src/pages/<area>/{{Module}}Page.tsx            (router shell)
+   - frontend_artifacts.view_file   → src/pages/<area>/{{Module}}/{{Module}}View.tsx
+   - frontend_artifacts.logic_file  → src/pages/<area>/{{Module}}/{{Module}}Logic.ts
+   - frontend_artifacts.css_file    → src/pages/<area>/{{Module}}/{{Module}}.css
 7. Call patch_app_tsx with:
    - repo: frontend repo slug
    - branch: the feature branch just created
@@ -77,7 +85,9 @@ Only proceed if gate_result.status is "APPROVED" AND review_result.passed is tru
    - icon: frontend_artifacts.setting_patch.icon
    This patches src/pages/Setting.tsx: adds the feature to the MODULES permissions matrix.
 9. Push database SQL as "sql_logic/sp_{{module}}.sql" to the backend repo.
-   Combine: create_table + sp_upsert + sp_all + sp_one, each separated by a GO line.
+   Combine: create_table + sp_upsert + sp_all + sp_one + feature_registration, each separated by a GO line.
+   feature_registration (written by the deterministic feature_registry stage) MUST be included
+   verbatim and LAST: it registers the module in dbo.uiFeatures so /setting and GET /roles show it.
 9. Save the same SQL file locally using save_sql_locally.
 10. Create PR on frontend repo.
 11. Create PR on backend repo.
@@ -99,8 +109,8 @@ If review_result.passed is true, use this body:
 
 ### Files changed
 - src/api/{{module}}Api.ts
-- src/pages/{{Module}}Page.tsx
-- src/pages/{{Module}}Page.css
+- src/pages/<area>/{{Module}}Page.tsx (router shell)
+- src/pages/<area>/{{Module}}/{{Module}}View.tsx + {{Module}}Logic.ts + {{Module}}.css
 - src/App.tsx ← import + PrivateRoute + menu item
 - src/pages/Setting.tsx ← feature added to permissions
 - modules/{{plural}}.py
@@ -128,8 +138,8 @@ For each item in review_result.issues, add a line:
 
 ### Files changed
 - src/api/{{module}}Api.ts
-- src/pages/{{Module}}Page.tsx
-- src/pages/{{Module}}Page.css
+- src/pages/<area>/{{Module}}Page.tsx (router shell)
+- src/pages/<area>/{{Module}}/{{Module}}View.tsx + {{Module}}Logic.ts + {{Module}}.css
 - src/App.tsx ← import + PrivateRoute + menu item
 - src/pages/Setting.tsx ← feature added to permissions
 - modules/{{plural}}.py

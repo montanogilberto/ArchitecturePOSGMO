@@ -1,0 +1,210 @@
+{
+  "module": "voiceCall",
+  "description": "AI voice calls to customers whose laundry order is ready, and the WhatsApp confirmation of what was agreed on the call. One row per outbound call. Flow: (1) a production order completes (alertDispatcher.notify_cycle_done) for a company with voice calls enabled -> POST /voiceCalls/place resolves the order's client and phone server-side, mints a signed call token (VOICE_CALL_SECRET, HMAC; format and payload in LoanAgents_SmartLoans voice/call_token.py) and asks Twilio to dial with TwiML <Connect><Stream url=wss://loanagents-smartloans.azurewebsites.net/voice/twilio-stream> carrying the token as a <Parameter>; (2) the LoanAgents voice secretary (Gemini Live) talks with the customer and PROPOSES a PICKUP_AGREEMENT -- it never writes; (3) LoanAgents POSTs the call result to /voiceCalls/result (worker key); (4) if there is an agreement, the backend sends the approved Meta template acuerdo_llamada with the summary to the client's WhatsApp and stores it as the pending proposal of that WhatsApp conversation (whatsappChannels.set_pending, same mechanism as CREATE_RESERVATION); (5) the customer's deterministic 'si' (posSupportChat._classify_confirmation, existing) confirms it: the agreement is marked confirmed and staff get a push. Never auto-confirm: an agreement is only confirmed by the customer's own WhatsApp reply. Non-custodial: nothing here moves or records money -- paymentMethod is only how the customer plans to pay. CONSTRAINTS: (a) walk-in client 1 (WALK_IN_CLIENT_ID, the 'mostrador' placeholder with a real phone on file) is never called; (b) the client's phone comes only from clients.cellphone of the order's client -- never from the request; (c) idempotent per orderId: one call per order, a second place request returns the existing row; (d) calls only inside the company's calling window (default 09:00-20:00 America/Hermosillo, UTC-7 no DST) and never when clientContactPreferences opts the client out of calls; (e) feature flag per company (VOICE_CALLS_ENABLED_COMPANIES, empty = off) -- customer calling stays OFF until the voice acceptance criteria pass; (f) only the LATEST agreementRevision of a call can be confirmed: a 'si' to an older revision is rejected and the newest summary is re-sent; (g) the agreement is validated again server-side, independently of the AI: date within the next 8 days and inside that weekday's reservationHours, time not already passed, deliveryMode 'delivery' only when businessInfo.deliveryPolicy is registered, paymentMethod (if any) among businessInfo.paymentMethods when they are registered -- an invalid agreement is not sent, the call is marked needs_staff and staff get a push; (h) caller ID: TWILIO_VOICE_CALLER_ID must be a Twilio-owned Mexican number -- a verified non-Twilio Mexican caller ID was dropped by the carrier on a real test (2026-11-07); (i) no transcript, phone or address is ever written to the log tables (observability redactor) -- the agreement JSON is stored on this row only. OPEN QUESTIONS: what 'confirmed' should change in productionOrders (e.g. a pickupAt column) is left to a follow-up PRD; this module only records and confirms the agreement. INTEGRATIONS: Twilio Programmable Voice (Calls.create, status callback) -- reuse TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN already in the backend; Meta WhatsApp Cloud API template acuerdo_llamada (Utility, es_MX) -- must be submitted and approved in Meta Business Manager before go-live; text and samples to add to docs/whatsapp-templates.md; LoanAgents_SmartLoans /voice/twilio-stream (WebSocket) -- shares VOICE_CALL_SECRET. WHATSAPP TEMPLATE acuerdo_llamada (UTILITY, es_MX), body: \"📞 *Resumen de tu llamada - {{1}}*\\n\\nHola *{{2}}*, esto acordamos:\\n\\n🧺 *Entrega:* {{3}}\\n📅 *Fecha:* {{4}}\\n🕐 *Hora:* {{5}}\\n📝 *Notas:* {{6}}\\n\\nResponde *SÍ* para confirmar o escríbenos si quieres cambiar algo.\"; samples {1}..{6}: Lavandería GMO, Gilberto, Recoger en sucursal, domingo 8 de noviembre, 12:00, Pago en efectivo. OBSERVABILITY: workflow_step for order_ready -> call_placed -> call_answered -> agreement_proposed -> whatsapp_sent -> confirmed (one workflowId per orderId); timed_integration around Twilio and Meta calls; log_audit on agreementStatus changes. Never log phone, address or transcript. BACKEND CONVENTIONS (reviewer-enforced): routes_/voiceCall.py declares router = APIRouter() with NO prefix and NO tags, and every decorator carries its full path exactly as listed in backend.endpoints (/voiceCalls, /all_voiceCalls, /one_voiceCalls, /voiceCalls/place, /voiceCalls/twilio-status, /voiceCalls/result, /voiceCalls/confirm); route files never import HTTPException -- connectors return JSONResponse with the status code; all HTTP calls (Twilio REST Calls.json, Meta Graph) use httpx.AsyncClient, not the twilio SDK; validate X-Twilio-Signature with hmac/hashlib (HMAC-SHA1 of URL + sorted form params, base64) instead of twilio.request_validator.",
+  "fields": [
+    {
+      "name": "clientId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "clients",
+      "fk_column": "clientId",
+      "description": "The order's client, resolved server-side from productionOrders.clientId. Never 1 (walk-in placeholder)."
+    },
+    {
+      "name": "orderId",
+      "type": "integer",
+      "required": true,
+      "fk_table": "productionOrders",
+      "fk_column": "orderId",
+      "description": "The completed production order this call is about. Unique per company: one call per order (idempotency key)."
+    },
+    {
+      "name": "callSid",
+      "type": "string",
+      "required": false,
+      "max_length": 64,
+      "description": "Twilio Call SID (CA...). Null until Twilio accepts the call. Unique when present."
+    },
+    {
+      "name": "callStatus",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "Twilio lifecycle, updated by the status callback. Allowed values: queued, ringing, in_progress, completed, no_answer, busy, failed, canceled, skipped. 'skipped' = not dialed (walk-in, no cellphone, opted out, outside the calling window, feature off) -- skipReason says why."
+    },
+    {
+      "name": "skipReason",
+      "type": "string",
+      "required": false,
+      "max_length": 40,
+      "description": "Why the call was not placed: walk_in_client, no_cellphone, opted_out, outside_calling_window, feature_disabled, duplicate_order."
+    },
+    {
+      "name": "endedBy",
+      "type": "string",
+      "required": false,
+      "max_length": 12,
+      "description": "From the LoanAgents CallResult: agent, customer, timeout, error."
+    },
+    {
+      "name": "durationSeconds",
+      "type": "integer",
+      "required": false,
+      "description": "Talk time reported by Twilio (completed calls)."
+    },
+    {
+      "name": "promptVersion",
+      "type": "string",
+      "required": false,
+      "max_length": 40,
+      "description": "Voice secretary prompt version that ran the call (e.g. voice_secretary_v1.5), for tracing an agreement back to the behavior that produced it."
+    },
+    {
+      "name": "identityConfirmed",
+      "type": "boolean",
+      "required": true,
+      "description": "Whether the person on the line clearly confirmed being the customer before any order detail was said (CallResult.identityConfirmed). Defaults to false."
+    },
+    {
+      "name": "agreementRevision",
+      "type": "integer",
+      "required": false,
+      "description": "Revision number of the LATEST PICKUP_AGREEMENT proposed on the call (the customer may change it mid-call; earlier revisions are superseded). Only this revision can be confirmed."
+    },
+    {
+      "name": "agreementJson",
+      "type": "text",
+      "required": false,
+      "description": "The latest PICKUP_AGREEMENT fields as JSON: deliveryMode (pickup|delivery), weekday, date (YYYY-MM-DD), time (HH:MM), address (delivery only), paymentMethod, notes. Contract: LoanAgents retrieval/contracts.py PICKUP_AGREEMENT. Never the transcript."
+    },
+    {
+      "name": "agreementStatus",
+      "type": "string",
+      "required": true,
+      "max_length": 20,
+      "description": "none (no agreement on the call), invalid (failed server-side validation -> needs staff), pending_confirmation (WhatsApp summary sent, waiting for 'si'), confirmed (customer replied 'si' to the latest revision), cancelled (customer replied 'no'), expired (no reply within the pending TTL)."
+    },
+    {
+      "name": "confirmationMessageId",
+      "type": "string",
+      "required": false,
+      "max_length": 100,
+      "description": "Meta wamid of the acuerdo_llamada template sent. A 200 from Meta means accepted, not delivered -- delivery status arrives by webhook (existing whatsappCloud status handling)."
+    },
+    {
+      "name": "confirmedAt",
+      "type": "datetime",
+      "required": false,
+      "description": "When the customer's 'si' confirmed the latest revision (UTC)."
+    },
+    {
+      "name": "needsStaff",
+      "type": "boolean",
+      "required": true,
+      "description": "True when staff must follow up: the customer asked for a person (REQUEST_HUMAN), the agreement failed validation, or the call ended without one. Drives the POS list filter and the staff push. Defaults to false."
+    },
+    {
+      "name": "staffReason",
+      "type": "string",
+      "required": false,
+      "max_length": 200,
+      "description": "Short reason for needsStaff (REQUEST_HUMAN reason from the agent, or the validation error). No PII."
+    }
+  ],
+  "relationships": [
+    {
+      "parentModule": "companies",
+      "cardinality": "1:N",
+      "notes": "Multi-tenant isolation via companyId -- injected automatically by stored procedures."
+    },
+    {
+      "parentModule": "clients",
+      "cardinality": "N:1",
+      "notes": "FK clientId -> clients.clientId."
+    },
+    {
+      "parentModule": "productionOrders",
+      "cardinality": "1:1",
+      "notes": "FK orderId -> productionOrders.orderId; UNIQUE (companyId, orderId) enforces one call per order."
+    }
+  ],
+  "roles_allowed": [
+    "Admin",
+    "Manager"
+  ],
+  "has_list_view": true,
+  "has_detail_view": true,
+  "frontend": {
+    "pageRoute": "/voice-calls",
+    "allowedRoles": [
+      "Admin",
+      "Manager"
+    ],
+    "uiPattern": "List + Detail Layout",
+    "components": [
+      {
+        "step": 1,
+        "name": "VoiceCallsFeedStep",
+        "description": "IonList of calls, newest first: client name, order, callStatus badge, agreementStatus badge (pending_confirmation=amber, confirmed=green, invalid/needsStaff=red), agreed day/time when there is one. IonSegment filter: Todas / Por confirmar / Confirmadas / Requieren atención (needsStaff). Spinner while loading; refetch on view re-enter."
+      },
+      {
+        "step": 2,
+        "name": "VoiceCallDetailModal",
+        "description": "IonModal: call timeline (placed, ringing, answered, ended, WhatsApp sent, confirmed), duration, endedBy, identityConfirmed, promptVersion, the agreement fields read as a sentence (e.g. 'Recoge el domingo 8 a las 12:00, pago en efectivo'), agreementRevision, staffReason. Read-only: staff never confirms on the customer's behalf."
+      }
+    ]
+  },
+  "backend": {
+    "endpoints": [
+      {
+        "path": "/voiceCalls",
+        "method": "POST",
+        "description": "Standard POS GMO upsert/action router over sp_voiceCalls (@pjsonfile), used internally by the connectors below to insert and update rows. Not called by the POS directly."
+      },
+      {
+        "path": "/voiceCalls/place",
+        "method": "POST",
+        "description": "Worker key (security/worker_key.py). Body: { orderId }. Called by alertDispatcher.notify_cycle_done for companies in VOICE_CALLS_ENABLED_COMPANIES. Resolves the order's company/client/cellphone server-side; applies constraints (a)-(e) and records a 'skipped' row with skipReason instead of dialing when one fails; otherwise mints the call token (payload: companyId, branchId, clientId, orderId, companyName, customerName, order {service, total}; exp <= 15 min) and calls Twilio Calls.create (From=TWILIO_VOICE_CALLER_ID, To=cellphone, Twiml=<Connect><Stream>, StatusCallback=/voiceCalls/twilio-status, StatusCallbackEvent=initiated ringing answered completed) inside timed_integration('twilio_voice', 'place'). Idempotent per (companyId, orderId)."
+      },
+      {
+        "path": "/voiceCalls/twilio-status",
+        "method": "POST",
+        "description": "Twilio status callback (form-encoded; validate X-Twilio-Signature with TWILIO_AUTH_TOKEN). Updates callStatus/durationSeconds by callSid. On no_answer/busy/failed: no retry loop -- falls back once to the existing order-ready notification (notificationDispatch, eventName order_ready) and sets needsStaff=false."
+      },
+      {
+        "path": "/voiceCalls/result",
+        "method": "POST",
+        "description": "Worker key. Called by LoanAgents (voice/twilio_bridge.py) when a call ends. Body: { callSid, companyId, clientId, orderId, endedBy, durationS, promptVersion, identityConfirmed, agreement: {capability, revision, fields} | null, requestHuman: {reason} | null }. No transcript. Validates the agreement server-side (constraint g); if valid and identityConfirmed: sends template acuerdo_llamada to the client's WhatsApp ({{1}} companyName, {{2}} first name, {{3}} 'Recoger en sucursal' or 'Entrega a domicilio: <address>', {{4}} date as 'domingo 8 de noviembre', {{5}} time, {{6}} paymentMethod/notes or '-') via whatsappCloud.send_template inside timed_integration('whatsapp_cloud', 'acuerdo_llamada'); stores it with whatsappChannels.set_pending(channel, phone, {capability: 'PICKUP_AGREEMENT', voiceCallId, revision}, ttl 24 h) and sets agreementStatus=pending_confirmation. requestHuman -> needsStaff=true + staff push. log_audit on every agreementStatus change."
+      },
+      {
+        "path": "/voiceCalls/confirm",
+        "method": "POST",
+        "description": "Internal, called from whatsappReservations.reply_to when the WhatsApp pending proposal has capability PICKUP_AGREEMENT (instead of _book): Body { voiceCallId, revision, decision: confirm|cancel }. confirm -> only if revision == the row's agreementRevision and agreementStatus == pending_confirmation (else reject and re-send the latest summary); sets confirmed + confirmedAt, push to staff ('Gilberto confirmó: recoge domingo 8, 12:00'), and the WhatsApp reply '¡Listo! Te esperamos el <día> a las <hora>.' cancel -> cancelled + needsStaff=true. Integration point: whatsappReservations.reply_to must branch on the pending capability (today it assumes CREATE_RESERVATION)."
+      },
+      {
+        "path": "/all_voiceCalls",
+        "method": "POST",
+        "description": "List for the POS page: { companyId, filter: all|pending|confirmed|needsStaff, limit } -> rows joined with clients.first_name/last_name. Never returns the client's phone."
+      },
+      {
+        "path": "/one_voiceCalls",
+        "method": "POST",
+        "description": "Detail for the modal: { companyId, voiceCallId }."
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      "dbo.voiceCalls"
+    ],
+    "storedProcedures": [
+      "dbo.sp_voiceCalls",
+      "dbo.sp_voiceCalls_all",
+      "dbo.sp_voiceCalls_one"
+    ],
+    "hints": [
+      "UNIQUE (companyId, orderId) on dbo.voiceCalls -- one call per order",
+      "UNIQUE callSid WHERE callSid IS NOT NULL"
+    ]
+  }
+}

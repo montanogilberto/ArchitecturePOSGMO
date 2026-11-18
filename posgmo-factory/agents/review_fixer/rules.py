@@ -11,6 +11,37 @@ from google.adk.tools.tool_context import ToolContext
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _shell_module(page_path: str) -> tuple[str, str] | None:
+    """('Expenses', 'finance') from src/pages/finance/ExpensesPage.tsx."""
+    m = re.match(r"src/pages/([^/]+)/(\w+)Page\.tsx$", page_path or "")
+    return (m.group(2), m.group(1)) if m else None
+
+
+def _shell_from_layout(page_path: str) -> str:
+    """The router shell exactly as POSVending writes it (pages/finance/ExpensesPage.tsx),
+    with the import lines from frontend_layout -- the one source for them."""
+    from frontend_layout import layout
+    parsed = _shell_module(page_path)
+    if not parsed:
+        return ""
+    M, area = parsed
+    lines = layout(M[0].lower() + M[1:], area)
+    return (f"import React from 'react';\n{lines['shell_css_import']}\n{lines['shell_view_import']}\n\n"
+            f"const {M}Page: React.FC = () => {{\n  return <{M}View />;\n}};\n\nexport default {M}Page;\n")
+
+
+def _ensure_default_view_export(view_content: str, page_path: str) -> str:
+    """The shell default-imports the View; add `export default` when the View
+    only has a named export."""
+    parsed = _shell_module(page_path)
+    if not parsed or re.search(r"^export\s+default\b", view_content, re.M):
+        return view_content
+    M = parsed[0]
+    if re.search(rf"\b(const|function)\s+{M}View\b", view_content):
+        return view_content.rstrip() + f"\n\nexport default {M}View;\n"
+    return view_content
+
+
 def _load(key: str, tool_context: ToolContext) -> dict:
     raw = tool_context.state.get(key, "{}")
     if not isinstance(raw, str):
@@ -54,14 +85,14 @@ def _fix_auth_context(content: str) -> str:
     content = re.sub(
         r"const\s+\{([^}]+)\}\s*=\s*useContext\s*\(\s*AuthContext\s*\);?",
         lambda m: (
-            "import { useUser } from '../components/UserContext';\n"
+            "import { useUser } from '../contexts/UserContext';\n"
             "const { companyId, userId, roleCode, username } = useUser();"
         ),
         content,
     )
     # Add useUser import if not already present
     if "useUser" not in content:
-        content = "import { useUser } from '../components/UserContext';\n" + content
+        content = "import { useUser } from '../contexts/UserContext';\n" + content
     # Fix user?.companyId → companyId (useUser exposes it directly)
     content = content.replace("user?.companyId", "companyId")
     content = content.replace("user.companyId", "companyId")
@@ -132,6 +163,20 @@ def _fix_bare_custom_event(content: str) -> str:
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _frontend_key_for(frontend: dict, file: str) -> str:
+    """Artifact key whose path matches an issue's file (page_file if none)."""
+    for key in ("view_file", "logic_file", "page_file", "api_file", "css_file"):
+        art = frontend.get(key)
+        if isinstance(art, dict) and file and art.get("path") == file and art.get("content"):
+            return key
+    if file:  # artifact paths may be missing/wrong — match by the MVVM file suffix
+        for suffix, key in (("View.tsx", "view_file"), ("Logic.ts", "logic_file"),
+                            ("Api.ts", "api_file"), ("Page.tsx", "page_file")):
+            if file.endswith(suffix) and (frontend.get(key) or {}).get("content"):
+                return key
+    return "page_file"
+
+
 def apply_review_fixes(tool_context: ToolContext) -> dict:
     """
     Reads review_result.issues, applies deterministic fixes to artifacts,
@@ -163,13 +208,36 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
         msg_lo   = message.lower()
 
         if artifact == "frontend":
-            page = frontend.get("page_file", {})
+            # Wrong MVVM path: the expected path is in the message — set it.
+            path_fix = re.match(r"(\w+_file) path must be (\S+)", message)
+            if path_fix and isinstance(frontend.get(path_fix.group(1)), dict):
+                frontend[path_fix.group(1)]["path"] = path_fix.group(2)
+                fe_dirty = True
+                fixed.append(f"[frontend] {message}")
+                continue
+
+            # Edit the file the issue names (MVVM: View / Logic / shell / api),
+            # falling back to page_file for older single-page artifacts.
+            key = _frontend_key_for(frontend, issue.get("file", ""))
+            page = frontend.get(key, {})
             content = page.get("content", "")
             if not content:
-                skipped.append(f"[frontend] no page_file content — {message}")
+                skipped.append(f"[frontend] no {key} content — {message}")
                 continue
 
             original = content
+
+            if key == "page_file" and msg_lo.startswith("router shell must import"):
+                # The shell is fully determined by the layout: rebuild it from
+                # frontend_layout's import lines (2026-11-07, prd_voiceCall: a
+                # named `{ VoiceCallView }` import blocked the PR 3/3 iterations).
+                content = _shell_from_layout(page.get("path", ""))
+                view = frontend.get("view_file") or {}
+                if view.get("content"):
+                    view_fixed = _ensure_default_view_export(view["content"], page.get("path", ""))
+                    if view_fixed != view["content"]:
+                        frontend["view_file"]["content"] = view_fixed
+                        fe_dirty = True
 
             if "authcontext" in msg_lo or "usecontext(authcontext)" in msg_lo or "user?.companyid" in msg_lo:
                 content = _fix_auth_context(content)
@@ -180,11 +248,22 @@ def apply_review_fixes(tool_context: ToolContext) -> dict:
             if "catch" in msg_lo and "any" in msg_lo:
                 content = _fix_catch_any(content)
 
-            if "bare customevent" in msg_lo or ("customevent" in msg_lo and "generic" in msg_lo):
+            if "customevent<any>" in msg_lo.replace(" ", ""):
+                # fix_frontend's deterministic fixer, reused: fixer_agent runs
+                # BEFORE frontend_agent, so it never sees page output -- this
+                # was the only path left for a CustomEvent<any> finding
+                # (Step 1 evidence: supplier run scored frontend 80 on it).
+                from agents.fixer.rules import _ensure_ionic_imports, _fix_custom_event_any
+                content, applied = _fix_custom_event_any(content)
+                content = _ensure_ionic_imports(content, applied)
+            elif "bare customevent" in msg_lo or ("customevent" in msg_lo and "generic" in msg_lo):
                 content = _fix_bare_custom_event(content)
+                from agents.fixer.rules import _ensure_ionic_imports, _fix_bare_refresher_event
+                content, applied = _fix_bare_refresher_event(content)
+                content = _ensure_ionic_imports(content, applied)
 
             if content != original:
-                frontend["page_file"]["content"] = content
+                frontend[key]["content"] = content
                 fe_dirty = True
                 fixed.append(f"[frontend] {message}")
             else:
